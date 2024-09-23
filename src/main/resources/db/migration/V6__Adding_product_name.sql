@@ -1,0 +1,2 @@
+ALTER TABLE menu
+    ADD COLUMN product_name VARCHAR(255) NOT NULL;
