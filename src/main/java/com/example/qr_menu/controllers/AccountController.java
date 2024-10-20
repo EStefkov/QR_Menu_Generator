@@ -28,12 +28,11 @@ public class AccountController {
     }
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody LoginDTO loginDTO) {
-        boolean isAuthenticated = accountService.authenticate(loginDTO);
-        if (isAuthenticated) {
-            return new ResponseEntity<>("Login successful", HttpStatus.OK);
+        String token = accountService.login(loginDTO);
+        if (token != null) {
+            return new ResponseEntity<>(token, HttpStatus.OK);
         } else {
             return new ResponseEntity<>("Invalid email or password", HttpStatus.UNAUTHORIZED);
         }
     }
-
 }

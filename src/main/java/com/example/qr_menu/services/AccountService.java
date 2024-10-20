@@ -7,6 +7,7 @@ import com.example.qr_menu.repositories.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.qr_menu.utils.JwtTokenUtil;
 
 import java.sql.Timestamp;
 import java.util.Optional;
@@ -16,13 +17,7 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
-
-    @Autowired
-    public AccountService(AccountRepository accountRepository, PasswordEncoder passwordEncoder) {
-        this.accountRepository = accountRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
+    private final JwtTokenUtil jwtTokenUtil;
     /**
      * Registers a new account by encoding the password and saving the account to the database.
      *
@@ -41,19 +36,23 @@ public class AccountService {
         accountRepository.save(newAccount);
     }
 
-    /**
-     * Authenticates the user by comparing the provided password with the stored password.
-     *
-     * @param loginDTO the DTO containing login credentials
-     * @return true if authentication is successful, false otherwise
-     */
-    public boolean authenticate(LoginDTO loginDTO) {
+
+    @Autowired
+    public AccountService(AccountRepository accountRepository, PasswordEncoder passwordEncoder, JwtTokenUtil jwtTokenUtil) {
+        this.accountRepository = accountRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtTokenUtil = jwtTokenUtil;
+    }
+
+    public String login(LoginDTO loginDTO) {
         Optional<Account> accountOpt = accountRepository.findByMailAddress(loginDTO.getMailAddress());
         if (accountOpt.isPresent()) {
             Account account = accountOpt.get();
-            // Compare provided password with the encoded password in the database
-            return passwordEncoder.matches(loginDTO.getPassword(), account.getPassword());
+            if (passwordEncoder.matches(loginDTO.getPassword(), account.getPassword())) {
+                // If authentication is successful, generate JWT token
+                return jwtTokenUtil.generateToken(account.getMailAddress());
+            }
         }
-        return false;
+        return null; // Return null or throw exception if login fails
     }
 }
