@@ -1,36 +1,58 @@
 package com.example.qr_menu.services;
 
-
+import com.example.qr_menu.dto.AccountDTO;
+import com.example.qr_menu.dto.LoginDTO;
 import com.example.qr_menu.entities.Account;
-import com.example.qr_menu.entities.Account.AccountType;
-import com.example.qr_menu.repositories.AccountRepository; // Ensure you have this repository
+import com.example.qr_menu.repositories.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.example.qr_menu.utils.JwtTokenUtil;
+
+import java.sql.Timestamp;
+import java.util.Optional;
 
 @Service
 public class AccountService {
 
     private final AccountRepository accountRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenUtil jwtTokenUtil;
+    /**
+     * Registers a new account by encoding the password and saving the account to the database.
+     *
+     * @param accountDTO the DTO containing account registration data
+     */
+    public void registerAccount(AccountDTO accountDTO) {
+        Account newAccount = Account.builder()
+                .accountName(accountDTO.getAccountName())
+                .mailAddress(accountDTO.getMailAddress())
+                .number(accountDTO.getNumber())
+                .password(passwordEncoder.encode(accountDTO.getPassword()))  // Encode password
+                .accountType(accountDTO.getAccountType())
+                .createdAt(new Timestamp(System.currentTimeMillis()))  // Set createdAt timestamp
+                .build();
 
-    @Autowired
-    public AccountService(AccountRepository accountRepository) {
-        this.accountRepository = accountRepository;
-        this.passwordEncoder = new BCryptPasswordEncoder();
+        accountRepository.save(newAccount);
     }
 
-    public Account createAccount(String accountName, String email, String number, String plainPassword, AccountType accountType) {
-        Account account = new Account();
-        account.setAccountName(accountName);
-        account.setMailAddress(email);
-        account.setNumber(number);
 
-        // Hash the password
-        String hashedPassword = passwordEncoder.encode(plainPassword);
-        account.setPassword(hashedPassword);
+    @Autowired
+    public AccountService(AccountRepository accountRepository, PasswordEncoder passwordEncoder, JwtTokenUtil jwtTokenUtil) {
+        this.accountRepository = accountRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtTokenUtil = jwtTokenUtil;
+    }
 
-        account.setAccountType(accountType);
-        return accountRepository.save(account);
+    public String login(LoginDTO loginDTO) {
+        Optional<Account> accountOpt = accountRepository.findByMailAddress(loginDTO.getMailAddress());
+        if (accountOpt.isPresent()) {
+            Account account = accountOpt.get();
+            if (passwordEncoder.matches(loginDTO.getPassword(), account.getPassword())) {
+                // If authentication is successful, generate JWT token
+                return jwtTokenUtil.generateToken(account.getMailAddress());
+            }
+        }
+        return null; // Return null or throw exception if login fails
     }
 }

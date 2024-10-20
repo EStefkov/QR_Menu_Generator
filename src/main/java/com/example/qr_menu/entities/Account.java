@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Entity
@@ -32,16 +33,20 @@ public class Account {
     @Column(name = "password", nullable = false)
     private String password;
 
-    // Enum to store account types (USER or ADMIN)
     @Enumerated(EnumType.STRING)
     @Column(name = "account_type", nullable = false)
     private AccountType accountType;
+
+    @Column(name = "created_at")
+    private Timestamp createdAt;
+
+    @Column(name = "updated_at")
+    private Timestamp updatedAt;
 
     // One Account can have many Restaurants
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Restorant> restorants;
 
-    // Enum definition
     public enum AccountType {
         USER,
         ADMIN
