@@ -13,4 +13,5 @@ public class RestaurantDTO {
     private Long id;
     private String restorantName;
     private String phoneNumber;
+    private Long accountId;
 }

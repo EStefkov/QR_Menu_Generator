@@ -2,9 +2,11 @@ package com.example.qr_menu.controllers;
 
 import com.example.qr_menu.dto.RestaurantDTO;
 import com.example.qr_menu.services.RestaurantService;
+import com.example.qr_menu.utils.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,15 +16,25 @@ import java.util.List;
 public class RestaurantController {
 
     private final RestaurantService restaurantService;
+    private final JwtTokenUtil jwtTokenUtil;
 
     @Autowired
-    public RestaurantController(RestaurantService restaurantService) {
+    public RestaurantController(RestaurantService restaurantService, JwtTokenUtil jwtTokenUtil) {
         this.restaurantService = restaurantService;
+        this.jwtTokenUtil = jwtTokenUtil;
     }
 
     @PostMapping
-    public ResponseEntity<String> createRestaurant(@RequestBody RestaurantDTO restaurantDTO) {
-        restaurantService.createRestaurant(restaurantDTO);
+    public ResponseEntity<String> createRestaurant(
+            @RequestBody RestaurantDTO restaurantDTO,
+            @RequestHeader("Authorization") String token) {
+
+        // Extract email from the token (remove "Bearer " prefix)
+        String email = jwtTokenUtil.extractEmailFromToken(token.substring(7));
+
+        // Pass email to the service
+        restaurantService.createRestaurant(restaurantDTO, email);
+
         return new ResponseEntity<>("Restaurant created successfully", HttpStatus.CREATED);
     }
 
@@ -37,8 +49,8 @@ public class RestaurantController {
         RestaurantDTO restaurantDTO = restaurantService.getRestaurantById(id);
         return ResponseEntity.ok(restaurantDTO);
     }
-
-    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteRestaurant(@PathVariable Long id) {
         restaurantService.deleteRestaurant(id);
         return new ResponseEntity<>("Restaurant deleted successfully", HttpStatus.OK);

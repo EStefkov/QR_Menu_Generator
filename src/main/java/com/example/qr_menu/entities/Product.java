@@ -29,6 +29,6 @@ public class Product {
 
     // Many Products can belong to one Menu
     @ManyToOne
-    @JoinColumn(name = "menu_id") // Foreign key column in Products table
+    @JoinColumn(name = "menu_id", nullable = false) // Foreign key column in Products table
     private Menu menu;
 }

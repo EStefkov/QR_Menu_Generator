@@ -22,13 +22,10 @@ public class Menu {
 
     @Column(name = "category")
     private String category;
-
-    @Column(name = "product_name")
-    private String product_name;
-
+    
     // Many Menus can belong to one Restorant
     @ManyToOne
-    @JoinColumn(name = "restorant_id") // Foreign key column in Menu table
+    @JoinColumn(name = "restorant_id",nullable = false) // Foreign key column in Menu table
     private Restorant restorant;
 
     // One Menu can have many Products

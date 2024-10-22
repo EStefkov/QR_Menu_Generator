@@ -1,8 +1,10 @@
 package com.example.qr_menu.services;
 
 import com.example.qr_menu.dto.RestaurantDTO;
+import com.example.qr_menu.entities.Account;
 import com.example.qr_menu.entities.Restorant;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
+import com.example.qr_menu.repositories.AccountRepository;
 import com.example.qr_menu.repositories.RestaurantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,16 +16,24 @@ import java.util.stream.Collectors;
 public class RestaurantService {
 
     private final RestaurantRepository restaurantRepository;
+    private final AccountRepository accountRepository; // Inject AccountRepository to find accounts
 
     @Autowired
-    public RestaurantService(RestaurantRepository restaurantRepository) {
+    public RestaurantService(RestaurantRepository restaurantRepository, AccountRepository accountRepository) {
         this.restaurantRepository = restaurantRepository;
+        this.accountRepository = accountRepository;
     }
 
-    public void createRestaurant(RestaurantDTO restaurantDTO) {
+    public void createRestaurant(RestaurantDTO restaurantDTO, String email) {
+        // Find account by email (extracted from JWT)
+        Account account = accountRepository.findByMailAddress(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+
+        // Build restaurant with associated account
         Restorant restaurant = Restorant.builder()
                 .restorantName(restaurantDTO.getRestorantName())
                 .phoneNumber(restaurantDTO.getPhoneNumber())
+                .account(account) // Associate restaurant with account
                 .build();
         restaurantRepository.save(restaurant);
     }
@@ -38,7 +48,7 @@ public class RestaurantService {
 
     public void deleteRestaurant(Long id) {
         Restorant restaurant = restaurantRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id: " + id));
         restaurantRepository.delete(restaurant);
     }
 
@@ -54,6 +64,7 @@ public class RestaurantService {
         dto.setId(restaurant.getId());
         dto.setRestorantName(restaurant.getRestorantName());
         dto.setPhoneNumber(restaurant.getPhoneNumber());
+        dto.setAccountId(restaurant.getAccount().getId()); // Include account ID in the DTO
         return dto;
     }
 
