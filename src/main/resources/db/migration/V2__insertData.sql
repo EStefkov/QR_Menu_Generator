@@ -1,8 +1,8 @@
--- Insert into Account Table
+-- Insert into Account Table with 'ROLE_' prefixed account_type
 INSERT INTO account (account_name, mail_address, number, password, account_type, created_at, updated_at)
 VALUES
-    ('admin', 'admin@domain.com', '555-7890', 'admin', 'ADMIN', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Liam Brooks', 'liam.brooks@domain.com', '555-4321', 'strongPass456', 'USER', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    ('admin', 'admin@domain.com', '555-7890', 'admin', 'ROLE_ADMIN', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Liam Brooks', 'liam.brooks@domain.com', '555-4321', 'strongPass456', 'ROLE_USER', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert into Restorant Table
 INSERT INTO restorant (restorant_name, phone_number, account_id, created_at, updated_at)

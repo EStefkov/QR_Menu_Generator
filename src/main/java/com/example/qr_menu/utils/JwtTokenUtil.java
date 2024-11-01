@@ -1,23 +1,36 @@
 package com.example.qr_menu.utils;
 
+import com.example.qr_menu.entities.Account;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.function.Function;
 
 @Component
 public class JwtTokenUtil {
 
-    // Use io.jsonwebtoken.security.Keys to generate a secure key
-    private final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    // Generate a secure 512-bit key for HS512 algorithm
+    private final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+
+    // Method to extract the subject (email) from the JWT token
+    public String extractEmailFromToken(String token) {
+        return getAllClaimsFromToken(token).getSubject(); // Assuming email is stored as the subject
+    }
+
+    // Helper method to get all claims from the JWT token
+    public Claims getAllClaimsFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
 
     // Retrieve email (subject) from JWT token
     public String extractUsername(String token) {
@@ -35,6 +48,7 @@ public class JwtTokenUtil {
         return claimsResolver.apply(claims);
     }
 
+    // Helper method to extract all claims from the token
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(SECRET_KEY)
@@ -49,23 +63,15 @@ public class JwtTokenUtil {
     }
 
     // Generate a token for the user
-    public String generateToken(String username) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, username);
-    }
+    public String generateToken(String email, Account.AccountType accountType) {
+        String accountTypeClaim = accountType.toString();
 
-    // While creating the token:
-    // 1. Define claims
-    // 2. Set subject (email)
-    // 3. Set issued at date and expiration
-    // 4. Sign the token with HS256 and a secure key
-    private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
-                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setSubject(email) // Store the email as the subject
+                .claim("accountType",accountTypeClaim)
+                .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // Token valid for 10 hours
-                .signWith(SECRET_KEY)
+                .signWith(SECRET_KEY) // Use the secure key generated earlier
                 .compact();
     }
 
