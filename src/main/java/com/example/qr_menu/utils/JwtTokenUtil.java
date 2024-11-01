@@ -1,5 +1,6 @@
 package com.example.qr_menu.utils;
 
+import com.example.qr_menu.entities.Account;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
 
 @Component
@@ -22,7 +24,7 @@ public class JwtTokenUtil {
     }
 
     // Helper method to get all claims from the JWT token
-    private Claims getAllClaimsFromToken(String token) {
+    public Claims getAllClaimsFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(SECRET_KEY)
                 .build()
@@ -61,9 +63,12 @@ public class JwtTokenUtil {
     }
 
     // Generate a token for the user
-    public String generateToken(String email) {
+    public String generateToken(String email, Account.AccountType accountType) {
+        String accountTypeClaim = accountType.toString();
+
         return Jwts.builder()
                 .setSubject(email) // Store the email as the subject
+                .claim("accountType",accountTypeClaim)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // Token valid for 10 hours
                 .signWith(SECRET_KEY) // Use the secure key generated earlier

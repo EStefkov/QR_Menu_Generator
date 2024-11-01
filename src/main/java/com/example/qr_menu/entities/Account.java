@@ -43,12 +43,13 @@ public class Account {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
+
     // One Account can have many Restaurants
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Restorant> restorants;
 
     public enum AccountType {
-        USER,
-        ADMIN
+        ROLE_USER,
+        ROLE_ADMIN
     }
 }

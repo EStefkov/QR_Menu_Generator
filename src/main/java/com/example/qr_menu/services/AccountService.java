@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import com.example.qr_menu.utils.JwtTokenUtil;
 
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class AccountService {
@@ -49,10 +51,11 @@ public class AccountService {
         if (accountOpt.isPresent()) {
             Account account = accountOpt.get();
             if (passwordEncoder.matches(loginDTO.getPassword(), account.getPassword())) {
-                // If authentication is successful, generate JWT token
-                return jwtTokenUtil.generateToken(account.getMailAddress());
+                // Directly pass the list of roles since they are already strings
+                return jwtTokenUtil.generateToken(account.getMailAddress(),account.getAccountType()  );
             }
         }
         return null; // Return null or throw exception if login fails
     }
+
 }

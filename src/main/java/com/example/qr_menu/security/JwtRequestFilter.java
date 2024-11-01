@@ -1,6 +1,9 @@
-package com.example.qr_menu.utils;
+package com.example.qr_menu.security;
+
+import com.example.qr_menu.utils.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,6 +17,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
@@ -33,7 +41,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String username = null;
         String jwt = null;
 
-        // Check if the Authorization header is present and starts with "Bearer "
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
             try {
@@ -43,13 +50,18 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             }
         }
 
-        // Validate the token and authenticate the user
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
             if (jwtTokenUtil.validateToken(jwt, userDetails.getUsername())) {
-                // If token is valid, set authentication in the context
+                // Remove roles extraction
+                String accountTypeStr = jwtTokenUtil.getAllClaimsFromToken(jwt).get("accountType", String.class);
+
+                // Create a single authority based on account type
+                SimpleGrantedAuthority authority = new SimpleGrantedAuthority(accountTypeStr);
+                List<SimpleGrantedAuthority> authorities = Collections.singletonList(authority);
+
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
+                        userDetails, null, authorities);
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }

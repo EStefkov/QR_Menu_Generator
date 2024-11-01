@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -22,11 +23,20 @@ public class Menu {
 
     @Column(name = "category")
     private String category;
-    
+
+    @Column(name = "created_at")
+    @Temporal(TemporalType.DATE)
+    private Date createdAt;
+
+    @Column(name= "updated_at")
+    @Temporal(TemporalType.DATE)
+    private Date updatedAt;
     // Many Menus can belong to one Restorant
-    @ManyToOne
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "restorant_id",nullable = false) // Foreign key column in Menu table
     private Restorant restorant;
+
 
     // One Menu can have many Products
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -1,9 +1,10 @@
-package com.example.qr_menu.config;
+package com.example.qr_menu.configurations;
 
-import com.example.qr_menu.utils.JwtRequestFilter;
+import com.example.qr_menu.security.JwtRequestFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,6 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 
 @Configuration
 @EnableWebSecurity
@@ -29,7 +31,13 @@ public class SecurityConfig {
                 // Allow public access to registration and login endpoints
                 .requestMatchers("/api/accounts/register", "/api/accounts/login").permitAll()
                 // Only allow users with 'ADMIN' role to delete restaurants
-                .requestMatchers("/restaurants/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "api/restaurants/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "api/restaurants/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "api/restaurants/**").hasRole("ADMIN")
+
+                .requestMatchers(HttpMethod.POST, "/api/menus/**").hasAnyRole("ADMIN")  // Create menu
+                .requestMatchers(HttpMethod.PUT, "/api/menus/**").hasRole("ADMIN")              // Update menu
+                .requestMatchers(HttpMethod.DELETE, "/api/menus/**").hasRole("ADMIN")
                 // All other requests need authentication
                 .anyRequest().authenticated()
                 .and()
