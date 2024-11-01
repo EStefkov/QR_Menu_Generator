@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests()
                 // Allow public access to registration and login endpoints
                 .requestMatchers("/api/accounts/register", "/api/accounts/login").permitAll()
-                // Only allow users with 'ADMIN' role to delete restaurants
+                // Only allow users with 'ADMIN' role to delete,create or update restaurants
                 .requestMatchers(HttpMethod.PUT, "api/restaurants/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "api/restaurants/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "api/restaurants/**").hasRole("ADMIN")
