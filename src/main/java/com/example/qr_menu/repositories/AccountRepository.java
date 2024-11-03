@@ -9,6 +9,7 @@ import java.util.Optional;
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
 
-    Optional<Account> findByMailAddress(String mailAddress);
+    Optional<Account> findByAccountNameOrMailAddress(String accountName, String mailAddress);
+
     // Custom query methods can be added here if needed
 }

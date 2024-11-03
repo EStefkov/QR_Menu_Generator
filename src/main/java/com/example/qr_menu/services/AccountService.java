@@ -47,15 +47,19 @@ public class AccountService {
     }
 
     public String login(LoginDTO loginDTO) {
-        Optional<Account> accountOpt = accountRepository.findByMailAddress(loginDTO.getMailAddress());
+        Optional<Account> accountOpt = accountRepository.findByAccountNameOrMailAddress(
+                loginDTO.getAccountName(), loginDTO.getMailAddress());
+
         if (accountOpt.isPresent()) {
             Account account = accountOpt.get();
             if (passwordEncoder.matches(loginDTO.getPassword(), account.getPassword())) {
-                // Directly pass the list of roles since they are already strings
-                return jwtTokenUtil.generateToken(account.getMailAddress(),account.getAccountType()  );
+                return jwtTokenUtil.generateToken(
+                        account.getMailAddress(),
+                        account.getAccountType()
+                );
             }
         }
-        return null; // Return null or throw exception if login fails
+        return null; // Return null or throw an exception if login fails
     }
 
 }

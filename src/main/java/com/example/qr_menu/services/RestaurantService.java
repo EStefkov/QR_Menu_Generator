@@ -24,9 +24,9 @@ public class RestaurantService {
         this.accountRepository = accountRepository;
     }
 
-    public void createRestaurant(RestaurantDTO restaurantDTO, String email) {
-        // Find account by email (extracted from JWT)
-        Account account = accountRepository.findByMailAddress(email)
+    public void createRestaurant(RestaurantDTO restaurantDTO, String identifier) {
+        // Find account by account name or email (identifier extracted from JWT)
+        Account account = accountRepository.findByAccountNameOrMailAddress(identifier, identifier)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
         // Build restaurant with associated account
@@ -35,6 +35,7 @@ public class RestaurantService {
                 .phoneNumber(restaurantDTO.getPhoneNumber())
                 .account(account) // Associate restaurant with account
                 .build();
+
         restaurantRepository.save(restaurant);
     }
 
