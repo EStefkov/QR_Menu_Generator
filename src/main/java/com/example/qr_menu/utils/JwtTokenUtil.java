@@ -63,17 +63,17 @@ public class JwtTokenUtil {
     }
 
     // Generate a token for the user
-    public String generateToken(String email, Account.AccountType accountType) {
-        String accountTypeClaim = accountType.toString();
-
+    public String generateToken(String email, Account.AccountType accountType, Long accountId) {
         return Jwts.builder()
                 .setSubject(email) // Store the email as the subject
-                .claim("accountType",accountTypeClaim)
+                .claim("accountType", accountType.toString()) // Add accountType as a claim
+                .claim("accountId", accountId) // Add accountId as a claim
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // Token valid for 10 hours
                 .signWith(SECRET_KEY) // Use the secure key generated earlier
                 .compact();
     }
+
 
     // Validate the token
     public Boolean validateToken(String token, String username) {

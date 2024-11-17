@@ -53,13 +53,16 @@ public class AccountService {
         if (accountOpt.isPresent()) {
             Account account = accountOpt.get();
             if (passwordEncoder.matches(loginDTO.getPassword(), account.getPassword())) {
+                // Pass accountId while generating the token
                 return jwtTokenUtil.generateToken(
                         account.getMailAddress(),
-                        account.getAccountType()
+                        account.getAccountType(),
+                        account.getId()
                 );
             }
         }
         return null; // Return null or throw an exception if login fails
     }
+
 
 }

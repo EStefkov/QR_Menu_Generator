@@ -1,5 +1,6 @@
 package com.example.qr_menu.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,11 +34,15 @@ public class Order {
 
     @ManyToOne
     @JoinColumn(name = "account_id", nullable = false)
+    @JsonBackReference
     private Account account;
 
     @ManyToOne
     @JoinColumn(name = "restorant_id", nullable = false)
+    @JsonBackReference
     private Restorant restorant;
+
+
 
     public enum OrderStatus {
         FINISHED,
