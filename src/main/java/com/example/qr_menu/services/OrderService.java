@@ -37,16 +37,23 @@ public class OrderService {
 
         double totalPrice = 0.0;
 
-        for (OrderDTO.ProductOrderDTO productOrder : orderDTO.getProducts()) {
-            Product product = productRepository.findById(productOrder.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productOrder.getProductId()));
+        if (orderDTO.getProducts() != null) {
+            for (OrderDTO.ProductOrderDTO productOrder : orderDTO.getProducts()) {
+                Product product = productRepository.findById(productOrder.getProductId())
+                        .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productOrder.getProductId()));
 
-            totalPrice += product.getProductPrice() * productOrder.getQuantity();
+                double priceAtOrder = product.getProductPrice(); // Snapshot price at the time of the order
+                totalPrice += priceAtOrder * productOrder.getQuantity();
+                productOrder.setProductPriceAtOrder(priceAtOrder); // Storing the price at the time of the order
+            }
         }
+
+        // Optionally, round total price to 2 decimal places (e.g., for currency formatting)
+        totalPrice = Math.round(totalPrice * 100.0) / 100.0; // Round to 2 decimal places
 
         Order order = Order.builder()
                 .orderStatus(orderDTO.getOrderStatus())
-                .totalPrice((long) totalPrice) // Corrected total price type
+                .totalPrice(Math.round(totalPrice))  // Store totalPrice as long, rounded to nearest whole number
                 .account(account)
                 .restorant(restorant)
                 .orderTime(new Date())
@@ -54,4 +61,5 @@ public class OrderService {
 
         return orderRepository.save(order);
     }
+
 }

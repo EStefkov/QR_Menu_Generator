@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AccountDTO {
 
+
     private String accountName;
     private String mailAddress;
     private String number;
