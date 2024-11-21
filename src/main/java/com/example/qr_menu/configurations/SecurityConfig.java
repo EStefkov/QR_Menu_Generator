@@ -27,6 +27,9 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf().disable()
+
+                .cors().and()
+
                 .authorizeHttpRequests()
                 // Allow public access to registration and login endpoints
                 .requestMatchers("/api/accounts/register", "/api/accounts/login").permitAll()
@@ -46,7 +49,8 @@ public class SecurityConfig {
                 // All other requests need authentication
                 .anyRequest().authenticated()
                 .and()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                ;
 
         // Add JWT request filter before UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
