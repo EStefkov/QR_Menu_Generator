@@ -32,12 +32,17 @@ public class SecurityConfig {
                 .requestMatchers("/api/accounts/register", "/api/accounts/login").permitAll()
                 // Only allow users with 'ADMIN' role to delete,create or update restaurants
                 .requestMatchers(HttpMethod.PUT, "api/restaurants/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH,"api/restaurants/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "api/restaurants/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "api/restaurants/**").hasRole("ADMIN")
 
                 .requestMatchers(HttpMethod.POST, "/api/menus/**").hasAnyRole("ADMIN")  // Create menu
                 .requestMatchers(HttpMethod.PUT, "/api/menus/**").hasRole("ADMIN")              // Update menu
                 .requestMatchers(HttpMethod.DELETE, "/api/menus/**").hasRole("ADMIN")
+
+                .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT,"api/orders/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH,"api/orders/**").hasRole("ADMIN")
                 // All other requests need authentication
                 .anyRequest().authenticated()
                 .and()

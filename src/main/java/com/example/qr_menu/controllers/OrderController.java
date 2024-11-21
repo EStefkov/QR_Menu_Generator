@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
+
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -36,8 +38,9 @@ public class OrderController {
         Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken);
         Long accountId = claims.get("accountId", Long.class);
 
-        // Set accountId into orderDTO
+        // Set accountId and new Date into orderDTO
         orderDTO.setAccountId(accountId);
+        orderDTO.setOrderTime(new Date());
 
         // Create the order
         Order createdOrder = orderService.createOrder(orderDTO);
