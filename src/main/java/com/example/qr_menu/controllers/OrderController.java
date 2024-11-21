@@ -30,19 +30,21 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<Order> createOrder(@RequestBody OrderDTO orderDTO, @RequestHeader("Authorization") String token) {
-        // Extract the accountId from the JWT token
+    public ResponseEntity<String> createOrder(@RequestBody OrderDTO orderDTO, @RequestHeader("Authorization") String token) {
+        // Extract accountId from JWT token
         String jwtToken = token.substring(7); // Remove "Bearer " prefix from the token
-        Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken); // Get claims from the token
-        Long accountId = claims.get("accountId", Long.class); // Extract accountId
+        Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken);
+        Long accountId = claims.get("accountId", Long.class);
 
-        // Set accountId from JWT token into the orderDTO
+        // Set accountId into orderDTO
         orderDTO.setAccountId(accountId);
 
-        // Create the order using the OrderService
+        // Create the order
         Order createdOrder = orderService.createOrder(orderDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body("Order created successfully with ID: " + createdOrder.getId());
     }
+
 
 
     // New GET endpoint for paginated order retrieval
@@ -59,6 +61,7 @@ public class OrderController {
         Page<Order> orders = orderRepository.findAll(pageable);
 
         Page<OrderDTO> orderDTOs = orders.map(order -> OrderDTO.builder()
+                .id(order.getId())
                 .accountId(order.getAccount().getId())
                 .restorantId(order.getRestorant().getId())
                 .orderStatus(order.getOrderStatus())
@@ -67,6 +70,16 @@ public class OrderController {
                 .build());
 
         return ResponseEntity.ok(orderDTOs);
+    }
+
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity<String> deleteOrder(@PathVariable Long orderId) {
+        boolean isDeleted = orderService.deleteOrder(orderId);
+        if (isDeleted) {
+            return ResponseEntity.ok("Order with ID " + orderId + " deleted successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found with ID: " + orderId);
+        }
     }
 
 }
