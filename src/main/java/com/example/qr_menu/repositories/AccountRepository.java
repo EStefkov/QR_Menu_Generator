@@ -13,5 +13,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     @Query("SELECT a FROM Account a WHERE a.accountName = ?1 OR a.mailAddress = ?1")
     Optional<Account> findByAccountNameOrMailAddress(String accountName, String mailAddress);
 
+    // Method to check if an accountName or mailAddress already exists
+    boolean existsByAccountNameOrMailAddress(String accountName, String mailAddress);
+
     // Custom query methods can be added here if needed
 }

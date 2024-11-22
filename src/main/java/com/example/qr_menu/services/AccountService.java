@@ -26,12 +26,32 @@ public class AccountService {
      * @param accountDTO the DTO containing account registration data
      */
     public void registerAccount(AccountDTO accountDTO) {
+
+        // Check if the accountName or mailAddress is already in use
+        boolean accountExists = accountRepository.existsByAccountNameOrMailAddress(
+                accountDTO.getAccountName(),
+                accountDTO.getMailAddress()
+        );
+
+        if (accountExists) {
+            throw new IllegalArgumentException("Username or email is already in use.");
+        }
+
+        // Set default profile picture if not provided
+        String defaultProfilePicture = "https://img.freepik.com/premium-vector/account-icon-user-icon-vector-graphics_292645-552.jpg";
+        String profilePicture = accountDTO.getProfilePicture() != null ? accountDTO.getProfilePicture() : defaultProfilePicture;
+
+
+
         Account newAccount = Account.builder()
                 .accountName(accountDTO.getAccountName())
                 .mailAddress(accountDTO.getMailAddress())
                 .number(accountDTO.getNumber())
                 .password(passwordEncoder.encode(accountDTO.getPassword()))  // Encode password
                 .accountType(accountDTO.getAccountType())
+                .firstName(Optional.ofNullable(accountDTO.getFirstName()).orElse("Unknown"))
+                .lastName(Optional.ofNullable(accountDTO.getLastName()).orElse("Unknown"))
+                .profilePicture(profilePicture)
                 .createdAt(new Timestamp(System.currentTimeMillis()))  // Set createdAt timestamp
                 .build();
 
@@ -57,7 +77,10 @@ public class AccountService {
                 return jwtTokenUtil.generateToken(
                         account.getMailAddress(),
                         account.getAccountType(),
-                        account.getId()
+                        account.getId(),
+                        account.getFirstName(),
+                        account.getLastName(),
+                        account.getProfilePicture()
                 );
             }
         }

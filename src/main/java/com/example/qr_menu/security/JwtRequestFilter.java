@@ -1,6 +1,7 @@
 package com.example.qr_menu.security;
 
 import com.example.qr_menu.utils.JwtTokenUtil;
+import io.jsonwebtoken.Claims;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -53,10 +54,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
             if (jwtTokenUtil.validateToken(jwt, userDetails.getUsername())) {
-                // Remove roles extraction
-                String accountTypeStr = jwtTokenUtil.getAllClaimsFromToken(jwt).get("accountType", String.class);
+                Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwt);
+                String accountTypeStr = claims.get("accountType", String.class);
+                String firstName = claims.get("firstName", String.class);
+                String lastName = claims.get("lastName", String.class);
+                String profilePicture = claims.get("profilePicture", String.class);
 
-                // Create a single authority based on account type
                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority(accountTypeStr);
                 List<SimpleGrantedAuthority> authorities = Collections.singletonList(authority);
 

@@ -22,8 +22,12 @@ public class AccountController {
     @CrossOrigin(origins = "http://localhost:5173")
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AccountDTO accountDTO) {
-        accountService.registerAccount(accountDTO);
-        return new ResponseEntity<>("Account successfully created", HttpStatus.CREATED);
+        try {
+            accountService.registerAccount(accountDTO);
+            return new ResponseEntity<>("Account successfully created", HttpStatus.CREATED);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT); // Return 409 Conflict
+        }
     }
     @CrossOrigin(origins = "http://localhost:5173")
     @PostMapping("/login")

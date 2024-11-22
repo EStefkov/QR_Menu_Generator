@@ -13,6 +13,9 @@ public class AccountDTO {
 
     private String accountName;
     private String mailAddress;
+    private String firstName;
+    private String lastName;
+    private String profilePicture; // Optional, can be null if default is used
     private String number;
     private String password;
     private Account.AccountType accountType;
