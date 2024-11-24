@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { registerAccount } from "../api/account.jsx"; // Adjust the path to your API file
+import React, { useState } from "react";
+import { registerAccount } from "../api/account";
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -11,7 +11,6 @@ const RegisterPage = () => {
         accountType: "ROLE_USER",
         firstName: "",
         lastName: "",
-        profilePicture: "",
     });
 
     const [error, setError] = useState(null);
@@ -29,14 +28,13 @@ const RegisterPage = () => {
         e.preventDefault();
         setError(null);
 
-        // Password validation
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords do not match");
             return;
         }
 
         try {
-            const { confirmPassword, ...dataToSend } = formData; // Remove confirmPassword before sending
+            const { confirmPassword, ...dataToSend } = formData;
             const response = await registerAccount(dataToSend);
             setSuccess("Account successfully created!");
             console.log("Registration response:", response);
@@ -46,80 +44,16 @@ const RegisterPage = () => {
     };
 
     return (
-        <div>
+        <div className="auth-container">
             <h1>Register</h1>
-            {error && <p style={{ color: "red" }}>{error}</p>}
-            {success && <p style={{ color: "green" }}>{success}</p>}
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    name="accountName"
-                    placeholder="Username"
-                    value={formData.accountName}
-                    onChange={handleChange}
-                    required
-                />
-                <input
-                    type="email"
-                    name="mailAddress"
-                    placeholder="Email"
-                    value={formData.mailAddress}
-                    onChange={handleChange}
-                    required
-                />
-                <input
-                    type="text"
-                    name="number"
-                    placeholder="Phone Number"
-                    value={formData.number}
-                    onChange={handleChange}
-                    required
-                />
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                />
-                <input
-                    type="password"
-                    name="confirmPassword"
-                    placeholder="Retype Password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    required
-                />
-                <input
-                    type="text"
-                    name="firstName"
-                    placeholder="First Name"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                />
-                <input
-                    type="text"
-                    name="lastName"
-                    placeholder="Last Name"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                />
-                <input
-                    type="text"
-                    name="profilePicture"
-                    placeholder="Profile Picture URL"
-                    value={formData.profilePicture}
-                    onChange={handleChange}
-                />
-                <select
-                    name="accountType"
-                    value={formData.accountType}
-                    onChange={handleChange}
-                >
-                    <option value="ROLE_USER">User</option>
-                    <option value="ROLE_ADMIN">Admin</option>
-                </select>
+            {error && <p className="error">{error}</p>}
+            {success && <p className="success">{success}</p>}
+            <form className="auth-form" onSubmit={handleSubmit}>
+                <input type="text" name="accountName" placeholder="Username" value={formData.accountName} onChange={handleChange} required />
+                <input type="email" name="mailAddress" placeholder="Email" value={formData.mailAddress} onChange={handleChange} required />
+                <input type="text" name="number" placeholder="Phone Number" value={formData.number} onChange={handleChange} required />
+                <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+                <input type="password" name="confirmPassword" placeholder="Retype Password" value={formData.confirmPassword} onChange={handleChange} required />
                 <button type="submit">Register</button>
             </form>
         </div>

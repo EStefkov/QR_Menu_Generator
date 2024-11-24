@@ -30,6 +30,7 @@ public class Menu {
 
     @Column(name= "updated_at")
     @Temporal(TemporalType.DATE)
+
     private Date updatedAt;
     // Many Menus can belong to one Restorant
 
