@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom"; // Import Link for navigation
 import { registerAccount } from "../api/account";
 
 const RegisterPage = () => {
@@ -56,6 +57,10 @@ const RegisterPage = () => {
                 <input type="password" name="confirmPassword" placeholder="Retype Password" value={formData.confirmPassword} onChange={handleChange} required />
                 <button type="submit">Register</button>
             </form>
+            <div className="helper-text">
+                <p>Already have an account? <Link to="/login">Login here</Link>.</p>
+                <p>Or go back to the <Link to="/">Home Page</Link>.</p>
+            </div>
         </div>
     );
 };
