@@ -195,3 +195,86 @@ a:hover {
     padding: 8px;
   }
 }
+
+
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+}
+
+th, td {
+  border: 1px solid #fff;
+  padding: 10px;
+  text-align: center;
+}
+
+th {
+  background-color: rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+}
+
+td {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dashboard Buttons */
+.button-container {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.edit-btn, .delete-btn {
+  padding: 5px 12px;
+  border: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: transform 0.3s, box-shadow 0.3s, opacity 0.3s;
+}
+
+.edit-btn {
+  background: linear-gradient(90deg, #36d1dc, #5b86e5); /* Aqua to Blue */
+}
+
+.edit-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(91, 134, 229, 0.4);
+  opacity: 0.9;
+}
+
+.delete-btn {
+  background: linear-gradient(90deg, #ff416c, #ff4b2b); /* Red shades */
+}
+
+.delete-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(255, 65, 108, 0.4);
+  opacity: 0.9;
+}
+
+/* Table Spacing Adjustments */
+th, td {
+  border: 1px solid #fff;
+  padding: 10px;
+  text-align: center;
+}
+
+th {
+  background-color: rgba(255, 255, 255, 0.3);
+  font-weight: bold;
+}
+
+td {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.table-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}

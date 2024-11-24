@@ -1,7 +1,7 @@
 package com.example.qr_menu.security;
 
 import com.example.qr_menu.utils.JwtTokenUtil;
-import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -11,18 +11,14 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import io.jsonwebtoken.ExpiredJwtException;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
@@ -38,34 +34,36 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         final String authorizationHeader = request.getHeader("Authorization");
-
         String username = null;
         String jwt = null;
 
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
             try {
-                username = jwtTokenUtil.extractUsername(jwt);
+                username = jwtTokenUtil.extractEmailFromToken(jwt);
             } catch (ExpiredJwtException e) {
-                System.out.println("JWT Token has expired");
+                logger.warn("JWT Token has expired: " + e.getMessage());
+            } catch (Exception e) {
+                logger.error("Error while parsing JWT Token: " + e.getMessage());
             }
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-            if (jwtTokenUtil.validateToken(jwt, userDetails.getUsername())) {
-                Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwt);
-                String accountTypeStr = claims.get("accountType", String.class);
-                String firstName = claims.get("firstName", String.class);
-                String lastName = claims.get("lastName", String.class);
-                String profilePicture = claims.get("profilePicture", String.class);
 
-                SimpleGrantedAuthority authority = new SimpleGrantedAuthority(accountTypeStr);
-                List<SimpleGrantedAuthority> authorities = Collections.singletonList(authority);
+            if (jwtTokenUtil.validateToken(jwt, userDetails.getUsername())) {
+                // Extract and process the account type
+                String accountType = jwtTokenUtil.extractClaim(jwt, claims -> claims.get("accountType", String.class));
+                if (accountType != null && accountType.startsWith("ROLE_")) {
+                    accountType = accountType.substring(5); // Strip "ROLE_" prefix
+                }
+
+                SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + accountType);
 
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, authorities);
+                        userDetails, null, Collections.singletonList(authority));
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }

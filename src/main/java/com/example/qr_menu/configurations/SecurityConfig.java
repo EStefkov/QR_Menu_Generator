@@ -15,7 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -27,32 +26,32 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf().disable()
-
                 .cors().and()
-
                 .authorizeHttpRequests()
-                // Allow public access to registration and login endpoints
+                // Publicly accessible endpoints
                 .requestMatchers("/api/accounts/register", "/api/accounts/login").permitAll()
-                // Only allow users with 'ADMIN' role to delete,create or update restaurants
-                .requestMatchers(HttpMethod.PUT, "api/restaurants/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH,"api/restaurants/**").hasRole("ADMIN")
+
+                // Restricted endpoints for ADMIN role
+                .requestMatchers(HttpMethod.PUT, "/api/restaurants/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/restaurants/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "api/restaurants/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "api/restaurants/**").hasRole("ADMIN")
-
-                .requestMatchers(HttpMethod.POST, "/api/menus/**").hasAnyRole("ADMIN")  // Create menu
-                .requestMatchers(HttpMethod.PUT, "/api/menus/**").hasRole("ADMIN")              // Update menu
+                .requestMatchers(HttpMethod.DELETE, "/api/restaurants/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/menus/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/menus/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.DELETE, "/api/menus/**").hasRole("ADMIN")
-
                 .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,"api/orders/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH,"api/orders/**").hasRole("ADMIN")
-                // All other requests need authentication
+                .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/orders/**").hasRole("ADMIN")
+
+                // All other endpoints require authentication
                 .anyRequest().authenticated()
                 .and()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                ;
 
-        // Add JWT request filter before UsernamePasswordAuthenticationFilter
+                // Stateless session management
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+        // Attach the JWT filter before UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

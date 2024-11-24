@@ -8,8 +8,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/accounts")
+@CrossOrigin(origins = "http://localhost:5173") // Consolidated CORS annotation for the whole controller
 public class AccountController {
 
     private final AccountService accountService;
@@ -19,24 +22,79 @@ public class AccountController {
         this.accountService = accountService;
     }
 
-    @CrossOrigin(origins = "http://localhost:5173")
+    /**
+     * Registers a new account.
+     *
+     * @param accountDTO the account data transfer object
+     * @return a response indicating the outcome
+     */
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody AccountDTO accountDTO) {
+    public ResponseEntity<?> register(@RequestBody AccountDTO accountDTO) {
         try {
             accountService.registerAccount(accountDTO);
-            return new ResponseEntity<>("Account successfully created", HttpStatus.CREATED);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Account successfully created");
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT); // Return 409 Conflict
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred");
         }
     }
-    @CrossOrigin(origins = "http://localhost:5173")
+
+    /**
+     * Authenticates a user and generates a JWT token.
+     *
+     * @param loginDTO the login data transfer object
+     * @return a JWT token if authentication is successful
+     */
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginDTO loginDTO) {
-        String token = accountService.login(loginDTO);
-        if (token != null) {
-            return new ResponseEntity<>(token, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("Invalid email or password", HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
+        try {
+            String token = accountService.login(loginDTO);
+            if (token != null) {
+                return ResponseEntity.ok(token);
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred");
+        }
+    }
+
+    /**
+     * Fetches all accounts with their associated restaurants.
+     *
+     * @return a list of accounts with restaurant information
+     */
+    @GetMapping("/with-restaurants")
+    public ResponseEntity<List<AccountDTO>> getAllAccountsWithRestaurants() {
+        List<AccountDTO> accounts = accountService.getAllAccountsWithRestaurants();
+        return ResponseEntity.ok(accounts);
+    }
+
+    /**
+     * Fetches all accounts without additional relationships.
+     *
+     * @return a list of accounts
+     */
+    @GetMapping
+    public ResponseEntity<List<AccountDTO>> getAllAccounts() {
+        List<AccountDTO> accounts = accountService.getAllAccounts();
+        return ResponseEntity.ok(accounts);
+    }
+
+    /**
+     * Deletes an account by ID.
+     *
+     * @param id the ID of the account to delete
+     * @return a response indicating the outcome
+     */
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> deleteAccount(@PathVariable Long id) {
+        try {
+            accountService.deleteAccount(id);
+            return ResponseEntity.ok("Account deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete account");
         }
     }
 }
