@@ -59,6 +59,7 @@ public class Account {
 
     public enum AccountType {
         ROLE_USER,
-        ROLE_ADMIN
+        ROLE_ADMIN,
+        ROLE_WAITER
     }
 }

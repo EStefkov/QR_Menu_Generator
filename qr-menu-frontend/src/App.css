@@ -139,6 +139,21 @@ a:hover {
   line-height: 1.5;
 }
 
+.helper-text {
+  margin-top: 20px;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+.helper-text a {
+  color: #ffde59;
+  text-decoration: underline;
+  font-weight: bold;
+}
+.helper-text a:hover {
+  color: #ffd700;
+}
+
+
 /* Animations */
 @keyframes fadeIn {
   from {

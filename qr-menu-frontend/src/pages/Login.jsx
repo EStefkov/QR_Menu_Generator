@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { loginAccount } from "../api/account";
 
 const Login = () => {
@@ -20,22 +21,46 @@ const Login = () => {
             setMessage("Login successful!");
 
             // Redirect based on account type
-            window.location.href = payload.accountType === "ROLE_ADMIN" ? "/admin" : "/user";
+            if (payload.accountType === "ROLE_ADMIN") {
+                window.location.href = "/admin";
+            } else if (payload.accountType === "ROLE_WAITER") {
+                window.location.href = "/waiter";
+            } else {
+                window.location.href = "/user";
+            }
         } catch (error) {
-            setMessage(error);
+            setMessage("Login failed. Please check your credentials.");
         }
     };
-
 
     return (
         <div className="auth-container">
             <h1>Login</h1>
             <form className="auth-form" onSubmit={handleSubmit}>
-                <input name="accountName" placeholder="Name or Email" onChange={handleChange} required />
-                <input name="password" placeholder="Password" type="password" onChange={handleChange} required />
+                <input
+                    name="accountName"
+                    placeholder="Name or Email"
+                    onChange={handleChange}
+                    required
+                />
+                <input
+                    name="password"
+                    placeholder="Password"
+                    type="password"
+                    onChange={handleChange}
+                    required
+                />
                 <button type="submit">Login</button>
             </form>
             {message && <p className="message">{message}</p>}
+            <div className="helper-text">
+                <p>
+                    Don’t have an account? <Link to="/register">Create one here</Link>.
+                </p>
+                <p>
+                    Or go back to the <Link to="/">Home Page</Link>.
+                </p>
+            </div>
         </div>
     );
 };
