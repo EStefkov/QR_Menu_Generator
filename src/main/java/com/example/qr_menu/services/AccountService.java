@@ -2,6 +2,7 @@ package com.example.qr_menu.services;
 
 import com.example.qr_menu.dto.AccountDTO;
 import com.example.qr_menu.dto.LoginDTO;
+import com.example.qr_menu.dto.RestaurantDTO;
 import com.example.qr_menu.entities.Account;
 import com.example.qr_menu.repositories.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,19 +74,66 @@ public class AccountService {
         if (accountOpt.isPresent()) {
             Account account = accountOpt.get();
             if (passwordEncoder.matches(loginDTO.getPassword(), account.getPassword())) {
-                // Pass accountId while generating the token
-                return jwtTokenUtil.generateToken(
-                        account.getMailAddress(),
-                        account.getAccountType(),
-                        account.getId(),
-                        account.getFirstName(),
-                        account.getLastName(),
-                        account.getProfilePicture()
-                );
+                // Pass the entire Account object while generating the token
+                return jwtTokenUtil.generateToken(account);
             }
         }
-        return null; // Return null or throw an exception if login fails
+        throw new IllegalArgumentException("Invalid username or password");
     }
+
+
+    public List<AccountDTO> getAllAccountsWithRestaurants() {
+        List<Account> accounts = accountRepository.findAll();
+        return accounts.stream()
+                .map(account -> AccountDTO.builder()
+                        .id(account.getId())
+                        .accountName(account.getAccountName())
+                        .mailAddress(account.getMailAddress())
+                        .firstName(account.getFirstName())
+                        .lastName(account.getLastName())
+                        .profilePicture(account.getProfilePicture())
+                        .number(account.getNumber())
+                        .accountType(account.getAccountType()) // Include accountType
+                        .restaurants(account.getRestorants().stream()
+                                .map(restaurant -> RestaurantDTO.builder()
+                                        .id(restaurant.getId())
+                                        .restorantName(restaurant.getRestorantName())
+                                        .address(restaurant.getAddress())
+                                        .build())
+                                .collect(Collectors.toList()))
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+
+    public List<AccountDTO> getAllAccounts() {
+        List<Account> accounts = accountRepository.findAll();
+        return accounts.stream()
+                .map(account -> AccountDTO.builder()
+                        .id(account.getId())
+                        .accountName(account.getAccountName())
+                        .mailAddress(account.getMailAddress())
+                        .firstName(account.getFirstName())
+                        .lastName(account.getLastName())
+                        .profilePicture(account.getProfilePicture())
+                        .number(account.getNumber())
+                        .accountType(account.getAccountType()) // Include accountType
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+
+    public void deleteAccount(Long id) {
+        if (accountRepository.existsById(id)) {
+            accountRepository.deleteById(id);
+        } else {
+            throw new IllegalArgumentException("Account with ID " + id + " does not exist.");
+        }
+    }
+
+
+
+
 
 
 }

@@ -2,15 +2,20 @@ package com.example.qr_menu.dto;
 
 import com.example.qr_menu.entities.Account;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class AccountDTO {
 
 
+    private Long id; // Add this field
     private String accountName;
     private String mailAddress;
     private String firstName;
@@ -19,5 +24,6 @@ public class AccountDTO {
     private String number;
     private String password;
     private Account.AccountType accountType;
+    private List<RestaurantDTO> restaurants;
 }
 

@@ -54,7 +54,7 @@ public class Account {
 
 
     // One Account can have many Restaurants
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Restorant> restorants;
 
     public enum AccountType {
