@@ -1,0 +1,71 @@
+/* Form Container */
+.edit-form {
+    max-width: 500px;
+    margin: 30px auto;
+    padding: 25px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.edit-form h3 {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #34495e;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Form Inputs */
+.edit-form input {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    color: #34495e;
+}
+
+.edit-form input:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+    transition: all 0.3s ease;
+}
+
+/* Buttons */
+.edit-form button {
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.edit-btn {
+    background: #27ae60;
+    color: #ffffff;
+}
+
+.edit-btn:hover {
+    background: #1e8449;
+}
+
+.delete-btn {
+    background: #e74c3c;
+    color: #ffffff;
+}
+
+.delete-btn:hover {
+    background: #c0392b;
+}
+
+.edit-form button:not(:last-child) {
+    margin-right: 10px;
+}
+
+

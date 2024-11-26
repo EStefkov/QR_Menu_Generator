@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import "../styles/AdminDashboard.css";
+import "../styles/Table.css";
+import "../styles/Form.css"
 
 const AdminDashboard = () => {
     const [accounts, setAccounts] = useState([]);
@@ -20,9 +23,7 @@ const AdminDashboard = () => {
 
             try {
                 const accountsResponse = await fetch("http://localhost:8080/api/accounts", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                 });
 
                 if (!accountsResponse.ok) {
@@ -30,9 +31,7 @@ const AdminDashboard = () => {
                 }
 
                 const restaurantsResponse = await fetch("http://localhost:8080/api/restaurants", {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                 });
 
                 if (!restaurantsResponse.ok) {
@@ -54,32 +53,27 @@ const AdminDashboard = () => {
         fetchData();
     }, []);
 
-    // Handle account deletion
+    // Delete Account
     const deleteAccount = async (id) => {
         const token = localStorage.getItem("token");
         try {
             const response = await fetch(`http://localhost:8080/api/accounts/delete/${id}`, {
                 method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` },
             });
             if (response.ok) {
-                alert("Account deleted successfully");
                 setAccounts(accounts.filter((account) => account.id !== id));
+                alert("Account deleted successfully");
             } else {
-                alert("Failed to delete account");
+                const errorText = await response.text();
+                alert(`Failed to delete account: ${errorText}`);
             }
         } catch (error) {
             console.error("Error deleting account:", error);
         }
     };
 
-    // Handle editing accounts
-    const handleEditAccount = (account) => {
-        setEditingAccount(account);
-    };
-
+    // Save Account Changes
     const saveAccount = async () => {
         const token = localStorage.getItem("token");
         try {
@@ -93,49 +87,47 @@ const AdminDashboard = () => {
             });
 
             if (response.ok) {
-                alert("Account updated successfully");
-                setAccounts((prev) =>
-                    prev.map((acc) => (acc.id === editingAccount.id ? editingAccount : acc))
+                setAccounts((prevAccounts) =>
+                    prevAccounts.map((account) =>
+                        account.id === editingAccount.id ? editingAccount : account
+                    )
                 );
                 setEditingAccount(null);
+                alert("Account updated successfully");
             } else {
-                alert("Failed to update account");
+                const errorText = await response.text();
+                alert(`Failed to update account: ${errorText}`);
             }
         } catch (error) {
             console.error("Error updating account:", error);
         }
     };
 
-    // Handle restaurant deletion
+    // Delete Restaurant
     const deleteRestaurant = async (id) => {
         const token = localStorage.getItem("token");
         try {
             const response = await fetch(`http://localhost:8080/api/restaurants/delete/${id}`, {
                 method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` },
             });
             if (response.ok) {
-                alert("Restaurant deleted successfully");
                 setRestaurants(restaurants.filter((restaurant) => restaurant.id !== id));
+                alert("Restaurant deleted successfully");
             } else {
-                alert("Failed to delete restaurant");
+                const errorText = await response.text();
+                alert(`Failed to delete restaurant: ${errorText}`);
             }
         } catch (error) {
             console.error("Error deleting restaurant:", error);
         }
     };
 
-    // Handle editing restaurants
-    const handleEditRestaurant = (restaurant) => {
-        setEditingRestaurant(restaurant);
-    };
-
+    // Save Restaurant Changes
     const saveRestaurant = async () => {
         const token = localStorage.getItem("token");
         try {
-            const response = await fetch(`http://localhost:8080/api/restaurants/update/${editingRestaurant.id}`, {
+            const response = await fetch(`http://localhost:8080/api/restaurants/${editingRestaurant.id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -145,19 +137,23 @@ const AdminDashboard = () => {
             });
 
             if (response.ok) {
-                alert("Restaurant updated successfully");
-                setRestaurants((prev) =>
-                    prev.map((res) => (res.id === editingRestaurant.id ? editingRestaurant : res))
+                setRestaurants((prevRestaurants) =>
+                    prevRestaurants.map((restaurant) =>
+                        restaurant.id === editingRestaurant.id ? editingRestaurant : restaurant
+                    )
                 );
                 setEditingRestaurant(null);
+                alert("Restaurant updated successfully");
             } else {
-                alert("Failed to update restaurant");
+                const errorText = await response.text();
+                alert(`Failed to update restaurant: ${errorText}`);
             }
         } catch (error) {
             console.error("Error updating restaurant:", error);
         }
     };
 
+    // UI Rendering
     if (loading) return <p>Loading...</p>;
     if (error) return <p>Error: {error}</p>;
 
@@ -166,6 +162,7 @@ const AdminDashboard = () => {
             <h1>Admin Dashboard</h1>
             <p>Manage accounts and restaurants</p>
 
+            {/* Accounts Table */}
             <section>
                 <h2>Accounts</h2>
                 {accounts.length > 0 ? (
@@ -186,10 +183,10 @@ const AdminDashboard = () => {
                                 <td>{account.firstName} {account.lastName}</td>
                                 <td>{account.mailAddress}</td>
                                 <td>{account.accountType}</td>
-                                <td>
+                                <td className="table-actions">
                                     <button
                                         className="edit-btn"
-                                        onClick={() => handleEditAccount(account.id)}
+                                        onClick={() => setEditingAccount(account)}
                                     >
                                         Edit
                                     </button>
@@ -209,6 +206,7 @@ const AdminDashboard = () => {
                 )}
             </section>
 
+            {/* Restaurants Table */}
             <section>
                 <h2>Restaurants</h2>
                 {restaurants.length > 0 ? (
@@ -232,7 +230,7 @@ const AdminDashboard = () => {
                                 <td className="table-actions">
                                     <button
                                         className="edit-btn"
-                                        onClick={() => handleEditRestaurant(restaurant.id)}
+                                        onClick={() => setEditingRestaurant(restaurant)}
                                     >
                                         Edit
                                     </button>
@@ -252,50 +250,67 @@ const AdminDashboard = () => {
                 )}
             </section>
 
-            {/* Editing forms */}
+            {/* Edit Account Form */}
             {editingAccount && (
-                <div>
-                <h3>Edit Account</h3>
+                <div className="edit-form">
+                    <h3>Edit Account</h3>
                     <input
                         type="text"
-                        value={editingAccount.firstName}
-                        onChange={(e) => setEditingAccount({ ...editingAccount, firstName: e.target.value })}
+                        value={editingAccount.firstName || ""}
+                        onChange={(e) =>
+                            setEditingAccount({ ...editingAccount, firstName: e.target.value })
+                        }
                         placeholder="First Name"
                     />
                     <input
                         type="text"
-                        value={editingAccount.lastName}
-                        onChange={(e) => setEditingAccount({ ...editingAccount, lastName: e.target.value })}
+                        value={editingAccount.lastName || ""}
+                        onChange={(e) =>
+                            setEditingAccount({ ...editingAccount, lastName: e.target.value })
+                        }
                         placeholder="Last Name"
                     />
                     <input
-                        type="text"
-                        value={editingAccount.mailAddress}
-                        onChange={(e) => setEditingAccount({ ...editingAccount, mailAddress: e.target.value })}
+                        type="email"
+                        value={editingAccount.mailAddress || ""}
+                        onChange={(e) =>
+                            setEditingAccount({ ...editingAccount, mailAddress: e.target.value })
+                        }
                         placeholder="Email"
                     />
-                    <button onClick={saveAccount}>Save</button>
-                    <button onClick={() => setEditingAccount(null)}>Cancel</button>
+                    <button className="edit-btn" onClick={saveAccount}>Save</button>
+                    <button className="delete-btn" onClick={() => setEditingAccount(null)}>Cancel</button>
                 </div>
             )}
 
+            {/* Edit Restaurant Form */}
             {editingRestaurant && (
-                <div>
+                <div className="edit-form">
                     <h3>Edit Restaurant</h3>
                     <input
                         type="text"
-                        value={editingRestaurant.restorantName}
-                        onChange={(e) => setEditingRestaurant({ ...editingRestaurant, restorantName: e.target.value })}
+                        value={editingRestaurant.restorantName || ""}
+                        onChange={(e) =>
+                            setEditingRestaurant({
+                                ...editingRestaurant,
+                                restorantName: e.target.value,
+                            })
+                        }
                         placeholder="Restaurant Name"
                     />
                     <input
                         type="text"
-                        value={editingRestaurant.phoneNumber}
-                        onChange={(e) => setEditingRestaurant({ ...editingRestaurant, phoneNumber: e.target.value })}
+                        value={editingRestaurant.phoneNumber || ""}
+                        onChange={(e) =>
+                            setEditingRestaurant({
+                                ...editingRestaurant,
+                                phoneNumber: e.target.value,
+                            })
+                        }
                         placeholder="Phone Number"
                     />
-                    <button onClick={saveRestaurant}>Save</button>
-                    <button onClick={() => setEditingRestaurant(null)}>Cancel</button>
+                    <button className="edit-btn" onClick={saveRestaurant}>Save</button>
+                    <button className="delete-btn" onClick={() => setEditingRestaurant(null)}>Cancel</button>
                 </div>
             )}
         </div>

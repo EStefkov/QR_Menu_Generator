@@ -4,6 +4,7 @@ import com.example.qr_menu.dto.AccountDTO;
 import com.example.qr_menu.dto.LoginDTO;
 import com.example.qr_menu.dto.RestaurantDTO;
 import com.example.qr_menu.entities.Account;
+import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.repositories.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -132,6 +133,18 @@ public class AccountService {
     }
 
 
+    public void updateAccount(Long id, AccountDTO accountDTO) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + id));
+
+        account.setFirstName(accountDTO.getFirstName());
+        account.setLastName(accountDTO.getLastName());
+        account.setMailAddress(accountDTO.getMailAddress());
+        account.setNumber(accountDTO.getNumber());
+        account.setUpdatedAt(new Timestamp(System.currentTimeMillis())); // Update timestamp
+
+        accountRepository.save(account);
+    }
 
 
 

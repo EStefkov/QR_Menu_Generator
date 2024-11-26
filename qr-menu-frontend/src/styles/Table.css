@@ -1,0 +1,133 @@
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background: #b56431;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th, td {
+    border: 20px solid #ddd;
+    text-align: left;
+    padding: 14px;
+}
+
+th {
+    background: #2c3e50;
+    font-weight: bold;
+    color: #ecf0f1;
+    text-transform: uppercase;
+}
+
+td {
+    background: #f9f9f9;
+    color: #34495e;
+    font-size: 1rem;
+}
+
+tr:nth-child(even) {
+    background: #ecf0f1;
+}
+
+tr:hover {
+    background: #dfe6e9;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+/* Table Actions */
+.table-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.edit-btn, .delete-btn {
+    padding: 8px 16px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.edit-btn {
+    background: #3498db;
+    color: #ffffff;
+}
+
+.edit-btn:hover {
+    background: #2980b9;
+}
+
+.delete-btn {
+    background: #e74c3c;
+    color: #ffffff;
+}
+
+.delete-btn:hover {
+    background: #c0392b;
+}
+
+
+/* Responsive Tables */
+@media (max-width: 768px) {
+    table {
+        font-size: 0.9rem;
+    }
+
+    th, td {
+        padding: 10px;
+    }
+
+    .table-actions {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .edit-btn, .delete-btn {
+        width: 100%;
+        font-size: 0.85rem;
+    }
+}
+
+/* Responsive Dashboard */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 15px;
+    }
+
+    .dashboard-container h1 {
+        font-size: 2rem;
+    }
+
+    section h2 {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-container h1 {
+        font-size: 1.8rem;
+    }
+
+    section h2 {
+        font-size: 1.3rem;
+    }
+
+    .edit-form {
+        padding: 15px;
+    }
+
+    .edit-form input {
+        font-size: 0.9rem;
+    }
+
+    .edit-form button {
+        font-size: 0.9rem;
+        padding: 10px 15px;
+    }
+}
