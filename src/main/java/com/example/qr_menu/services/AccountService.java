@@ -4,8 +4,12 @@ import com.example.qr_menu.dto.AccountDTO;
 import com.example.qr_menu.dto.LoginDTO;
 import com.example.qr_menu.dto.RestaurantDTO;
 import com.example.qr_menu.entities.Account;
+import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.repositories.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.qr_menu.utils.JwtTokenUtil;
@@ -122,6 +126,23 @@ public class AccountService {
                 .collect(Collectors.toList());
     }
 
+    public Page<AccountDTO> getPagedAccounts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Account> accountsPage = accountRepository.findAll(pageable);
+
+        // Transform to DTO
+        return accountsPage.map(account -> AccountDTO.builder()
+                .id(account.getId())
+                .accountName(account.getAccountName())
+                .mailAddress(account.getMailAddress())
+                .firstName(account.getFirstName())
+                .lastName(account.getLastName())
+                .profilePicture(account.getProfilePicture())
+                .number(account.getNumber())
+                .accountType(account.getAccountType())
+                .build());
+    }
+
 
     public void deleteAccount(Long id) {
         if (accountRepository.existsById(id)) {
@@ -132,6 +153,18 @@ public class AccountService {
     }
 
 
+    public void updateAccount(Long id, AccountDTO accountDTO) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + id));
+
+        account.setFirstName(accountDTO.getFirstName());
+        account.setLastName(accountDTO.getLastName());
+        account.setMailAddress(accountDTO.getMailAddress());
+        account.setNumber(accountDTO.getNumber());
+        account.setUpdatedAt(new Timestamp(System.currentTimeMillis())); // Update timestamp
+
+        accountRepository.save(account);
+    }
 
 
 

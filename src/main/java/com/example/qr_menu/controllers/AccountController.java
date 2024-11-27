@@ -2,11 +2,17 @@ package com.example.qr_menu.controllers;
 
 import com.example.qr_menu.dto.AccountDTO;
 import com.example.qr_menu.dto.LoginDTO;
+import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.services.AccountService;
+import org.springframework.data.domain.Page;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+
+
 
 import java.util.List;
 
@@ -97,4 +103,27 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete account");
         }
     }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<String> updateAccount(@PathVariable Long id, @RequestBody AccountDTO accountDTO) {
+        try {
+            accountService.updateAccount(id, accountDTO);
+            return ResponseEntity.ok("Account updated successfully");
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update account");
+        }
+    }
+
+
+    @GetMapping("/paged")
+    public ResponseEntity<Page<AccountDTO>> getPagedAccounts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<AccountDTO> pagedAccounts = accountService.getPagedAccounts(page, size);
+        return ResponseEntity.ok(pagedAccounts);
+    }
+
+
 }

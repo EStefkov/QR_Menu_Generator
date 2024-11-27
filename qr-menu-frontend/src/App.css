@@ -153,6 +153,46 @@ a:hover {
   color: #ffd700;
 }
 
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.pagination-controls button {
+  padding: 8px 16px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(90deg, #36d1dc, #5b86e5); /* Aqua to Blue */
+  transition: transform 0.3s, box-shadow 0.3s, opacity 0.3s;
+}
+
+.pagination-controls button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(91, 134, 229, 0.4);
+  opacity: 0.9;
+}
+
+.pagination-controls button:disabled {
+  background: rgba(255, 255, 255, 0.2);
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.pagination-controls span {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #ffde59; /* Gold */
+}
+
+
 
 /* Animations */
 @keyframes fadeIn {
@@ -274,7 +314,7 @@ td {
 }
 
 .table-actions {
-  display: flex;
+  display: block;
   justify-content: center;
   gap: 10px;
 }

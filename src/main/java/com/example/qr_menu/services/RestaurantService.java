@@ -7,6 +7,9 @@ import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.repositories.AccountRepository;
 import com.example.qr_menu.repositories.RestaurantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -58,6 +61,18 @@ public class RestaurantService {
         return restaurants.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public Page<RestaurantDTO> getPagedRestaurants(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Restorant> restaurantsPage = restaurantRepository.findAll(pageable);
+        return restaurantsPage.map(restaurant -> RestaurantDTO.builder()
+                .id(restaurant.getId())
+                .restorantName(restaurant.getRestorantName())
+                .phoneNumber(restaurant.getPhoneNumber())
+                .accountId(restaurant.getAccount().getId())
+                .address(restaurant.getAddress())
+                .build());
     }
 
     private RestaurantDTO convertToDTO(Restorant restaurant) {
