@@ -3,7 +3,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin: 20px 0;
-    background: #b56431;
+    background-color: rgba(255,255,255,0.5);
     border-radius: 10px;
     overflow: hidden;
 }

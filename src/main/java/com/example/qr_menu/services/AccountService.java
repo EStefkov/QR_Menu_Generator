@@ -7,6 +7,9 @@ import com.example.qr_menu.entities.Account;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.repositories.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import com.example.qr_menu.utils.JwtTokenUtil;
@@ -121,6 +124,23 @@ public class AccountService {
                         .accountType(account.getAccountType()) // Include accountType
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    public Page<AccountDTO> getPagedAccounts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Account> accountsPage = accountRepository.findAll(pageable);
+
+        // Transform to DTO
+        return accountsPage.map(account -> AccountDTO.builder()
+                .id(account.getId())
+                .accountName(account.getAccountName())
+                .mailAddress(account.getMailAddress())
+                .firstName(account.getFirstName())
+                .lastName(account.getLastName())
+                .profilePicture(account.getProfilePicture())
+                .number(account.getNumber())
+                .accountType(account.getAccountType())
+                .build());
     }
 
 
