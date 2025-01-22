@@ -5,6 +5,7 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UserDashboard from "./pages/UserDashboard.jsx";
 import WaiterDashboard from "./pages/WaiterDashboard.jsx";
 import Home from "./pages/Home.jsx";
+import MenuPage from "./pages/MenuPage.jsx";
 import "./App.css";
 
 const App = () => {
@@ -17,6 +18,7 @@ const App = () => {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/menus/:menuId" element={<MenuPage />} />
                 <Route
                     path="/admin"
                     element={

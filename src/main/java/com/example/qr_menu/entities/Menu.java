@@ -38,8 +38,16 @@ public class Menu {
     @JoinColumn(name = "restorant_id",nullable = false) // Foreign key column in Menu table
     private Restorant restorant;
 
+    @Column(name = "menu_url")
+    private String menuUrl;
+
+    @Lob
+    @Column(name = "qr_code_image", columnDefinition = "BLOB")
+    private byte[] qrCodeImage;
 
     // One Menu can have many Products
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Product> products;
+
+
 }

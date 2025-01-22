@@ -10,12 +10,12 @@ VALUES
     ('Urban Eats', '555-6789', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('Cozy Corner Café', '555-3456', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
--- Insert into Menu Table
-INSERT INTO menu (category, restorant_id, created_at, updated_at)
+-- Insert into Menu Table with menu_url and qr_code_image
+INSERT INTO menu (category, restorant_id, menu_url, qr_code_image, created_at, updated_at)
 VALUES
-    ('Breakfast', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Beverages', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('Lunch Specials', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+    ('Breakfast', 1, 'http://localhost:8080/api/menus/1', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Beverages', 1, 'http://localhost:8080/api/menus/2', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('Lunch Specials', 2, 'http://localhost:8080/api/menus/3', NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert into Products Table
 INSERT INTO products (product_name, product_price, product_info, menu_id, created_at, updated_at)

@@ -4,6 +4,7 @@ import com.example.qr_menu.dto.MenuDTO;
 import com.example.qr_menu.services.MenuService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,5 +43,18 @@ public class MenuController {
     public ResponseEntity<String> deleteMenu(@PathVariable Long id) {
         menuService.deleteMenu(id);
         return new ResponseEntity<>("Menu deleted successfully", HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/qrcode")
+    public ResponseEntity<byte[]> getQRCode(@PathVariable Long id) {
+        byte[] qrCode = menuService.generateQRCodeForMenu(id);
+
+        if (qrCode == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(qrCode);
     }
 }
