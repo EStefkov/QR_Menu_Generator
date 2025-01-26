@@ -1,0 +1,131 @@
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+// Fetch paginated accounts
+export const fetchAccountsApi = async (token, currentPage, pageSize) => {
+    const response = await fetch(
+        `${API_BASE_URL}/api/accounts/paged?page=${currentPage}&size=${pageSize}`,
+        {
+            headers: { Authorization: `Bearer ${token}` },
+        }
+    );
+    if (!response.ok) {
+        throw new Error("Failed to fetch accounts");
+    }
+    return response.json();
+};
+
+// Fetch paginated restaurants
+export const fetchRestaurantsApi = async (token, currentPage, pageSize) => {
+    const response = await fetch(
+        `${API_BASE_URL}/api/restaurants/paged?page=${currentPage}&size=${pageSize}`,
+        {
+            headers: { Authorization: `Bearer ${token}` },
+        }
+    );
+    if (!response.ok) {
+        throw new Error("Failed to fetch restaurants");
+    }
+    return response.json();
+};
+
+// Fetch menus by restaurant ID
+export const fetchMenusByRestaurantIdApi = async (token, restaurantId) => {
+    const response = await fetch(
+        `${API_BASE_URL}/api/menus/restaurant/${restaurantId}`,
+        {
+            headers: { Authorization: `Bearer ${token}` },
+        }
+    );
+    if (!response.ok) {
+        throw new Error("Failed to fetch menus");
+    }
+    return response.json();
+};
+
+// Fetch QR code for a menu
+export const fetchQRCodeApi = async (token, menuId) => {
+    const response = await fetch(`${API_BASE_URL}/api/menus/${menuId}/qrcode`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+        throw new Error("Failed to fetch QR code");
+    }
+    return response.blob();
+};
+
+// Create a new menu
+export const createMenuApi = async (token, newMenu) => {
+    const response = await fetch(`${API_BASE_URL}/api/menus`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newMenu),
+    });
+    if (!response.ok) {
+        throw new Error("Failed to create menu");
+    }
+    return response.json();
+};
+
+// Delete an account
+export const deleteAccountApi = async (token, accountId) => {
+    const response = await fetch(`${API_BASE_URL}/api/accounts/delete/${accountId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+        throw new Error("Failed to delete account");
+    }
+};
+
+// Update an account
+export const updateAccountApi = async (token, accountId, accountData) => {
+    const response = await fetch(
+        `${API_BASE_URL}/api/accounts/update/${accountId}`,
+        {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(accountData),
+        }
+    );
+    if (!response.ok) {
+        throw new Error("Failed to update account");
+    }
+};
+
+// Delete a restaurant
+export const deleteRestaurantApi = async (token, restaurantId) => {
+    const response = await fetch(
+        `${API_BASE_URL}/api/restaurants/delete/${restaurantId}`,
+        {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+        }
+    );
+    if (!response.ok) {
+        throw new Error("Failed to delete restaurant");
+    }
+};
+
+// Update a restaurant
+export const updateRestaurantApi = async (token, restaurantId, restaurantData) => {
+    const response = await fetch(
+        `${API_BASE_URL}/api/restaurants/${restaurantId}`,
+        {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(restaurantData),
+        }
+    );
+    if (!response.ok) {
+        throw new Error("Failed to update restaurant");
+    }
+};

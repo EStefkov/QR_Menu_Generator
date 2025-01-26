@@ -3,6 +3,17 @@ import "../styles/AdminDashboard.css";
 import "../styles/Table.css";
 import "../styles/Form.css";
 import NavBar from "../components/NavBar.jsx";
+import {
+    fetchAccountsApi,
+    fetchRestaurantsApi,
+    fetchMenusByRestaurantIdApi,
+    fetchQRCodeApi,
+    createMenuApi,
+    deleteAccountApi,
+    updateAccountApi,
+    deleteRestaurantApi,
+    updateRestaurantApi,
+} from "../api/adminDashboard";
 
 const AdminDashboard = () => {
     const [accounts, setAccounts] = useState([]);
@@ -12,134 +23,32 @@ const AdminDashboard = () => {
     const [editingAccount, setEditingAccount] = useState(null);
     const [editingRestaurant, setEditingRestaurant] = useState(null);
     const [newMenu, setNewMenu] = useState({ category: "", restorantId: "" });
-    const [menus, setMenus] = useState({}); // Ключ: restaurantId, Стойност: масив от менюта
-    const API_BASE_URL = import.meta.env.VITE_API_URL;
-
-    const fetchMenusByRestaurantId = async (restaurantId) => {
-        try {
-            const response = await fetch(
-                `${API_BASE_URL}/api/menus/restaurant/${restaurantId}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            if (!response.ok) throw new Error("Failed to fetch menus");
-            const data = await response.json();
-            setMenus((prev) => ({ ...prev, [restaurantId]: data }));
-        } catch (err) {
-            alert(err.message);
-        }
-    };
-
+    const [menus, setMenus] = useState({}); // Key: restaurantId, Value: array of menus
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(0);
-    const [pageSize] = useState(4); // Fixed size for both tables
+    const [pageSize] = useState(4);
 
     const token = localStorage.getItem("token");
 
-    // Fetch paginated accounts
+    // Fetch accounts
     const fetchAccounts = async () => {
         try {
             setLoading(true);
-            const response = await fetch(
-                `${API_BASE_URL}/api/accounts/paged?page=${currentPage}&size=${pageSize}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-
-            // Логни целия отговор
-            console.log("Response:", response);
-
-            // Проверка дали отговорът е JSON
-            if (response.headers.get("content-type")?.includes("application/json")) {
-                const data = await response.json();
-                setAccounts(data.content);
-            } else {
-                const text = await response.text();
-                console.error("Unexpected response:", text);
-                throw new Error("Expected JSON but received HTML.");
-            }
+            const data = await fetchAccountsApi(token, currentPage, pageSize);
+            setAccounts(data.content);
         } catch (err) {
-            console.error(err.message);
             setError(err.message);
         } finally {
             setLoading(false);
         }
     };
 
-
-    const fetchQRCode = async (menuId) => {
-        try {
-
-            //testing api link should delete this two lanes
-            const urlTest= `${API_BASE_URL}/api/menus/${menuId}/qrcode`
-            console.log(urlTest);
-
-
-            const response = await fetch(
-                `${API_BASE_URL}/api/menus/${menuId}/qrcode`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            if (!response.ok) throw new Error("Failed to fetch QR code");
-
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-
-            console.log("QR CODE blob URL:" + url );
-
-            window.open(url, "_blank");
-        } catch (err) {
-            alert(err.message);
-        }
-    };
-
-
-    const createMenu = async () => {
-        if (!newMenu.category || !newMenu.restorantId) {
-            alert("Please fill in all fields.");
-            return;
-        }
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/menus`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(newMenu),
-            });
-
-            if (!response.ok) throw new Error("Failed to create menu");
-
-            alert("Menu created successfully!");
-            setNewMenu({ category: "", restorantId: "" });
-            fetchRestaurants(); // Обнови ресторантите
-        } catch (err) {
-            alert(err.message);
-        }
-    };
-
-
-    // Fetch paginated restaurants
+    // Fetch restaurants
     const fetchRestaurants = async () => {
         try {
             setLoading(true);
-            const response = await fetch(
-                `${API_BASE_URL}/api/restaurants/paged?page=${currentPage}&size=${pageSize}`,
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            if (!response.ok) throw new Error("Failed to fetch restaurants");
-            const data = await response.json();
+            const data = await fetchRestaurantsApi(token, currentPage, pageSize);
             setRestaurants(data.content);
         } catch (err) {
             setError(err.message);
@@ -148,48 +57,57 @@ const AdminDashboard = () => {
         }
     };
 
-    // Fetch both tables on page load and page change
-    useEffect(() => {
-        if (token) {
-            fetchAccounts();
-            fetchRestaurants();
-        } else {
-            setError("No token found. Please log in.");
+    // Fetch menus by restaurant
+    const fetchMenusByRestaurantId = async (restaurantId) => {
+        try {
+            const data = await fetchMenusByRestaurantIdApi(token, restaurantId);
+            setMenus((prev) => ({ ...prev, [restaurantId]: data }));
+        } catch (err) {
+            alert(err.message);
         }
-    }, [currentPage, pageSize]);
+    };
 
-    // Delete Account
+    // Fetch QR code
+    const fetchQRCode = async (menuId) => {
+        try {
+            const blob = await fetchQRCodeApi(token, menuId);
+            const url = URL.createObjectURL(blob);
+            window.open(url, "_blank");
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    // Create menu
+    const createMenu = async () => {
+        if (!newMenu.category || !newMenu.restorantId) {
+            alert("Please fill in all fields.");
+            return;
+        }
+        try {
+            await createMenuApi(token, newMenu);
+            alert("Menu created successfully!");
+            setNewMenu({ category: "", restorantId: "" });
+            fetchRestaurants(); // Refresh restaurants
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    // Delete account
     const deleteAccount = async (id) => {
         try {
-            const response = await fetch(
-                `${API_BASE_URL}/api/accounts/delete/${id}`,
-                {
-                    method: "DELETE",
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            if (!response.ok) throw new Error("Failed to delete account");
+            await deleteAccountApi(token, id);
             setAccounts(accounts.filter((account) => account.id !== id));
         } catch (err) {
             alert(err.message);
         }
     };
 
-    // Save Account Changes
+    // Update account
     const saveAccount = async () => {
         try {
-            const response = await fetch(
-                `${API_BASE_URL}/api/accounts/update/${editingAccount.id}`,
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify(editingAccount),
-                }
-            );
-            if (!response.ok) throw new Error("Failed to update account");
+            await updateAccountApi(token, editingAccount.id, editingAccount);
             setAccounts((prev) =>
                 prev.map((acc) => (acc.id === editingAccount.id ? editingAccount : acc))
             );
@@ -199,38 +117,20 @@ const AdminDashboard = () => {
         }
     };
 
-    // Delete Restaurant
+    // Delete restaurant
     const deleteRestaurant = async (id) => {
         try {
-            const response = await fetch(
-                `${API_BASE_URL}/api/restaurants/delete/${id}`,
-                {
-                    method: "DELETE",
-                    headers: { Authorization: `Bearer ${token}` },
-                }
-            );
-            if (!response.ok) throw new Error("Failed to delete restaurant");
+            await deleteRestaurantApi(token, id);
             setRestaurants(restaurants.filter((restaurant) => restaurant.id !== id));
         } catch (err) {
             alert(err.message);
         }
     };
 
-    // Save Restaurant Changes
+    // Update restaurant
     const saveRestaurant = async () => {
         try {
-            const response = await fetch(
-                `${API_BASE_URL}/api/restaurants/${editingRestaurant.id}`,
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify(editingRestaurant),
-                }
-            );
-            if (!response.ok) throw new Error("Failed to update restaurant");
+            await updateRestaurantApi(token, editingRestaurant.id, editingRestaurant);
             setRestaurants((prev) =>
                 prev.map((res) =>
                     res.id === editingRestaurant.id ? editingRestaurant : res
@@ -241,6 +141,15 @@ const AdminDashboard = () => {
             alert(err.message);
         }
     };
+// Initial data fetch
+    useEffect(() => {
+        if (token) {
+            fetchAccounts();
+            fetchRestaurants();
+        } else {
+            setError("No token found. Please log in.");
+        }
+    }, [currentPage, pageSize]);
 
     // Pagination Handlers
     const handleNextPage = () => setCurrentPage((prev) => prev + 1);
