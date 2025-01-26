@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./NavBar.css";
 
 // Function to decode the JWT token payload
@@ -20,9 +20,20 @@ const decodeToken = (token) => {
 };
 
 const NavBar = () => {
-    // Retrieve the token from localStorage
+    const navigate = useNavigate();
     const token = localStorage.getItem("token");
     const userData = token ? decodeToken(token) : null;
+
+    const handleLogout = () => {
+        // Clear localStorage
+        localStorage.removeItem("token");
+        localStorage.removeItem("accountType");
+        localStorage.removeItem("firstName");
+        localStorage.removeItem("lastName");
+        localStorage.removeItem("profilePicture");
+        // Navigate to home or login page
+        navigate("/login");
+    };
 
     return (
         <nav className="navbar">
@@ -51,9 +62,19 @@ const NavBar = () => {
                             alt="Profile"
                             className="profile-picture"
                         />
+                        <button className="logout-button" onClick={handleLogout}>
+                            Logout
+                        </button>
                     </div>
                 ) : (
-                    <span className="welcome-text">Welcome, Guest</span>
+                    <div className="auth-links">
+                        <Link to="/login" className="nav-link">
+                            Login
+                        </Link>
+                        <Link to="/register" className="nav-link">
+                            Register
+                        </Link>
+                    </div>
                 )}
             </div>
         </nav>

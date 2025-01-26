@@ -7,10 +7,11 @@ const MenuPage = () => {
     const { menuId } = useParams();
     const [menu, setMenu] = useState(null);
     const [error, setError] = useState(null);
+    const API_BASE_URL = import.meta.env.VITE_API_URL;
 
     useEffect(() => {
         const fetchMenu = async () => {
-            const url = `http://localhost:8080/api/menus/${menuId}`;
+            const url = `${API_BASE_URL}/api/menus/${menuId}`;
             console.log("Fetching menu from:", url);
 
             try {
@@ -32,10 +33,10 @@ const MenuPage = () => {
     return (
         <div>
             <NavBar /> {/* Include NavBar */}
-            <div className="p-4">
-                <h1 className="text-2xl font-bold">Menu: {menu.category}</h1>
-                <p className="text-sm text-gray-500">Created At: {menu.createdAt}</p>
-                <p className="text-sm text-gray-500">Updated At: {menu.updatedAt}</p>
+            <div >
+                <h1 >Menu: {menu.category}</h1>
+                <p >Created At: {menu.createdAt}</p>
+                <p >Updated At: {menu.updatedAt}</p>
             </div>
         </div>
     );
