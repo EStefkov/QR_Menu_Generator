@@ -26,6 +26,8 @@ CREATE TABLE menu (
                       id BIGINT AUTO_INCREMENT PRIMARY KEY,
                       category VARCHAR(255),
                       restorant_id BIGINT,
+                      menu_url VARCHAR(512), -- New column for storing menu URL
+                      qr_code_image BLOB,    -- New column for storing QR code image
                       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                       CONSTRAINT fk_restorant_id FOREIGN KEY (restorant_id) REFERENCES restorant(id) ON DELETE CASCADE

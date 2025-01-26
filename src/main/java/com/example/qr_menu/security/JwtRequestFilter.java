@@ -33,6 +33,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+
+        // Allow unauthenticated access to public endpoints
+        if (isPublicEndpoint(request)) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         final String authorizationHeader = request.getHeader("Authorization");
         String username = null;
         String jwt = null;
@@ -45,6 +53,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 logger.warn("JWT Token has expired: " + e.getMessage());
             } catch (Exception e) {
                 logger.error("Error while parsing JWT Token: " + e.getMessage());
+                logger.error("JWT Token: " + jwt); // Логнете токена за анализ
             }
         }
 
@@ -68,5 +77,25 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             }
         }
         chain.doFilter(request, response);
+    }
+
+    /**
+     * Determines if the given request is for a public endpoint.
+     *
+     * @param request The HTTP request.
+     * @return True if the endpoint is public, false otherwise.
+     */
+    private boolean isPublicEndpoint(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String method = request.getMethod();
+
+        // Allow unauthenticated access to GET requests for menus
+        if (method.equalsIgnoreCase("GET") && path.startsWith("/api/menus")) {
+            return true;
+        }
+
+        // Add other public endpoints here if needed
+
+        return false;
     }
 }

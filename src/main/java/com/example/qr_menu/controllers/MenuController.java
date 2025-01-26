@@ -4,6 +4,7 @@ import com.example.qr_menu.dto.MenuDTO;
 import com.example.qr_menu.services.MenuService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +32,12 @@ public class MenuController {
         List<MenuDTO> menus = menuService.getMenusByRestaurantId(restorantId);
         return new ResponseEntity<>(menus, HttpStatus.OK);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<MenuDTO> getMenuById(@PathVariable Long id) {
+        MenuDTO menu = menuService.getMenuById(id);
+        return ResponseEntity.ok(menu);
+    }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<String> updateMenu(@PathVariable Long id, @RequestBody MenuDTO menuDTO) {
@@ -42,5 +49,20 @@ public class MenuController {
     public ResponseEntity<String> deleteMenu(@PathVariable Long id) {
         menuService.deleteMenu(id);
         return new ResponseEntity<>("Menu deleted successfully", HttpStatus.OK);
+    }
+
+    @GetMapping("/{id}/qrcode")
+    public ResponseEntity<byte[]> getQRCode(@PathVariable Long id) {
+        System.out.println("Fetching QR code for menu ID: " + id);
+        byte[] qrCode = menuService.generateQRCodeForMenu(id);
+
+        if (qrCode == null) {
+            System.out.println("QR code not found for menu ID: " + id);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(qrCode);
     }
 }
