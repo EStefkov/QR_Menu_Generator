@@ -39,7 +39,7 @@ public class CorsConfig {
         // Allows specific HTTP methods
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        // Optionally set maximum age for pre-flight requests
+        // Optionally set maximum age for pre-flight requests`
         config.setMaxAge(3600L); // 1 hour
 
         // Apply the configuration to all endpoints
