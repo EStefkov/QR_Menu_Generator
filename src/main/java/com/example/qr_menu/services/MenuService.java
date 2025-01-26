@@ -6,9 +6,11 @@ import com.example.qr_menu.entities.Restorant;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.repositories.MenuRepository;
 import com.example.qr_menu.repositories.RestaurantRepository;
+import com.example.qr_menu.security.MenuMapper;
 import com.example.qr_menu.utils.QRCodeGenerator;
 import lombok.Builder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
@@ -21,6 +23,14 @@ public class MenuService {
 
     private final MenuRepository menuRepository;
     private final RestaurantRepository restaurantRepository;
+
+    @Value("${server.host}")
+    private String serverHost;
+    @Value("${server.hostTwo}")
+    private String viteHost;
+    @Autowired
+    private MenuMapper menuMapper;
+
 
     @Autowired
     public MenuService(MenuRepository menuRepository, RestaurantRepository restaurantRepository) {
@@ -44,7 +54,7 @@ public class MenuService {
         menu = menuRepository.save(menu);
 
         // Създай URL с валидно ID
-        String menuUrl = "http://192.168.240.140:5173/menus/" + menu.getId();
+        String menuUrl = viteHost + "/menus/"+ menu.getId();
         menu.setMenuUrl(menuUrl);
 
         // Генерирай QR код
@@ -58,6 +68,7 @@ public class MenuService {
         // Обнови записа с URL и QR кода
         menuRepository.save(menu);
     }
+
 
 
 
@@ -98,13 +109,17 @@ public class MenuService {
         Menu menu = menuRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu not found"));
 
-        String menuUrl = "https://myapp.com/menu/" + menu.getId();
-
+        String menuUrl = "http://192.168.240.140:5173" + "/menus/"+ menu.getId();
         try {
             return QRCodeGenerator.generateQRCodeImage(menuUrl, 200, 200);
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
+    }
+    public MenuDTO getMenuById(Long id) {
+        Menu menu = menuRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Menu not found"));
+        return menuMapper.toDto(menu); // Преобразуване на entity към DTO
     }
 }

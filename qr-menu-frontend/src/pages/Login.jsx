@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { loginAccount } from "../api/account";
 
 const Login = () => {
     const [formData, setFormData] = useState({ accountName: "", password: "" });
     const [message, setMessage] = useState("");
+    const navigate = useNavigate(); // Use navigate for redirection
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -14,19 +15,23 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const token = await loginAccount(formData);
+            const token = await loginAccount(formData); // Call login API
             const payload = JSON.parse(atob(token.split(".")[1])); // Decode JWT payload
-            localStorage.setItem("token", token);
-            localStorage.setItem("accountType", payload.accountType); // Store account type from token
+            localStorage.setItem("token", token); // Store JWT token
+            localStorage.setItem("accountType", payload.accountType); // Store account type
+            localStorage.setItem("firstName", payload.firstName); // Store user info
+            localStorage.setItem("lastName", payload.lastName);
+            localStorage.setItem("profilePicture", payload.profilePicture);
+
             setMessage("Login successful!");
 
             // Redirect based on account type
             if (payload.accountType === "ROLE_ADMIN") {
-                window.location.href = "/admin";
+                navigate("/admin");
             } else if (payload.accountType === "ROLE_WAITER") {
-                window.location.href = "/waiter";
+                navigate("/waiter");
             } else {
-                window.location.href = "/user";
+                navigate("/user");
             }
         } catch (error) {
             setMessage("Login failed. Please check your credentials.");
@@ -40,6 +45,7 @@ const Login = () => {
                 <input
                     name="accountName"
                     placeholder="Name or Email"
+                    value={formData.accountName}
                     onChange={handleChange}
                     required
                 />
@@ -47,6 +53,7 @@ const Login = () => {
                     name="password"
                     placeholder="Password"
                     type="password"
+                    value={formData.password}
                     onChange={handleChange}
                     required
                 />

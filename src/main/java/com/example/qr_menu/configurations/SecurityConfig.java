@@ -30,7 +30,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests()
                 // Publicly accessible endpoints
                 .requestMatchers("/api/accounts/register", "/api/accounts/login").permitAll()
-
+                .requestMatchers(HttpMethod.GET, "/api/products/menu/**").permitAll() // Allow GET requests for menus
+                .requestMatchers(HttpMethod.GET, "/api/menus/restaurant/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/menus/{id}/qrcode").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll()
                 // Restricted endpoints for ADMIN role
                 .requestMatchers(HttpMethod.PUT, "/api/restaurants/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/restaurants/**").hasRole("ADMIN")

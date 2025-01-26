@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "../styles/AdminDashboard.css";
 import "../styles/Table.css";
 import "../styles/Form.css";
+import NavBar from "../components/NavBar.jsx";
 
 const AdminDashboard = () => {
     const [accounts, setAccounts] = useState([]);
@@ -12,11 +13,12 @@ const AdminDashboard = () => {
     const [editingRestaurant, setEditingRestaurant] = useState(null);
     const [newMenu, setNewMenu] = useState({ category: "", restorantId: "" });
     const [menus, setMenus] = useState({}); // Ключ: restaurantId, Стойност: масив от менюта
+    const API_BASE_URL = import.meta.env.VITE_API_URL;
 
     const fetchMenusByRestaurantId = async (restaurantId) => {
         try {
             const response = await fetch(
-                `http://localhost:8080/api/menus/restaurant/${restaurantId}`,
+                `${API_BASE_URL}/api/menus/restaurant/${restaurantId}`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
@@ -41,25 +43,43 @@ const AdminDashboard = () => {
         try {
             setLoading(true);
             const response = await fetch(
-                `http://localhost:8080/api/accounts/paged?page=${currentPage}&size=${pageSize}`,
+                `${API_BASE_URL}/api/accounts/paged?page=${currentPage}&size=${pageSize}`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
             );
-            if (!response.ok) throw new Error("Failed to fetch accounts");
-            const data = await response.json();
-            setAccounts(data.content);
+
+            // Логни целия отговор
+            console.log("Response:", response);
+
+            // Проверка дали отговорът е JSON
+            if (response.headers.get("content-type")?.includes("application/json")) {
+                const data = await response.json();
+                setAccounts(data.content);
+            } else {
+                const text = await response.text();
+                console.error("Unexpected response:", text);
+                throw new Error("Expected JSON but received HTML.");
+            }
         } catch (err) {
+            console.error(err.message);
             setError(err.message);
         } finally {
             setLoading(false);
         }
     };
 
+
     const fetchQRCode = async (menuId) => {
         try {
+
+            //testing api link should delete this two lanes
+            const urlTest= `${API_BASE_URL}/api/menus/${menuId}/qrcode`
+            console.log(urlTest);
+
+
             const response = await fetch(
-                `http://localhost:8080/api/menus/${menuId}/qrcode`,
+                `${API_BASE_URL}/api/menus/${menuId}/qrcode`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -71,6 +91,9 @@ const AdminDashboard = () => {
 
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
+
+            console.log("QR CODE blob URL:" + url );
+
             window.open(url, "_blank");
         } catch (err) {
             alert(err.message);
@@ -85,7 +108,7 @@ const AdminDashboard = () => {
         }
 
         try {
-            const response = await fetch("http://localhost:8080/api/menus", {
+            const response = await fetch(`${API_BASE_URL}/api/menus`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -110,7 +133,7 @@ const AdminDashboard = () => {
         try {
             setLoading(true);
             const response = await fetch(
-                `http://localhost:8080/api/restaurants/paged?page=${currentPage}&size=${pageSize}`,
+                `${API_BASE_URL}/api/restaurants/paged?page=${currentPage}&size=${pageSize}`,
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
@@ -139,7 +162,7 @@ const AdminDashboard = () => {
     const deleteAccount = async (id) => {
         try {
             const response = await fetch(
-                `http://localhost:8080/api/accounts/delete/${id}`,
+                `${API_BASE_URL}/api/accounts/delete/${id}`,
                 {
                     method: "DELETE",
                     headers: { Authorization: `Bearer ${token}` },
@@ -156,7 +179,7 @@ const AdminDashboard = () => {
     const saveAccount = async () => {
         try {
             const response = await fetch(
-                `http://localhost:8080/api/accounts/update/${editingAccount.id}`,
+                `${API_BASE_URL}/api/accounts/update/${editingAccount.id}`,
                 {
                     method: "PUT",
                     headers: {
@@ -180,7 +203,7 @@ const AdminDashboard = () => {
     const deleteRestaurant = async (id) => {
         try {
             const response = await fetch(
-                `http://localhost:8080/api/restaurants/delete/${id}`,
+                `${API_BASE_URL}/api/restaurants/delete/${id}`,
                 {
                     method: "DELETE",
                     headers: { Authorization: `Bearer ${token}` },
@@ -197,7 +220,7 @@ const AdminDashboard = () => {
     const saveRestaurant = async () => {
         try {
             const response = await fetch(
-                `http://localhost:8080/api/restaurants/${editingRestaurant.id}`,
+                `${API_BASE_URL}/api/restaurants/${editingRestaurant.id}`,
                 {
                     method: "PUT",
                     headers: {
@@ -229,6 +252,7 @@ const AdminDashboard = () => {
 
     return (
         <div className="dashboard-container">
+            <NavBar />
             <h1>Admin Dashboard</h1>
             <p>Manage accounts and restaurants</p>
 

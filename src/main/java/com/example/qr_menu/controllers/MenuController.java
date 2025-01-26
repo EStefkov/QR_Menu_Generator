@@ -32,6 +32,12 @@ public class MenuController {
         List<MenuDTO> menus = menuService.getMenusByRestaurantId(restorantId);
         return new ResponseEntity<>(menus, HttpStatus.OK);
     }
+    @GetMapping("/{id}")
+    public ResponseEntity<MenuDTO> getMenuById(@PathVariable Long id) {
+        MenuDTO menu = menuService.getMenuById(id);
+        return ResponseEntity.ok(menu);
+    }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<String> updateMenu(@PathVariable Long id, @RequestBody MenuDTO menuDTO) {
@@ -47,9 +53,11 @@ public class MenuController {
 
     @GetMapping("/{id}/qrcode")
     public ResponseEntity<byte[]> getQRCode(@PathVariable Long id) {
+        System.out.println("Fetching QR code for menu ID: " + id);
         byte[] qrCode = menuService.generateQRCodeForMenu(id);
 
         if (qrCode == null) {
+            System.out.println("QR code not found for menu ID: " + id);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
 
