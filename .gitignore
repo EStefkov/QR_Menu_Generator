@@ -33,3 +33,4 @@ build/
 .vscode/
 qr-menu-frontend/.env
 src/main/resources/application.properties
+src/main/resources/application.properties
