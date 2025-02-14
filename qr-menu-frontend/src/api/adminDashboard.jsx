@@ -44,14 +44,30 @@ export const fetchMenusByRestaurantIdApi = async (token, restaurantId) => {
 
 // Fetch QR code for a menu
 export const fetchQRCodeApi = async (token, menuId) => {
-    const response = await fetch(`${API_BASE_URL}/api/menus/${menuId}/qrcode`, {
-        headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!response.ok) {
-        throw new Error("Failed to fetch QR code");
+    if (!menuId) {
+        console.error("Invalid menu ID:", menuId);
+        return;
     }
-    return response.blob();
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/menus/${menuId}/qrcode`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+            console.error(`Failed to fetch QR code (Status: ${response.status})`);
+            throw new Error(`Failed to fetch QR code. Server responded with status ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank"); // Отваря QR кода в нов прозорец
+    } catch (error) {
+        console.error("Error fetching QR code:", error);
+        alert("Failed to fetch QR code. Please try again.");
+    }
 };
+
 
 // Create a new menu
 export const createMenuApi = async (token, newMenu) => {

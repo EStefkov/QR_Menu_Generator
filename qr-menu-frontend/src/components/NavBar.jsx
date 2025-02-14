@@ -23,6 +23,7 @@ const NavBar = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
     const userData = token ? decodeToken(token) : null;
+    const accountType = userData?.accountType || "";
 
     const handleLogout = () => {
         // Clear localStorage
@@ -31,7 +32,7 @@ const NavBar = () => {
         localStorage.removeItem("firstName");
         localStorage.removeItem("lastName");
         localStorage.removeItem("profilePicture");
-        // Navigate to home or login page
+        // Navigate to login page
         navigate("/login");
     };
 
@@ -39,15 +40,20 @@ const NavBar = () => {
         <nav className="navbar">
             {/* Left side (Navigation Links) */}
             <div className="navbar-left">
-                <Link to="/" className="nav-link">
-                    Home
-                </Link>
-                <Link to="/menus" className="nav-link">
-                    Menus
-                </Link>
-                <Link to="/about" className="nav-link">
-                    About
-                </Link>
+                <Link to="/" className="nav-link">Home</Link>
+                
+                {/* Ако е администратор, показваме "AdminDashboard" */}
+                {accountType === "ROLE_ADMIN" && (
+                    <Link to="/admin" className="nav-link">Admin Dashboard</Link>
+                )}
+
+                {/* Ако е нормален потребител, показваме "Menus" и "About" */}
+                {accountType === "ROLE_USER" && (
+                    <>
+                        <Link to="/menus" className="nav-link">Menus</Link>
+                        <Link to="/about" className="nav-link">About</Link>
+                    </>
+                )}
             </div>
 
             {/* Right side (Profile Section) */}
@@ -68,12 +74,8 @@ const NavBar = () => {
                     </div>
                 ) : (
                     <div className="auth-links">
-                        <Link to="/login" className="nav-link">
-                            Login
-                        </Link>
-                        <Link to="/register" className="nav-link">
-                            Register
-                        </Link>
+                        <Link to="/login" className="nav-link">Login</Link>
+                        <Link to="/register" className="nav-link">Register</Link>
                     </div>
                 )}
             </div>
