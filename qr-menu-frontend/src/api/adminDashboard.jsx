@@ -145,3 +145,21 @@ export const updateRestaurantApi = async (token, restaurantId, restaurantData) =
         throw new Error("Failed to update restaurant");
     }
 };
+
+// POST a new category in menu
+export const createCategoryApi = async (token, categoryData) => {
+    const response = await fetch("http://localhost:8080/api/categories", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(categoryData),
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to create category");
+    }
+
+    return await response.json();
+};
