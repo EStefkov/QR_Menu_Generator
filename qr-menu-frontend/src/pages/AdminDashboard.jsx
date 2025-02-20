@@ -9,6 +9,8 @@ import CreateMenuForm from "../components/CreateMenuForm.jsx";
 import EditAccountForm from "../components/EditAccountForm.jsx";
 import EditRestaurantForm from "../components/EditRestaurantForm.jsx";
 import CreateCategoryForm from "../components/CreateCategoryForm";
+import CreateProductForm from "../components/CreateProductForm.jsx";
+
 
 import {
     fetchAccountsApi,
@@ -21,6 +23,7 @@ import {
     updateAccountApi,
     deleteRestaurantApi,
     updateRestaurantApi,
+    createProductApi
 } from "../api/adminDashboard";
 
 const AdminDashboard = () => {
@@ -160,6 +163,22 @@ const AdminDashboard = () => {
             console.error("Error creating category:", error);
         }
     };
+    // Функция, която се подава към CreateProductForm
+    const onCreateProduct = async (productData) => {
+        try {
+            await createProductApi(token, {
+                productName: productData.productName,
+                productPrice: Number(productData.productPrice),
+                productInfo: productData.productInfo,
+                categoryId: Number(productData.categoryId),
+            });
+            alert("Product created successfully!");
+            // Тук може да презаредите списък с продукти, ако показвате някъде (fetchProductsByCategoryId) или нещо друго
+        } catch (error) {
+            console.error("Error creating product:", error);
+            alert("Failed to create product. Check console for more details.");
+        }
+    };
 
     return (
         <div className="dashboard-container">
@@ -216,6 +235,11 @@ const AdminDashboard = () => {
                     onCancel={() => setEditingRestaurant(null)}
                 />
             )}
+
+
+            {/* Форма за създаване на нов продукт */}
+            <CreateProductForm onCreateProduct={onCreateProduct} />
+
         </div>
     );
 };

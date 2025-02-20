@@ -163,3 +163,18 @@ export const createCategoryApi = async (token, categoryData) => {
 
     return await response.json();
 };
+
+export const createProductApi = async (token, productData) => {
+    const response = await fetch(`${API_BASE_URL}/api/products`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(productData),
+    });
+    if (!response.ok) {
+        throw new Error("Failed to create product");
+    }
+    return response.json();
+};
