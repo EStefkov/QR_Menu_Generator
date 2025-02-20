@@ -109,7 +109,7 @@ public class MenuService {
         Menu menu = menuRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu not found"));
 
-        String menuUrl = "http://192.168.240.140:5173" + "/menus/"+ menu.getId();
+        String menuUrl = viteHost + "/menus/"+ menu.getId();
         try {
             return QRCodeGenerator.generateQRCodeImage(menuUrl, 200, 200);
         } catch (Exception e) {

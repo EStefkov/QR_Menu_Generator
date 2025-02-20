@@ -18,7 +18,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/accounts")
-@CrossOrigin(origins = "http://localhost:5173") // Consolidated CORS annotation for the whole controller
 public class AccountController {
 
     private final AccountService accountService;
@@ -65,6 +64,13 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred");
         }
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        // The logout endpoint can clear the frontend-stored token.
+        return ResponseEntity.ok("Logged out successfully");
+    }
+
 
     /**
      * Fetches all accounts with their associated restaurants.

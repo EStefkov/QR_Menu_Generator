@@ -6,13 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductDTO {
+@Builder
+public class CategoryDTO {
     private Long id;
-    private String productName;
-    private Double productPrice;
-    private String productInfo;
-    private Long categoryId; // To associate the product with a menu by ID
+    private String name;
+    private Long menuId;
 }

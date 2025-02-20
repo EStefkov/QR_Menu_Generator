@@ -5,23 +5,31 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Arrays;
 
 @Configuration
 public class CorsConfig {
 
+
+    @Value("${server.hostTwo}")
+    private String viteHost;
+
     @Bean
     public CorsFilter corsFilter() {
+
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
 
         // Allows credentials (e.g., cookies or authorization headers)
         config.setAllowCredentials(true);
 
+
         // Replace "*" with specific domains for production
         config.setAllowedOriginPatterns(Arrays.asList(
-                "http://192.168.240.140:5173", // Frontend in development
+                viteHost, // Frontend in development
                 "http://localhost:5173" // Frontend in production
         ));
 
@@ -31,7 +39,7 @@ public class CorsConfig {
         // Allows specific HTTP methods
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 
-        // Optionally set maximum age for pre-flight requests
+        // Optionally set maximum age for pre-flight requests`
         config.setMaxAge(3600L); // 1 hour
 
         // Apply the configuration to all endpoints

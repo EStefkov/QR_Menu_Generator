@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./NavBar.css";
 
 // Function to decode the JWT token payload
@@ -20,23 +20,40 @@ const decodeToken = (token) => {
 };
 
 const NavBar = () => {
-    // Retrieve the token from localStorage
+    const navigate = useNavigate();
     const token = localStorage.getItem("token");
     const userData = token ? decodeToken(token) : null;
+    const accountType = userData?.accountType || "";
+
+    const handleLogout = () => {
+        // Clear localStorage
+        localStorage.removeItem("token");
+        localStorage.removeItem("accountType");
+        localStorage.removeItem("firstName");
+        localStorage.removeItem("lastName");
+        localStorage.removeItem("profilePicture");
+        // Navigate to login page
+        navigate("/login");
+    };
 
     return (
         <nav className="navbar">
             {/* Left side (Navigation Links) */}
             <div className="navbar-left">
-                <Link to="/" className="nav-link">
-                    Home
-                </Link>
-                <Link to="/menus" className="nav-link">
-                    Menus
-                </Link>
-                <Link to="/about" className="nav-link">
-                    About
-                </Link>
+                <Link to="/" className="nav-link">Home</Link>
+                
+                {/* Ако е администратор, показваме "AdminDashboard" */}
+                {accountType === "ROLE_ADMIN" && (
+                    <Link to="/admin" className="nav-link">Admin Dashboard</Link>
+                )}
+
+                {/* Ако е нормален потребител, показваме "Menus" и "About" */}
+                {accountType === "ROLE_USER" && (
+                    <>
+                        <Link to="/menus" className="nav-link">Menus</Link>
+                        <Link to="/about" className="nav-link">About</Link>
+                    </>
+                )}
             </div>
 
             {/* Right side (Profile Section) */}
@@ -51,9 +68,15 @@ const NavBar = () => {
                             alt="Profile"
                             className="profile-picture"
                         />
+                        <button className="logout-button" onClick={handleLogout}>
+                            Logout
+                        </button>
                     </div>
                 ) : (
-                    <span className="welcome-text">Welcome, Guest</span>
+                    <div className="auth-links">
+                        <Link to="/login" className="nav-link">Login</Link>
+                        <Link to="/register" className="nav-link">Register</Link>
+                    </div>
                 )}
             </div>
         </nav>

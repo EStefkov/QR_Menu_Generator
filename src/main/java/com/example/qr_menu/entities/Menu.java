@@ -49,5 +49,9 @@ public class Menu {
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Product> products;
 
+    @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Category> categories;
+
+
 
 }

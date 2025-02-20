@@ -31,4 +31,9 @@ public class Product {
     @ManyToOne
     @JoinColumn(name = "menu_id", nullable = false) // Foreign key column in Products table
     private Menu menu;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
 }
