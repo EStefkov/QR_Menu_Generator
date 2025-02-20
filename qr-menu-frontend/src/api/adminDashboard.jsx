@@ -148,7 +148,7 @@ export const updateRestaurantApi = async (token, restaurantId, restaurantData) =
 
 // POST a new category in menu
 export const createCategoryApi = async (token, categoryData) => {
-    const response = await fetch("http://localhost:8080/api/categories", {
+    const response = await fetch(`${API_BASE_URL}/api/categories`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
