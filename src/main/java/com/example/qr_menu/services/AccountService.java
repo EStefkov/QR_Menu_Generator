@@ -161,6 +161,7 @@ public class AccountService {
         account.setLastName(accountDTO.getLastName());
         account.setMailAddress(accountDTO.getMailAddress());
         account.setNumber(accountDTO.getNumber());
+        account.setAccountType(accountDTO.getAccountType());
         account.setUpdatedAt(new Timestamp(System.currentTimeMillis())); // Update timestamp
 
         accountRepository.save(account);
