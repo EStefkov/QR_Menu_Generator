@@ -18,6 +18,12 @@ public class Category {
     @Column(nullable = false)
     private String name;
 
+    @Column(
+            name = "category_image",
+            columnDefinition = "VARCHAR(255) DEFAULT 'default_category.png'"
+    )
+    private String categoryImage;
+
     @ManyToOne
     @JoinColumn(name = "menu_id", nullable = false)
     private Menu menu;

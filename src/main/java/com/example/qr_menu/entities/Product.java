@@ -27,6 +27,12 @@ public class Product {
     @Column(name = "product_info")
     private String productInfo;
 
+    @Column(
+            name = "product_image",
+            columnDefinition = "VARCHAR(255) DEFAULT 'default_product.png'"
+    )
+    private String productImage;
+
     // Many Products can belong to one Menu
     @ManyToOne
     @JoinColumn(name = "menu_id", nullable = false) // Foreign key column in Products table

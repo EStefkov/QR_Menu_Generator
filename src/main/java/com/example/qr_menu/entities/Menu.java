@@ -45,6 +45,12 @@ public class Menu {
     @Column(name = "qr_code_image", columnDefinition = "BLOB")
     private byte[] qrCodeImage;
 
+    @Column(
+            name = "menu_image",
+            columnDefinition = "VARCHAR(255) DEFAULT 'default_menu.png'"
+    )
+    private String menuImage;
+
     // One Menu can have many Products
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Product> products;
