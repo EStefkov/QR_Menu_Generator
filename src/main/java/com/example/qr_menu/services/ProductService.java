@@ -22,35 +22,48 @@ public class ProductService {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    /**
+     * Създава продукт. Ако productImage не е зададено,
+     * ще му сложим "default_product.png".
+     */
     public ProductDTO createProduct(ProductDTO productDTO) {
-        // Намери категорията
+        if (productDTO.getProductImage() == null || productDTO.getProductImage().isBlank()) {
+            productDTO.setProductImage("default_product.png");
+        }
+
+        // Проверяваме дали съществува категорията
         Category category = categoryRepository.findById(productDTO.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
-        // Автоматично вземи менюто от категорията
+        // Менюто е свързано през категорията
         Menu menu = category.getMenu();
 
-        // Създай нов продукт
+        String defaultProfilePicture = "https://www.tiffincurry.ca/wp-content/uploads/2021/02/default-product.png";
+        String productPicture = productDTO.getProductImage() != null ? productDTO.getProductImage() : defaultProfilePicture;
+
+        // Създаваме ентити обект
         Product product = Product.builder()
                 .productName(productDTO.getProductName())
                 .productPrice(productDTO.getProductPrice())
                 .productInfo(productDTO.getProductInfo())
-                .category(category) // Свързва се с категорията
-                .menu(menu) // Свързва се с менюто, извлечено от категорията
+                .productImage(productPicture) // път или URL
+                .category(category)
+                .menu(menu)
                 .build();
 
         Product savedProduct = productRepository.save(product);
         return convertToDto(savedProduct);
     }
 
-
-
+    // Връща списък продукти за дадена категория (ако ви трябва)
     public List<ProductDTO> getProductsByCategoryId(Long categoryId) {
         return productRepository.findByCategoryId(categoryId)
                 .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+
+    // Връща списък продукти за дадено меню
     public List<ProductDTO> getProductsByMenuId(Long menuId) {
         return productRepository.findByMenuId(menuId)
                 .stream()
@@ -58,7 +71,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-
+    // Конвертира ентити в DTO
     private ProductDTO convertToDto(Product product) {
         return ProductDTO.builder()
                 .id(product.getId())
@@ -66,9 +79,13 @@ public class ProductService {
                 .productPrice(product.getProductPrice())
                 .productInfo(product.getProductInfo())
                 .categoryId(product.getCategory().getId())
+                .productImage(product.getProductImage())
+                // Ако искате да върнете и пътя на снимката, добавете:
+                // .productImage(product.getProductImage())
                 .build();
     }
 
+    // Ъпдейт
     public ProductDTO updateProduct(Long id, ProductDTO productDTO) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
@@ -77,10 +94,16 @@ public class ProductService {
         product.setProductPrice(productDTO.getProductPrice());
         product.setProductInfo(productDTO.getProductInfo());
 
+        // Ако искате да позволите смяна на снимката при ъпдейт:
+        if (productDTO.getProductImage() != null && !productDTO.getProductImage().isBlank()) {
+            product.setProductImage(productDTO.getProductImage());
+        }
+
         Product updatedProduct = productRepository.save(product);
         return convertToDto(updatedProduct);
     }
 
+    // Изтриване
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
     }

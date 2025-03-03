@@ -25,22 +25,34 @@ export const fetchRestaurantsApi = async (token, currentPage, pageSize) => {
     if (!response.ok) {
         throw new Error("Failed to fetch restaurants");
     }
+
+
     return response.json();
 };
 
-// Fetch menus by restaurant ID
+// Взема менютата за даден ресторант
 export const fetchMenusByRestaurantIdApi = async (token, restaurantId) => {
-    const response = await fetch(
-        `${API_BASE_URL}/api/menus/restaurant/${restaurantId}`,
-        {
-            headers: { Authorization: `Bearer ${token}` },
-        }
-    );
+    const response = await fetch(`${API_BASE_URL}/api/menus/restaurant/${restaurantId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
     if (!response.ok) {
         throw new Error("Failed to fetch menus");
     }
+    
     return response.json();
 };
+
+// Взема категориите за дадено меню
+export const fetchCategoriesByMenuIdApi = async (token, menuId) => {
+    const response = await fetch(`${API_BASE_URL}/api/categories/menu/${menuId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+        throw new Error("Failed to fetch categories");
+    }
+    return response.json();
+};
+
 
 // Fetch QR code for a menu
 export const fetchQRCodeApi = async (token, menuId) => {
@@ -164,17 +176,43 @@ export const createCategoryApi = async (token, categoryData) => {
     return await response.json();
 };
 
-export const createProductApi = async (token, productData) => {
+export const createProductApi = async (token, formData) => {
     const response = await fetch(`${API_BASE_URL}/api/products`, {
+      method: "POST",
+      headers: {
+        // НЕ слагаме Content-Type. FormData сам ще си сложи boundary
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData
+    });
+  
+    if (!response.ok) {
+      throw new Error("Failed to create product");
+    }
+  
+    return await response.json();
+  };
+
+
+
+
+
+
+
+
+export const createRestaurantApi = async (token, restaurantData) => {
+    const response = await fetch(`${API_BASE_URL}/api/restaurants`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(productData),
+        body: JSON.stringify(restaurantData),
     });
+
     if (!response.ok) {
-        throw new Error("Failed to create product");
+        throw new Error("Failed to create restaurant");
     }
+
     return response.json();
 };

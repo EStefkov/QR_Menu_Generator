@@ -162,6 +162,7 @@ public class AccountService {
         account.setMailAddress(accountDTO.getMailAddress());
         account.setNumber(accountDTO.getNumber());
         account.setAccountType(accountDTO.getAccountType());
+        account.setProfilePicture(account.getProfilePicture());
         account.setUpdatedAt(new Timestamp(System.currentTimeMillis())); // Update timestamp
 
         accountRepository.save(account);

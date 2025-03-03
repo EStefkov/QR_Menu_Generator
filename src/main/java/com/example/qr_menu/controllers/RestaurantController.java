@@ -1,5 +1,6 @@
 package com.example.qr_menu.controllers;
 
+import com.example.qr_menu.dto.MenuDTO;
 import com.example.qr_menu.dto.RestaurantDTO;
 import com.example.qr_menu.services.RestaurantService;
 import com.example.qr_menu.utils.JwtTokenUtil;
@@ -11,8 +12,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
-    @RestController
+@RestController
     @RequestMapping("/api/restaurants")
     public class RestaurantController {
 
@@ -25,8 +27,10 @@ import java.util.List;
             this.jwtTokenUtil = jwtTokenUtil;
         }
 
+
+
         @PostMapping
-        public ResponseEntity<String> createRestaurant(
+        public ResponseEntity<Map<String, String>> createRestaurant(
                 @RequestBody RestaurantDTO restaurantDTO,
                 @RequestHeader("Authorization") String token) {
 
@@ -36,8 +40,11 @@ import java.util.List;
             // Pass email to the service
             restaurantService.createRestaurant(restaurantDTO, email);
 
-            return new ResponseEntity<>("Restaurant created successfully", HttpStatus.CREATED);
+            // ✅ Връщаме JSON вместо текст
+            Map<String, String> response = Map.of("message", "Restaurant created successfully");
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         }
+
 
         @PutMapping("/{id}")
         public ResponseEntity<String> updateRestaurant(@PathVariable Long id, @RequestBody RestaurantDTO restaurantDTO) {
@@ -70,5 +77,11 @@ import java.util.List;
             Page<RestaurantDTO> restaurants = restaurantService.getPagedRestaurants(page, size);
             return ResponseEntity.ok(restaurants);
         }
+
+    @GetMapping("/{restaurantId}/menus")
+    public ResponseEntity<List<MenuDTO>> getMenusByRestaurant(@PathVariable Long restaurantId) {
+        List<MenuDTO> menus = restaurantService.getMenusByRestaurant(restaurantId);
+        return ResponseEntity.ok(menus);
+    }
 
     }

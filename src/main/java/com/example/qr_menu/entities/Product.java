@@ -28,8 +28,7 @@ public class Product {
     private String productInfo;
 
     @Column(
-            name = "product_image",
-            columnDefinition = "VARCHAR(255) DEFAULT 'default_product.png'"
+            name = "product_image"
     )
     private String productImage;
 

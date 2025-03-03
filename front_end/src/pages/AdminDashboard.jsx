@@ -7,6 +7,8 @@ import EditAccountForm from "../components/EditAccountForm.jsx";
 import EditRestaurantForm from "../components/EditRestaurantForm.jsx";
 import CreateCategoryForm from "../components/CreateCategoryForm";
 import CreateProductForm from "../components/CreateProductForm.jsx";
+import CreateRestaurantForm from "../components/CreateRestaurantForm";
+
 
 import {
     fetchAccountsApi,
@@ -20,7 +22,10 @@ import {
     deleteRestaurantApi,
     updateRestaurantApi,
     createCategoryApi,
-    createProductApi
+    createProductApi,
+    createRestaurantApi,
+    fetchCategoriesByMenuIdApi
+
 } from "../api/adminDashboard";
 
 const AdminDashboard = () => {
@@ -139,6 +144,17 @@ const AdminDashboard = () => {
         await fetchQRCodeApi(token, menuId);
     };
 
+    const handleCreateRestaurant = async (restaurantData) => {
+        try {
+            await createRestaurantApi(token, restaurantData);
+            alert("Ресторантът е създаден успешно!");
+            fetchRestaurants(); // Обновява списъка с ресторанти
+        } catch (err) {
+            console.error("Error creating restaurant:", err);
+            alert("Неуспешно създаване на ресторант!");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
             
@@ -151,6 +167,7 @@ const AdminDashboard = () => {
                         {[
                             { id: "accounts", name: "Акаунти" },
                             { id: "restaurants", name: "Ресторанти" },
+                            { id: "createRestaurant", name: "Създай Ресторант"},
                             { id: "createMenu", name: "Създай Меню" },
                             { id: "createCategory", name: "Създай Категория" },
                             { id: "createProduct", name: "Създай Продукт" }
@@ -205,6 +222,9 @@ const AdminDashboard = () => {
                             token={token}
                         />
                     )}
+                    {activeComponent === "createRestaurant" && (
+                        <CreateRestaurantForm onCreateRestaurant={handleCreateRestaurant} />
+                        )}
 
                     {/* 3) Създай Меню */}
                     {activeComponent === "createMenu" && (
@@ -243,18 +263,29 @@ const AdminDashboard = () => {
 
                     {/* 5) Създай Продукт */}
                     {activeComponent === "createProduct" && (
-                        <CreateProductForm
-                            onCreateProduct={async (productData) => {
-                                try {
-                                    await createProductApi(token, productData);
-                                    alert("Продуктът е създаден успешно!");
-                                } catch (err) {
-                                    console.error("Error creating product:", err);
-                                    alert("Неуспешно създаване на продукт!");
-                                }
-                            }}
-                        />
-                    )}
+  <CreateProductForm
+    token={token}                         // <-- ДАВАМЕ ТОКЕН
+    onCreateProduct={async (productData) => {
+      try {
+        // ... (ако искате да обработвате данните тук)
+      } catch (err) {
+        console.error("Error creating product:", err);
+        alert("Неуспешно създаване на продукт!");
+      }
+    }}
+    fetchRestaurants={async () => {
+      const restaurants = await fetchRestaurantsApi(token, 0, 50);
+      return restaurants.content || [];
+    }}
+    fetchMenus={async (restaurantId) => {
+      return await fetchMenusByRestaurantIdApi(token, restaurantId);
+    }}
+    fetchCategories={async (menuId) => {
+      return await fetchCategoriesByMenuIdApi(token, menuId);
+    }}
+  />
+)}
+
 
                     {/* Форма за редакция на акаунт */}
                     {editingAccount && (

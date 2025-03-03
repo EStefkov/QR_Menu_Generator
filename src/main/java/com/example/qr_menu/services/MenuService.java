@@ -1,9 +1,12 @@
 package com.example.qr_menu.services;
 
+import com.example.qr_menu.dto.CategoryDTO;
 import com.example.qr_menu.dto.MenuDTO;
+import com.example.qr_menu.entities.Category;
 import com.example.qr_menu.entities.Menu;
 import com.example.qr_menu.entities.Restorant;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
+import com.example.qr_menu.repositories.CategoryRepository;
 import com.example.qr_menu.repositories.MenuRepository;
 import com.example.qr_menu.repositories.RestaurantRepository;
 import com.example.qr_menu.security.MenuMapper;
@@ -23,6 +26,7 @@ public class MenuService {
 
     private final MenuRepository menuRepository;
     private final RestaurantRepository restaurantRepository;
+    private final CategoryRepository categoryRepository;
 
     @Value("${server.host}")
     private String serverHost;
@@ -33,9 +37,12 @@ public class MenuService {
 
 
     @Autowired
-    public MenuService(MenuRepository menuRepository, RestaurantRepository restaurantRepository) {
+    public MenuService(MenuRepository menuRepository,
+                       RestaurantRepository restaurantRepository,
+                       CategoryRepository categoryRepository) {
         this.menuRepository = menuRepository;
         this.restaurantRepository = restaurantRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     public void createMenu(MenuDTO menuDTO) {
@@ -121,5 +128,15 @@ public class MenuService {
         Menu menu = menuRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu not found"));
         return menuMapper.toDto(menu); // Преобразуване на entity към DTO
+    }
+
+    public List<CategoryDTO> getCategoriesByMenu(Long menuId) {
+        Menu menu = menuRepository.findById(menuId)
+                .orElseThrow(() -> new ResourceNotFoundException("Menu not found"));
+
+        List<Category> categories = categoryRepository.findByMenu(menu);
+        return categories.stream()
+                .map(category -> new CategoryDTO(category.getId(), category.getName(),category.getId(), category.getCategoryImage()))
+                .collect(Collectors.toList());
     }
 }
