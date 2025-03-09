@@ -94,13 +94,19 @@ public class ProductService {
         product.setProductPrice(productDTO.getProductPrice());
         product.setProductInfo(productDTO.getProductInfo());
 
-        // Ако искате да позволите смяна на снимката при ъпдейт:
-        if (productDTO.getProductImage() != null && !productDTO.getProductImage().isBlank()) {
-            product.setProductImage(productDTO.getProductImage());
+        // Ако productImage e null => не пипаме снимката
+        // Ако productImage e нещо != null, тогава задаваме новата
+        if (productDTO.getProductImage() != null) {
+            // ако е "" (празен стринг), може да сложим default. Или остави така.
+            if (productDTO.getProductImage().isEmpty()) {
+                product.setProductImage("default_product.png");
+            } else {
+                product.setProductImage(productDTO.getProductImage());
+            }
         }
 
-        Product updatedProduct = productRepository.save(product);
-        return convertToDto(updatedProduct);
+        Product updated = productRepository.save(product);
+        return convertToDto(updated);
     }
 
     // Изтриване
