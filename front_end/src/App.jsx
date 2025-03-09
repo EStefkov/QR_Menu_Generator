@@ -6,11 +6,11 @@ import AdminDashboard from "./pages/AdminDashboard.jsx";
 import UserDashboard from "./pages/UserDashboard.jsx";
 import WaiterDashboard from "./pages/WaiterDashboard.jsx";
 import Home from "./pages/Home.jsx";
-import MenuPage from "./pages/MenuPage.jsx";
+import MenuPage from "./pages/AdminMenuPage.jsx";
 
 const Layout = ({ children }) => {
     const location = useLocation();
-    
+
     // Не показваме NavBar на страниците за вход и регистрация
     const hideNavBar = location.pathname === "/login" || location.pathname === "/register";
 
@@ -39,14 +39,17 @@ const App = () => {
                 />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<RegisterPage />} />
+
+                {/* Важно: тук е рутата за /menus/:menuId, която зарежда MenuPage */}
                 <Route
-                    path="/menus/:menuId"
+                    path="/menu/:menuId"
                     element={
                         <Layout>
                             <MenuPage />
                         </Layout>
                     }
                 />
+
                 <Route
                     path="/admin"
                     element={

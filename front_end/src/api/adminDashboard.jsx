@@ -216,3 +216,26 @@ export const createRestaurantApi = async (token, restaurantData) => {
 
     return response.json();
 };
+
+
+export async function fetchProductsByCategoryIdApi(token, categoryId) {
+    if (!categoryId) {
+      throw new Error("Invalid category ID");
+    }
+  
+    const response = await fetch(`${API_BASE_URL}/api/products/category/${categoryId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  
+    if (!response.ok) {
+      throw new Error(`Failed to fetch products for category ID: ${categoryId}`);
+    }
+  
+    const data = await response.json();
+    return data;
+  }
+  
