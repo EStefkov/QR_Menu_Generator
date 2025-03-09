@@ -50,6 +50,7 @@ public class ProductController {
             @RequestParam("productPrice") Double productPrice,
             @RequestParam("productInfo") String productInfo,
             @RequestParam("categoryId") Long categoryId,
+            @RequestParam(value = "allergenIds", required = false) List<Long> allergenIds,
             @RequestParam(value = "productImage", required = false) MultipartFile productImage
     ) {
         // Подготвяме DTO от параметрите
@@ -58,6 +59,7 @@ public class ProductController {
         dto.setProductPrice(productPrice);
         dto.setProductInfo(productInfo);
         dto.setCategoryId(categoryId);
+        dto.setAllergenIds(allergenIds);
 
         // Ако има качен файл, записваме го в папка "uploads/"
         if (productImage != null && !productImage.isEmpty()) {

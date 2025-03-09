@@ -47,6 +47,7 @@ public class RestaurantService {
                 .restorantName(restaurantDTO.getRestorantName())
                 .phoneNumber(restaurantDTO.getPhoneNumber())
                 .account(account) // Associate restaurant with account
+                .email(restaurantDTO.getEmail())
                 .build();
 
         restaurantRepository.save(restaurant);
@@ -57,6 +58,8 @@ public class RestaurantService {
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
         restaurant.setRestorantName(restaurantDTO.getRestorantName());
         restaurant.setPhoneNumber(restaurantDTO.getPhoneNumber());
+        restaurant.setAddress(restaurantDTO.getAddress());
+        restaurant.setEmail(restaurantDTO.getEmail());
         restaurantRepository.save(restaurant);
     }
 

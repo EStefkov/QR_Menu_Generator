@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { createProductApi } from "../api/adminDashboard"; // Ето я единствената функция, която ще ползваме
+import { createProductApi } from "../api/adminDashboard";
+
+// Примерен URL за зареждане на всички алергени
+// Ако имаш baseUrl, можеш да го сглобяваш динамично,
+// или пък да ползваш axios, etc.
+const ALLERGENS_URL = "http://localhost:8080/api/allergens"; 
 
 const CreateProductForm = ({ 
   token,
@@ -13,6 +18,7 @@ const CreateProductForm = ({
   const [menus, setMenus] = useState([]);
   const [categories, setCategories] = useState([]);
 
+  // Избор на ресторант и меню
   const [selectedRestaurant, setSelectedRestaurant] = useState("");
   const [selectedMenu, setSelectedMenu] = useState("");
 
@@ -27,6 +33,12 @@ const CreateProductForm = ({
     categoryId: "",
     menuId: "",
   });
+
+  // Избрани алергени (списък от ID)
+  const [selectedAllergens, setSelectedAllergens] = useState([]);
+
+  // Списък от алергени, заредени от бекенда
+  const [allergens, setAllergens] = useState([]);
 
   // 1) Зареждаме ресторанти при mount
   useEffect(() => {
@@ -46,10 +58,33 @@ const CreateProductForm = ({
   useEffect(() => {
     if (selectedMenu) {
       fetchCategories(selectedMenu).then(setCategories);
-      // Записваме menuId в productData
       setProductData(prev => ({ ...prev, menuId: selectedMenu }));
     }
   }, [selectedMenu]);
+
+  // 4) Зареждаме списъка с алергени от бекенда (при mount)
+  useEffect(() => {
+    // Можеш да ползваш fetch директно или да имаш отделен API метод
+    fetch(ALLERGENS_URL, {
+      headers: {
+        Authorization: `Bearer ${token}`, // ако бекендът изисква токен
+      },
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch allergens");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        // data е масив от обекти: [{id, allergenName}, ...]
+        setAllergens(data);
+      })
+      .catch((err) => {
+        console.error("Грешка при зареждане на алергени:", err);
+        // Ако искаш, можеш да покажеш съобщение на потребителя
+      });
+  }, [token]);
 
   // Обработва промяна в инпутите (име, цена, описание, категория)
   const handleChange = (e) => {
@@ -71,6 +106,18 @@ const CreateProductForm = ({
     }
   };
 
+  // Добавяне/премахване на алерген при чекване
+  const handleAllergenToggle = (allergenId) => {
+    setSelectedAllergens((prev) => {
+      // Ако ID вече го има, махаме го. Ако го няма, добавяме го.
+      if (prev.includes(allergenId)) {
+        return prev.filter((id) => id !== allergenId);
+      } else {
+        return [...prev, allergenId];
+      }
+    });
+  };
+
   // Сабмит
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -90,12 +137,16 @@ const CreateProductForm = ({
       formData.append("categoryId", productData.categoryId);
       formData.append("menuId", productData.menuId);
 
-      // Ако е избран файл, добавяме го; ако не – бекендът ще сложи "default_product.png"
+      // Ако е избран файл, добавяме го
       if (selectedImageFile) {
         formData.append("productImage", selectedImageFile);
       }
 
-      // Извикваме само createProductApi (унифицирано)
+      // Добавяме всеки избран алерген ID
+      selectedAllergens.forEach((allergenId) => {
+        formData.append("allergenIds", allergenId);
+      });
+
       const createdProduct = await createProductApi(token, formData);
       console.log("Продукт създаден:", createdProduct);
 
@@ -109,8 +160,9 @@ const CreateProductForm = ({
         productImage:""
       });
       setSelectedImageFile(null);
+      setSelectedAllergens([]);
 
-      // Уведомяваме родителя, за да презареди списък/данни (ако е нужно)
+      // Уведомяваме родителя
       if (onSuccess) {
         onSuccess();
       }
@@ -121,7 +173,6 @@ const CreateProductForm = ({
     }
   };
   
-
   return (
     <form 
       onSubmit={handleSubmit} 
@@ -241,14 +292,41 @@ const CreateProductForm = ({
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
             Качи снимка:
           </label>
-
           <input 
             type="file" 
             accept="image/*" 
             onChange={handleImageFileChange}
             className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white" 
           />
-         
+        </div>
+
+        {/* Алергени (чекбоксове) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Алергени (по желание):
+          </label>
+          {allergens.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+              Няма заредени алергени или възникна грешка.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {allergens.map((alg) => (
+                <label 
+                  key={alg.id} 
+                  className="inline-flex items-center space-x-2"
+                >
+                  <input
+                    type="checkbox"
+                    className="form-checkbox h-4 w-4 text-blue-600"
+                    checked={selectedAllergens.includes(alg.id)}
+                    onChange={() => handleAllergenToggle(alg.id)}
+                  />
+                  <span className="text-gray-700 dark:text-gray-200">{alg.allergenName}</span>
+                </label>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

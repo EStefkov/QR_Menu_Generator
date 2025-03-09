@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -18,4 +20,6 @@ public class ProductDTO {
     private String productInfo;
     private Long categoryId; // To associate the product with a menu by ID
     private String productImage;
+    private List<Long> allergenIds;
+
 }
