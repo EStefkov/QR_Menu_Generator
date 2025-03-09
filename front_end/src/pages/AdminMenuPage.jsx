@@ -2,8 +2,27 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   fetchCategoriesByMenuIdApi,
-  fetchProductsByCategoryIdApi
+  fetchProductsByCategoryIdApi,
 } from "../api/adminDashboard";
+
+/**
+ * Адресът, на който работи твоя бек-енд.
+ * Сложи реалното IP/порт, ако не е http://localhost:8080
+ */
+const API_BASE_URL = "http://localhost:8080";
+
+/**
+ * Нископрофилна функция, която, при подадено "/uploads/test.jpg",
+ * го превръща в "http://localhost:8080/uploads/test.jpg".
+ * Ако productImage е null/undefined, връща "/placeholder.png".
+ */
+function getFullImageUrl(productImage) {
+  if (!productImage) {
+    return "/placeholder.png";
+  }
+  // Предполагаме, че "productImage" е нещо като "/uploads/test.jpg"
+  return API_BASE_URL + productImage;
+}
 
 function MenuPage() {
   const { menuId } = useParams();
@@ -11,11 +30,11 @@ function MenuPage() {
 
   // Държим списъка с категории
   const [categories, setCategories] = useState([]);
-  // Дали категорията е „отворена“ (expanded) – map (или set)
+  // Кои категории са „отворени“ (expanded)
   const [expandedCategories, setExpandedCategories] = useState({});
-  // Продуктите за всяка категория: { [catId]: [продукти] }
+  // Продуктите по категория: { [catId]: [масив от продукти] }
   const [categoryProducts, setCategoryProducts] = useState({});
-  // Когато потребителят кликне върху конкретен продукт – отваряме модал
+  // За модал при клик върху продукт
   const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
@@ -33,14 +52,13 @@ function MenuPage() {
     }
   };
 
+  // Отваряне/затваряне на категория + lazy load на продуктите
   const handleToggleCategory = async (catId) => {
-    // Ако вече е „отворена“, тогава при повторен клик я затваряме:
     setExpandedCategories((prev) => ({
       ...prev,
       [catId]: !prev[catId],
     }));
 
-    // Ако досега не сме зареждали продуктите за тази категория, извлечи ги:
     if (!categoryProducts[catId]) {
       try {
         const products = await fetchProductsByCategoryIdApi(token, catId);
@@ -101,38 +119,41 @@ function MenuPage() {
                 <div className="p-4 bg-white dark:bg-gray-800">
                   {categoryProducts[cat.id]?.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {categoryProducts[cat.id].map((product) => (
-                        <div
-                          key={product.id}
-                          className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow hover:shadow-md transition"
-                        >
-                          <div className="w-full h-40 bg-gray-50 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                            {/* Продуктово изображение */}
-                            <img
-                              src={product.productImage || "/placeholder.png"}
-                              alt={product.productName}
-                              className="object-cover h-full"
-                            />
+                      {categoryProducts[cat.id].map((product) => {
+                        const imageUrl = getFullImageUrl(product.productImage);
+                        return (
+                          <div
+                            key={product.id}
+                            className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow hover:shadow-md transition"
+                          >
+                            <div className="w-full h-40 bg-gray-50 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                              {/* Продуктово изображение */}
+                              <img
+                                src={imageUrl}
+                                alt={product.productName}
+                                className="object-cover h-full"
+                              />
+                            </div>
+                            <div className="p-3">
+                              <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-1">
+                                {product.productName}
+                              </h4>
+                              <p className="text-gray-600 dark:text-gray-300 text-sm">
+                                {product.productInfo}
+                              </p>
+                              <p className="text-blue-600 dark:text-blue-400 font-semibold mt-2">
+                                {product.productPrice?.toFixed(2)} лв
+                              </p>
+                              <button
+                                onClick={() => handleSelectProduct(product)}
+                                className="mt-3 inline-block px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition"
+                              >
+                                Виж детайли
+                              </button>
+                            </div>
                           </div>
-                          <div className="p-3">
-                            <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-1">
-                              {product.productName}
-                            </h4>
-                            <p className="text-gray-600 dark:text-gray-300 text-sm">
-                              {product.productInfo}
-                            </p>
-                            <p className="text-blue-600 dark:text-blue-400 font-semibold mt-2">
-                              {product.productPrice?.toFixed(2)} лв
-                            </p>
-                            <button
-                              onClick={() => handleSelectProduct(product)}
-                              className="mt-3 inline-block px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition"
-                            >
-                              Виж детайли
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-gray-600 dark:text-gray-300">
@@ -149,7 +170,6 @@ function MenuPage() {
       {/* Модал за детайли на продукт */}
       {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          {/* Content */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full mx-2 relative">
             <button
               className="absolute top-2 right-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
@@ -161,7 +181,7 @@ function MenuPage() {
               {/* Голяма снимка */}
               <div className="w-full h-48 bg-gray-100 dark:bg-gray-700 mb-4 flex items-center justify-center overflow-hidden">
                 <img
-                  src={selectedProduct.productImage || "/placeholder.png"}
+                  src={getFullImageUrl(selectedProduct.productImage)}
                   alt={selectedProduct.productName}
                   className="object-cover h-full"
                 />
