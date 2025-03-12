@@ -1,5 +1,6 @@
 package com.example.qr_menu.services;
 
+import com.example.qr_menu.dto.AllergenDTO;
 import com.example.qr_menu.dto.ProductDTO;
 import com.example.qr_menu.entities.Allergen;
 import com.example.qr_menu.entities.Category;
@@ -86,11 +87,20 @@ public class ProductService {
     }
 
     /**
-     * Конвертира ентити в ProductDTO. Връща и списък от allergenIds.
+     * Конвертира ентити в ProductDTO.
+     * Връщаме и:
+     *  - allergenIds (за форми/ъпдейти)
+     *  - пълен списък от AllergenDTO (за визуализация).
      */
     private ProductDTO convertToDto(Product product) {
+        // Списък с ID-тата на алергените
         List<Long> allergenIds = product.getAllergens().stream()
                 .map(Allergen::getId)
+                .collect(Collectors.toList());
+
+        // Пълен списък от обекти (AllergenDTO), например:
+        List<AllergenDTO> allergenDTOs = product.getAllergens().stream()
+                .map(allergen -> new AllergenDTO(allergen.getId(), allergen.getAllergenName()))
                 .collect(Collectors.toList());
 
         return ProductDTO.builder()
@@ -100,7 +110,11 @@ public class ProductService {
                 .productInfo(product.getProductInfo())
                 .categoryId(product.getCategory().getId())
                 .productImage(product.getProductImage())
+
+                // Слагаме и двата списъка:
                 .allergenIds(allergenIds)
+                .allergens(allergenDTOs)
+
                 .build();
     }
 

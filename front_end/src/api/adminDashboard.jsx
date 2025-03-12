@@ -333,3 +333,20 @@ export const updateProductApi = async (token, productId, formData) => {
     return await response.json();
   };
   
+  /**
+ * Изтрива продукт по дадено productId.
+ * @param {string} token - JWT токен.
+ * @param {number} productId - ID на продукта за триене.
+ */
+export const deleteProductApi = async (token, productId) => {
+    const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to delete product with ID: ${productId}`);
+    }
+};
