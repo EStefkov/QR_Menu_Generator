@@ -18,17 +18,27 @@ const EditAccountForm = ({ account, onSave, onCancel, token }) => {
                 const newFileName = await uploadProfilePicture(token, selectedFile, editedAccount.id);
                 accountToUpdate.profilePicture = newFileName;
             } else {
-                // премахваме полето, ако няма нова снимка
                 delete accountToUpdate.profilePicture;
             }
     
             await updateAccountApi(token, editedAccount.id, accountToUpdate);
+    
+            // Тук винаги използвай локалния обект
+            localStorage.setItem("profilePicture", accountToUpdate.profilePicture || editedAccount.profilePicture);
+            localStorage.setItem("firstName", accountToUpdate.firstName);
+            localStorage.setItem("lastName", accountToUpdate.lastName);
+            localStorage.setItem("accountType", accountToUpdate.accountType);
+            window.dispatchEvent(new Event("storage"));
+    
+            // изпращай accountToUpdate, а не updatedAccount
             onSave(accountToUpdate);
+            
         } catch (error) {
             console.error("Error saving account:", error);
             alert("Възникна грешка при запазване на профилната снимка или данните.");
         }
     };
+    
     
 
     return (
