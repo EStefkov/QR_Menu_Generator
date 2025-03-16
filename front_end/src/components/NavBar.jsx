@@ -7,25 +7,25 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 const NavBar = () => {
     const navigate = useNavigate();
 
-    const [userData, setUserData] = useState({
+    const getUserData = () => ({
         firstName: localStorage.getItem("firstName"),
         lastName: localStorage.getItem("lastName"),
         profilePicture: localStorage.getItem("profilePicture"),
         accountType: localStorage.getItem("accountType"),
     });
 
-    useEffect(() => {
-        const handleStorageUpdate = () => {
-            setUserData({
-                firstName: localStorage.getItem("firstName"),
-                lastName: localStorage.getItem("lastName"),
-                profilePicture: localStorage.getItem("profilePicture"),
-                accountType: localStorage.getItem("accountType"),
-            });
-        };
+    const [userData, setUserData] = useState(getUserData);
 
+    useEffect(() => {
+        const handleStorageUpdate = () => setUserData(getUserData());
+        
+        window.addEventListener("userDataUpdated", handleStorageUpdate);
         window.addEventListener("storage", handleStorageUpdate);
-        return () => window.removeEventListener("storage", handleStorageUpdate);
+        return () => {
+            window.removeEventListener("userDataUpdated", handleStorageUpdate);
+            window.removeEventListener("storage", handleStorageUpdate);
+        };
+        
     }, []);
 
     const handleLogout = () => {
@@ -33,7 +33,6 @@ const NavBar = () => {
         navigate("/login");
     };
 
-    // Тема (светла/тъмна)
     const [isDarkMode, setIsDarkMode] = useState(
         localStorage.getItem("theme") === "dark"
     );
@@ -43,10 +42,8 @@ const NavBar = () => {
         localStorage.setItem("theme", isDarkMode ? "dark" : "light");
     }, [isDarkMode]);
 
-    // Тогъл за темата
     const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
-    // State за мобилното меню
     const [isOpen, setIsOpen] = useState(false);
     const toggleMenu = () => setIsOpen(!isOpen);
 

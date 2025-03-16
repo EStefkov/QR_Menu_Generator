@@ -1,45 +1,46 @@
 import { useState } from "react";
-import { updateAccountApi,
-    uploadProfilePicture
- } from "../api/adminDashboard";
+import { updateAccountApi, uploadProfilePicture } from "../api/adminDashboard";
+
 const EditAccountForm = ({ account, onSave, onCancel, token }) => {
     const [editedAccount, setEditedAccount] = useState(account);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const accountTypes = ["ROLE_ADMIN", "ROLE_USER", "ROLE_WAITER"];
 
-    
-
     const handleSave = async () => {
+        setIsLoading(true);
         try {
             let accountToUpdate = { ...editedAccount };
-    
+
             if (selectedFile) {
                 const newFileName = await uploadProfilePicture(token, selectedFile, editedAccount.id);
                 accountToUpdate.profilePicture = newFileName;
             } else {
                 delete accountToUpdate.profilePicture;
             }
-    
+
             await updateAccountApi(token, editedAccount.id, accountToUpdate);
-    
-            // Тук винаги използвай локалния обект
+
             localStorage.setItem("profilePicture", accountToUpdate.profilePicture || editedAccount.profilePicture);
             localStorage.setItem("firstName", accountToUpdate.firstName);
             localStorage.setItem("lastName", accountToUpdate.lastName);
             localStorage.setItem("accountType", accountToUpdate.accountType);
-            window.dispatchEvent(new Event("storage"));
-    
-            // изпращай accountToUpdate, а не updatedAccount
-            onSave(accountToUpdate);
-            
+
+            // Създаваме малко забавяне преди обновяването на интерфейса
+            setTimeout(() => {
+                window.dispatchEvent(new Event("storage"));
+                window.dispatchEvent(new Event("userDataUpdated"));
+                onSave(accountToUpdate);
+                setIsLoading(false);
+            }, 1000); // 1 секунда забавяне
+
         } catch (error) {
             console.error("Error saving account:", error);
             alert("Възникна грешка при запазване на профилната снимка или данните.");
+            setIsLoading(false);
         }
     };
-    
-    
 
     return (
         <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 w-full max-w-md mx-auto mt-6">
@@ -82,8 +83,20 @@ const EditAccountForm = ({ account, onSave, onCancel, token }) => {
             <label htmlFor="profilePicture" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Профилна снимка:</label>
             <input id="profilePicture" type="file" onChange={(e) => setSelectedFile(e.target.files[0])} className="mb-4" />
             <div className="flex space-x-3">
-                <button className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-md" onClick={handleSave}>Запази</button>
-                <button className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-md" onClick={onCancel}>Отказ</button>
+                <button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 rounded-md disabled:bg-gray-400"
+                    onClick={handleSave}
+                    disabled={isLoading}
+                >
+                    {isLoading ? "Запазване..." : "Запази"}
+                </button>
+                <button
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2 rounded-md"
+                    onClick={onCancel}
+                    disabled={isLoading}
+                >
+                    Отказ
+                </button>
             </div>
         </div>
     );

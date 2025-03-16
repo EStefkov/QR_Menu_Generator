@@ -1,75 +1,86 @@
-import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { loginAccount } from "../api/account";
 
 const Login = () => {
-    const [formData, setFormData] = useState({ accountName: "", password: "" });
-    const [message, setMessage] = useState("");
-    const navigate = useNavigate(); // Use navigate for redirection
+  const [formData, setFormData] = useState({ accountName: "", password: "" });
+  const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-    };
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const token = await loginAccount(formData); // Call login API
-            const payload = JSON.parse(atob(token.split(".")[1])); // Decode JWT payload
-            localStorage.setItem("token", token); // Store JWT token
-            localStorage.setItem("accountType", payload.accountType); // Store account type
-            localStorage.setItem("firstName", payload.firstName); // Store user info
-            localStorage.setItem("lastName", payload.lastName);
-            localStorage.setItem("profilePicture", payload.profilePicture);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = await loginAccount(formData);
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      localStorage.setItem("token", token);
+      localStorage.setItem("accountType", payload.accountType);
+      localStorage.setItem("firstName", payload.firstName);
+      localStorage.setItem("lastName", payload.lastName);
+      localStorage.setItem("profilePicture", payload.profilePicture);
 
-            setMessage("Login successful!");
+      setMessage("Login successful!");
 
-            // Redirect based on account type
-            if (payload.accountType === "ROLE_ADMIN") {
-                navigate("/admin");
-            } else if (payload.accountType === "ROLE_WAITER") {
-                navigate("/waiter");
-            } else {
-                navigate("/user");
-            }
-        } catch (error) {
-            setMessage("Login failed. Please check your credentials.");
-        }
-    };
+      if (payload.accountType === "ROLE_ADMIN") {
+        navigate("/admin");
+      } else if (payload.accountType === "ROLE_WAITER") {
+        navigate("/waiter");
+      } else {
+        navigate("/user");
+      }
+    } catch (error) {
+      setMessage("Login failed. Please check your credentials.");
+    }
+  };
 
-    return (
-        <div className="auth-container">
-            <h1>Login</h1>
-            <form className="auth-form" onSubmit={handleSubmit}>
-                <input
-                    name="accountName"
-                    placeholder="Name or Email"
-                    value={formData.accountName}
-                    onChange={handleChange}
-                    required
-                />
-                <input
-                    name="password"
-                    placeholder="Password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                />
-                <button type="submit">Login</button>
-            </form>
-            {message && <p className="message">{message}</p>}
-            <div className="helper-text">
-                <p>
-                    Don’t have an account? <Link to="/register">Create one here</Link>.
-                </p>
-                <p>
-                    Or go back to the <Link to="/">Home Page</Link>.
-                </p>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 text-center">Login</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            name="accountName"
+            placeholder="Name or Email"
+            value={formData.accountName}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Login
+          </button>
+        </form>
+        {message && (
+          <p className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300">{message}</p>
+        )}
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Don’t have an account? <Link to="/register" className="text-blue-500 hover:underline">Create one here</Link>.
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Or go back to the <Link to="/" className="text-blue-500 hover:underline">Home Page</Link>.
+          </p>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 export default Login;
