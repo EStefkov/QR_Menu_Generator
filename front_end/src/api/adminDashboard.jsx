@@ -350,3 +350,21 @@ export const deleteProductApi = async (token, productId) => {
         throw new Error(`Failed to delete product with ID: ${productId}`);
     }
 };
+
+// Функция за качване на снимката
+export const uploadProfilePicture = async (token,file, accountId) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("profilePicture", file);
+
+    const response = await fetch(`${API_BASE_URL}/api/accounts/uploadProfilePicture/${accountId}`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+    });
+    if (!response.ok) {
+        throw new Error("Failed to upload profile picture");
+    }
+};

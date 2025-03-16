@@ -4,14 +4,14 @@ import com.example.qr_menu.dto.AccountDTO;
 import com.example.qr_menu.dto.LoginDTO;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.services.AccountService;
+import com.example.qr_menu.utils.JwtTokenUtil;
 import org.springframework.data.domain.Page;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.util.List;
@@ -21,10 +21,12 @@ import java.util.List;
 public class AccountController {
 
     private final AccountService accountService;
+    private final JwtTokenUtil jwtTokenUtil;
 
     @Autowired
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, JwtTokenUtil jwtTokenUtil) {
         this.accountService = accountService;
+        this.jwtTokenUtil = jwtTokenUtil;
     }
 
     /**
@@ -131,5 +133,27 @@ public class AccountController {
         return ResponseEntity.ok(pagedAccounts);
     }
 
+    @PostMapping("/uploadProfilePicture/{accountId}")
+    public ResponseEntity<String> uploadProfilePicture(
+            @PathVariable Long accountId,
+            @RequestParam("profilePicture") MultipartFile profilePicture,
+            @RequestHeader("Authorization") String token
+    ) {
+        try {
+            // Извличаме email от JWT токена
+            String loggedInUserEmail = jwtTokenUtil.extractUsername(token.replace("Bearer ", ""));
+
+            accountService.uploadProfilePicture(accountId, profilePicture, loggedInUserEmail);
+            return ResponseEntity.ok("Profile picture uploaded successfully!");
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to upload profile picture");
+        }
+    }
 
 }
+
+

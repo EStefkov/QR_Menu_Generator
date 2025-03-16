@@ -290,9 +290,12 @@ const AdminDashboard = () => {
                     {/* Форма за редакция на акаунт */}
                     {editingAccount && (
                         <EditAccountForm
+                            token = {token}
                             account={editingAccount}
                             onSave={handleUpdateAccount} // Ползваме нашата функция
                             onCancel={() => setEditingAccount(null)}
+                            
+                            
                         />
                     )}
 

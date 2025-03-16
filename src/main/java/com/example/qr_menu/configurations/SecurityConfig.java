@@ -36,7 +36,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll()
                 .requestMatchers(HttpMethod.GET,"/api/categories/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/accounts/uploadProfilePicture/**").permitAll()
+
+
                 // Restricted endpoints for ADMIN role
+
                 .requestMatchers(HttpMethod.PUT, "/api/restaurants/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/restaurants/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "api/restaurants/**").hasRole("ADMIN")
