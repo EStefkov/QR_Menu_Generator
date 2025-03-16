@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { HiOutlineMenu, HiX } from "react-icons/hi";
 
 // Function to decode the JWT token payload
+
+const BASE_URL = import.meta.env.VITE_API_URL;
 const decodeToken = (token) => {
     try {
         const base64Url = token.split(".")[1];
@@ -93,10 +95,10 @@ const NavBar = () => {
                                 {userData.firstName} {userData.lastName}
                             </span>
                             <img
-                                src={userData.profilePicture}
-                                alt="Profile"
-                                className="w-10 h-10 rounded-full border-2 border-gray-300"
-                            />
+            src={`${BASE_URL}${userData.profilePicture}`}
+            alt="Profile"
+            className="w-10 h-10 rounded-full border-2 border-gray-300"
+        />
                             <button
                                 className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition"
                                 onClick={handleLogout}

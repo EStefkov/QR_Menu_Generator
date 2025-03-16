@@ -12,16 +12,24 @@ const EditAccountForm = ({ account, onSave, onCancel, token }) => {
 
     const handleSave = async () => {
         try {
+            let accountToUpdate = { ...editedAccount };
+    
             if (selectedFile) {
-                await uploadProfilePicture(token,selectedFile, editedAccount.id);
+                const newFileName = await uploadProfilePicture(token, selectedFile, editedAccount.id);
+                accountToUpdate.profilePicture = newFileName;
+            } else {
+                // премахваме полето, ако няма нова снимка
+                delete accountToUpdate.profilePicture;
             }
-            await updateAccountApi(token, editedAccount.id, editedAccount);
-            onSave(editedAccount);
+    
+            await updateAccountApi(token, editedAccount.id, accountToUpdate);
+            onSave(accountToUpdate);
         } catch (error) {
             console.error("Error saving account:", error);
             alert("Възникна грешка при запазване на профилната снимка или данните.");
         }
     };
+    
 
     return (
         <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 w-full max-w-md mx-auto mt-6">
