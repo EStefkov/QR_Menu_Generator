@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState,useContext } from "react";
 import { updateAccountApi, uploadProfilePicture } from "../api/adminDashboard";
+import { AuthContext } from "../AuthContext";
 
 const EditAccountForm = ({ account, onSave, onCancel, token }) => {
     const [editedAccount, setEditedAccount] = useState(account);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+// Взимаме userData, за да знаем кой е логнат
+const { userData } = useContext(AuthContext);
 
     const accountTypes = ["ROLE_ADMIN", "ROLE_USER", "ROLE_WAITER"];
 
@@ -22,18 +25,22 @@ const EditAccountForm = ({ account, onSave, onCancel, token }) => {
 
             await updateAccountApi(token, editedAccount.id, accountToUpdate);
 
-            localStorage.setItem("profilePicture", accountToUpdate.profilePicture || editedAccount.profilePicture);
-            localStorage.setItem("firstName", accountToUpdate.firstName);
-            localStorage.setItem("lastName", accountToUpdate.lastName);
-            localStorage.setItem("accountType", accountToUpdate.accountType);
+            // === ДОБАВЯМЕ ПРОВЕРКА ===
+            if (userData?.id === editedAccount.id) {
+                // Значи редактираме собствения акаунт, затова ъпдейтваме localStorage
+                localStorage.setItem("profilePicture", accountToUpdate.profilePicture || editedAccount.profilePicture);
+                localStorage.setItem("firstName", accountToUpdate.firstName);
+                localStorage.setItem("lastName", accountToUpdate.lastName);
+                localStorage.setItem("accountType", accountToUpdate.accountType);
 
-            // Създаваме малко забавяне преди обновяването на интерфейса
-            setTimeout(() => {
+                // Пускаме събития, за да се обнови NavBar
                 window.dispatchEvent(new Event("storage"));
                 window.dispatchEvent(new Event("userDataUpdated"));
-                onSave(accountToUpdate);
-                setIsLoading(false);
-            }, 1000); // 1 секунда забавяне
+            }
+
+            // Викаме onSave, за да обновим таблицата с акаунти
+            onSave(accountToUpdate);
+            setIsLoading(false);
 
         } catch (error) {
             console.error("Error saving account:", error);

@@ -1,11 +1,16 @@
+// Login.jsx
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { loginAccount } from "../api/account";
+import { AuthContext } from "../AuthContext"; // отново пътят може да е друг
 
 const Login = () => {
   const [formData, setFormData] = useState({ accountName: "", password: "" });
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+
+  // Вземаме `login` функцията от AuthContext
+  const { login } = useContext(AuthContext);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -15,13 +20,13 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // loginAccount би трябвало да върне самия token (JWT)
       const token = await loginAccount(formData);
+      // Вадим payload от token
       const payload = JSON.parse(atob(token.split(".")[1]));
-      localStorage.setItem("token", token);
-      localStorage.setItem("accountType", payload.accountType);
-      localStorage.setItem("firstName", payload.firstName);
-      localStorage.setItem("lastName", payload.lastName);
-      localStorage.setItem("profilePicture", payload.profilePicture);
+
+      // Вместо да пишем localStorage, звъним на login(...) от AuthContext
+      login(token, payload);
 
       setMessage("Login successful!");
 

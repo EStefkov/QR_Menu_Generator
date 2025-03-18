@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import NavBar from "../components/NavBar.jsx";
+import { useEffect, useState,useContext } from "react";
+import { AuthContext } from "../AuthContext"; 
 import AccountsTable from "../components/AccountsTable";
 import RestaurantsTable from "../components/RestaurantsTable.jsx";
 import CreateMenuForm from "../components/CreateMenuForm.jsx";
@@ -37,7 +37,10 @@ const AdminDashboard = () => {
     const [editingRestaurant, setEditingRestaurant] = useState(null);
 
     const [newMenu, setNewMenu] = useState({ category: "", restorantId: "" });
-    const token = localStorage.getItem("token");
+
+
+    const { userData } = useContext(AuthContext);
+  const token = userData?.token;
 
     useEffect(() => {
         if (token) {
