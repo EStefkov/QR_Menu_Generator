@@ -34,6 +34,9 @@ public class Restorant {
     @Column(name = "address") // New column for address
     private String address;
 
+    @Column(name = "email")
+    private String email;
+
 
     // One Restorant can have many Menus
     @OneToMany(mappedBy = "restorant", cascade = CascadeType.ALL, orphanRemoval = true)

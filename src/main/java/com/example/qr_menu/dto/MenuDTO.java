@@ -24,5 +24,6 @@ public class MenuDTO {
     private Date updatedAt;
     private String menuUrl; // Optional
     private byte[] qrCodeImage; // Optional
+    private String menuImage;
 
 }

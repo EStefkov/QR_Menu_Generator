@@ -1,5 +1,6 @@
 package com.example.qr_menu.controllers;
 
+import com.example.qr_menu.dto.CategoryDTO;
 import com.example.qr_menu.dto.MenuDTO;
 import com.example.qr_menu.services.MenuService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/menus")
@@ -22,10 +24,14 @@ public class MenuController {
     }
 
     @PostMapping
-    public ResponseEntity<String> createMenu(@RequestBody MenuDTO menuDTO) {
+    public ResponseEntity<Map<String, String>> createMenu(@RequestBody MenuDTO menuDTO) {
         menuService.createMenu(menuDTO);
-        return new ResponseEntity<>("Menu created successfully", HttpStatus.CREATED);
+
+        // ✅ Връщаме JSON вместо plain текст
+        Map<String, String> response = Map.of("message", "Menu created successfully");
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
 
     @GetMapping("/restaurant/{restorantId}")
     public ResponseEntity<List<MenuDTO>> getMenusByRestaurantId(@PathVariable Long restorantId) {
@@ -65,4 +71,11 @@ public class MenuController {
                 .contentType(MediaType.IMAGE_PNG)
                 .body(qrCode);
     }
+
+    @GetMapping("/{menuId}/categories")
+    public List<CategoryDTO> getCategoriesByMenu(@PathVariable Long menuId) {
+        return menuService.getCategoriesByMenu(menuId);
+    }
+
+
 }

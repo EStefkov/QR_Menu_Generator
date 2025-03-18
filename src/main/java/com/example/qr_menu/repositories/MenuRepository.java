@@ -1,6 +1,7 @@
 package com.example.qr_menu.repositories;
 
 import com.example.qr_menu.entities.Menu;
+import com.example.qr_menu.entities.Restorant;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,6 +17,8 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
     List<Menu> findMenusWithProductsByRestorantId(@Param("restorantId") Long restorantId);
 
     List<Menu> findByRestorantId(Long restorantId);
+
+    List<Menu> findByRestorant(Restorant restorant);
 
     @Query("SELECT m FROM Menu m JOIN FETCH m.restorant WHERE m.restorant.id = :restorantId")
     List<Menu> findByRestorantIdWithRestorant(@Param("restorantId") Long restorantId);

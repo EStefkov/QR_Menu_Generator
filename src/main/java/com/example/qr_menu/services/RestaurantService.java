@@ -1,11 +1,16 @@
 package com.example.qr_menu.services;
 
+import com.example.qr_menu.dto.MenuDTO;
 import com.example.qr_menu.dto.RestaurantDTO;
 import com.example.qr_menu.entities.Account;
+import com.example.qr_menu.entities.Menu;
 import com.example.qr_menu.entities.Restorant;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.repositories.AccountRepository;
+import com.example.qr_menu.repositories.MenuRepository;
 import com.example.qr_menu.repositories.RestaurantRepository;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,8 +26,13 @@ public class RestaurantService {
     private final RestaurantRepository restaurantRepository;
     private final AccountRepository accountRepository; // Inject AccountRepository to find accounts
 
+    private final MenuRepository menuRepository;
+
     @Autowired
-    public RestaurantService(RestaurantRepository restaurantRepository, AccountRepository accountRepository) {
+    public RestaurantService(RestaurantRepository restaurantRepository,
+                             AccountRepository accountRepository,
+                             MenuRepository menuRepository) {
+        this.menuRepository = menuRepository;
         this.restaurantRepository = restaurantRepository;
         this.accountRepository = accountRepository;
     }
@@ -37,6 +47,7 @@ public class RestaurantService {
                 .restorantName(restaurantDTO.getRestorantName())
                 .phoneNumber(restaurantDTO.getPhoneNumber())
                 .account(account) // Associate restaurant with account
+                .email(restaurantDTO.getEmail())
                 .build();
 
         restaurantRepository.save(restaurant);
@@ -47,6 +58,8 @@ public class RestaurantService {
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
         restaurant.setRestorantName(restaurantDTO.getRestorantName());
         restaurant.setPhoneNumber(restaurantDTO.getPhoneNumber());
+        restaurant.setAddress(restaurantDTO.getAddress());
+        restaurant.setEmail(restaurantDTO.getEmail());
         restaurantRepository.save(restaurant);
     }
 
@@ -89,4 +102,27 @@ public class RestaurantService {
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id: " + id));
         return convertToDTO(restaurant);
     }
+
+    public List<MenuDTO> getMenusByRestaurant(Long restaurantId) {
+        Restorant restaurant = restaurantRepository.findById(restaurantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id: " + restaurantId));
+
+        return menuRepository.findByRestorant(restaurant).stream()
+                .map(menu -> new MenuDTO(menu.getId(), menu.getCategory(), restaurant.getId(), menu.getCreatedAt(), menu.getUpdatedAt(), menu.getMenuUrl(), menu.getQrCodeImage(), menu.getMenuImage()))
+                .collect(Collectors.toList());
+    }
+
+    private MenuDTO convertToMenuDTO(Menu menu) {
+        return MenuDTO.builder()
+                .id(menu.getId())
+                .category(menu.getCategory())
+                .restorantId(menu.getRestorant().getId())
+                .createdAt(menu.getCreatedAt())
+                .updatedAt(menu.getUpdatedAt())
+                .menuUrl(menu.getMenuUrl())
+                .qrCodeImage(menu.getQrCodeImage())
+                .menuImage(menu.getMenuImage())
+                .build();
+    }
+
 }
