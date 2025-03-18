@@ -2,8 +2,8 @@
 import { useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HiOutlineMenu, HiX } from "react-icons/hi";
-import { AuthContext } from "../AuthContext"; // Важното е, че взимаме контекста
-                                              // пътят може да е различен при теб
+import { AuthContext } from "../AuthContext"; 
+import { validateToken } from "../api/account"; // Импортираме нашата функция
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -11,11 +11,12 @@ const NavBar = () => {
   const navigate = useNavigate();
   const { userData, logout } = useContext(AuthContext);
 
-  // Тъмна/светла тема, пазим я в localStorage, но не е задължително да е в същия контекст
+  // Тъмна/светла тема, пазим я в localStorage
   const [isDarkMode, setIsDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
   );
 
+  // При промяна на isDarkMode => toggle dark class
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
@@ -26,8 +27,26 @@ const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => setIsOpen(!isOpen);
 
-  // Когато кликнем Logout, извикваме logout() от контекста
-  // и навигираме към /login
+  // ➜ Тук добавяме useEffect за валидация на токена
+  useEffect(() => {
+    if (userData.token) {
+      validateToken(userData.token)
+        .then((resData) => {
+          // Ако бекендът върне 200 (OK), значи токенът е валиден
+          // По желание може да обновите userData, ако response връща нещо ново
+          // Например: setUserData({ ...resData, token: userData.token }) 
+          // Но за това ви трябва метод setUserData в AuthContext
+        })
+        .catch((err) => {
+          // Ако е 401, 403 или друга грешка => токенът е невалиден
+          console.error("Token validation error:", err);
+          logout();
+          navigate("/login");
+        });
+    }
+  }, [userData.token, logout, navigate]);
+
+  // Клик на Logout => чисти локални данни и пренасочва
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -41,12 +60,18 @@ const NavBar = () => {
         <div className="hidden md:flex space-x-6">
           <Link to="/" className="hover:text-gray-400 transition">Home</Link>
           {userData.accountType === "ROLE_ADMIN" && (
-            <Link to="/admin" className="hover:text-gray-400 transition">Admin Dashboard</Link>
+            <Link to="/admin" className="hover:text-gray-400 transition">
+              Admin Dashboard
+            </Link>
           )}
           {userData.accountType === "ROLE_USER" && (
             <>
-              <Link to="/menus" className="hover:text-gray-400 transition">Menus</Link>
-              <Link to="/about" className="hover:text-gray-400 transition">About</Link>
+              <Link to="/menus" className="hover:text-gray-400 transition">
+                Menus
+              </Link>
+              <Link to="/about" className="hover:text-gray-400 transition">
+                About
+              </Link>
             </>
           )}
         </div>
@@ -89,15 +114,22 @@ const NavBar = () => {
         </div>
       </div>
 
+      {/* Мобилно меню */}
       <div className={`md:hidden ${isOpen ? "block" : "hidden"} mt-4`}>
         <Link to="/" className="block py-2 hover:text-gray-400">Home</Link>
         {userData.accountType === "ROLE_ADMIN" && (
-          <Link to="/admin" className="block py-2 hover:text-gray-400">Admin Dashboard</Link>
+          <Link to="/admin" className="block py-2 hover:text-gray-400">
+            Admin Dashboard
+          </Link>
         )}
         {userData.accountType === "ROLE_USER" && (
           <>
-            <Link to="/menus" className="block py-2 hover:text-gray-400">Menus</Link>
-            <Link to="/about" className="block py-2 hover:text-gray-400">About</Link>
+            <Link to="/menus" className="block py-2 hover:text-gray-400">
+              Menus
+            </Link>
+            <Link to="/about" className="block py-2 hover:text-gray-400">
+              About
+            </Link>
           </>
         )}
         {userData.firstName ? (
@@ -109,8 +141,12 @@ const NavBar = () => {
           </button>
         ) : (
           <>
-            <Link to="/login" className="block py-2 hover:text-gray-400">Login</Link>
-            <Link to="/register" className="block py-2 hover:text-gray-400">Register</Link>
+            <Link to="/login" className="block py-2 hover:text-gray-400">
+              Login
+            </Link>
+            <Link to="/register" className="block py-2 hover:text-gray-400">
+              Register
+            </Link>
           </>
         )}
       </div>

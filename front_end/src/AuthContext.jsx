@@ -1,24 +1,30 @@
 // AuthContext.js
-import React, { createContext, useState } from "react";
+import React, { createContext, useState, useEffect } from "react";
 
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  // Първоначално четем данните от localStorage (ако има)
-  const [userData, setUserData] = useState(() => {
-    return {
-      id: localStorage.getItem("id"),
-      token: localStorage.getItem("token"),
-      firstName: localStorage.getItem("firstName"),
-      lastName: localStorage.getItem("lastName"),
-      profilePicture: localStorage.getItem("profilePicture"),
-      accountType: localStorage.getItem("accountType"),
-    };
-  });
+  const [userData, setUserData] = useState({});
 
-  // Функция за логин: записваме данните в localStorage и ъпдейтваме стейта
+  // При първоначално зареждане четем token от localStorage:
+  // Ако има token, тогава прочитаме и останалите данни
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      setUserData({
+        id: localStorage.getItem("id"),
+        token: storedToken,
+        firstName: localStorage.getItem("firstName"),
+        lastName: localStorage.getItem("lastName"),
+        profilePicture: localStorage.getItem("profilePicture"),
+        accountType: localStorage.getItem("accountType"),
+      });
+    }
+  }, []);
+
+  // Функция за логин: записваме данните в localStorage и ъпдейтваме state
   const login = (token, payload) => {
-    localStorage.setItem("id", payload.id);  
+    localStorage.setItem("id", payload.id);
     localStorage.setItem("token", token);
     localStorage.setItem("firstName", payload.firstName);
     localStorage.setItem("lastName", payload.lastName);
@@ -26,7 +32,6 @@ export function AuthProvider({ children }) {
     localStorage.setItem("accountType", payload.accountType);
 
     setUserData({
-      
       id: payload.id,
       token,
       firstName: payload.firstName,
@@ -36,9 +41,9 @@ export function AuthProvider({ children }) {
     });
   };
 
-  // Функция за logout: изчистваме localStorage и ъпдейтваме стейта
+  // Функция за logout: изчистваме localStorage и state
   const logout = () => {
-    localStorage.removeItem("id");  
+    localStorage.removeItem("id");
     localStorage.removeItem("token");
     localStorage.removeItem("firstName");
     localStorage.removeItem("lastName");
@@ -48,7 +53,6 @@ export function AuthProvider({ children }) {
     setUserData({});
   };
 
-  // Подаваме userData и методи за login/logout
   return (
     <AuthContext.Provider value={{ userData, login, logout }}>
       {children}

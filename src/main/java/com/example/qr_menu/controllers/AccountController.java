@@ -154,6 +154,37 @@ public class AccountController {
         }
     }
 
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String authorizationHeader) {
+        try {
+            // 1. Извличаме самия JWT без "Bearer "
+            String token = authorizationHeader.replace("Bearer ", "");
+
+            // 2. Проверяваме дали е валиден
+            if (!jwtTokenUtil.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+            }
+
+            // 3. Извличаме email от токена
+            String email = jwtTokenUtil.extractUsername(token);
+
+            // 4. Намираме потребителя по email (може да върнете AccountDTO, entity, т.н.)
+            AccountDTO accountDTO = accountService.getAccountDtoByEmail(email);
+
+            if (accountDTO == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
+            }
+
+            // 5. Връщаме данните за потребителя (примерно {id, firstName, lastName, profilePicture, accountType...})
+            return ResponseEntity.ok(accountDTO);
+
+        } catch (Exception e) {
+            // Ако нещо друго гръмне (например проблем при парсване на токена)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token validation failed");
+        }
+    }
+
+
 }
 
 

@@ -35,7 +35,7 @@ import java.util.Map;
                 @RequestHeader("Authorization") String token) {
 
             // Extract email from the token (remove "Bearer " prefix)
-            String email = jwtTokenUtil.extractEmailFromToken(token.substring(7));
+            String email = jwtTokenUtil.extractUsername(token.substring(7));
 
             // Pass email to the service
             restaurantService.createRestaurant(restaurantDTO, email);

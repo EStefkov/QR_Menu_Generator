@@ -224,6 +224,24 @@ public class AccountService {
     }
 
     /**
+     * Връща AccountDTO по зададен email (ако съществува).
+     * Хвърля ResourceNotFoundException, ако няма такъв потребител.
+     */
+    public AccountDTO getAccountDtoByEmail(String email) {
+        // Тук вие вече имате метод findByAccountNameOrMailAddress
+        // Може да подадете null за името и да търсите само по email
+        Optional<Account> accountOpt = accountRepository.findByAccountNameOrMailAddress(null, email);
+
+        if (accountOpt.isEmpty()) {
+            throw new ResourceNotFoundException("No account found for email: " + email);
+        }
+
+        Account account = accountOpt.get();
+        return mapToDTO(account);
+    }
+
+
+    /**
      * Помощен метод за конверсия на Entity -> DTO.
      */
     private AccountDTO mapToDTO(Account entity) {
