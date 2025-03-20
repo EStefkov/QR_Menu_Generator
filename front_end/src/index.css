@@ -1,4 +1,4 @@
-@import "@tailwindcss/postcss";
+@import "tailwindcss";
 
 @theme {
   --font-sans: InterVariable, sans-serif;
