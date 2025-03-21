@@ -11,11 +11,18 @@ import {
 import CategorySection from "../components/CategorySection";
 import DetailsModal from "../components/DetailsModal";
 import EditProductModal from "../components/EditProductModal";
+import MenuBanner from "../components/MenuBanner";
 
 const AdminMenuPage = () => {
   const { menuId } = useParams();
   const token = localStorage.getItem("token");
   const accountType = localStorage.getItem("accountType");
+
+  // Добавяме state за банера и името на менюто
+  const [menuData, setMenuData] = useState({
+    name: "Меню",
+    bannerImage: null
+  });
 
   // Категории и разгъната им част
   const [categories, setCategories] = useState([]);
@@ -32,12 +39,58 @@ const AdminMenuPage = () => {
   const [editInfo, setEditInfo] = useState("");
   const [editImageFile, setEditImageFile] = useState(null);
 
-  // Зареждаме категориите при mount (или при смяна на menuId)
+  // Зареждаме данните за менюто и категориите при mount
   useEffect(() => {
     if (menuId) {
+      loadMenuData();
       loadCategories();
     }
   }, [menuId]);
+
+  const loadMenuData = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/menus/${menuId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMenuData({
+          name: data.name || "Меню",
+          bannerImage: data.bannerImage
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching menu data:", error);
+    }
+  };
+
+  const handleBannerUpload = async (file) => {
+    const formData = new FormData();
+    formData.append('banner', file);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/menus/${menuId}/banner`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMenuData(prev => ({
+          ...prev,
+          bannerImage: data.bannerImage
+        }));
+      }
+    } catch (error) {
+      console.error('Error uploading banner:', error);
+      alert('Грешка при качване на банера');
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -145,59 +198,65 @@ const AdminMenuPage = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
-        Админ меню № {menuId}
-      </h1>
+    <div className="bg-white dark:bg-gray-800 min-h-screen">
+      {/* Add MenuBanner at the top */}
+      <MenuBanner
+        bannerImage={menuData.bannerImage}
+        menuName={menuData.name}
+        onBannerUpload={handleBannerUpload}
+        isAdmin={accountType === "ROLE_ADMIN"}
+      />
 
-      {/* Списък с категории */}
-      <div className="space-y-4">
-        {categories.length === 0 && (
-          <p className="text-gray-600 dark:text-gray-300">
-            Няма категории за това меню или все още не са заредени.
-          </p>
+      <div className="p-4 sm:p-6">
+        {/* Списък с категории */}
+        <div className="space-y-4">
+          {categories.length === 0 && (
+            <p className="text-gray-600 dark:text-gray-300">
+              Няма категории за това меню или все още не са заредени.
+            </p>
+          )}
+
+          {categories.map((cat) => {
+            const isExpanded = expandedCategories[cat.id] || false;
+            const products = categoryProducts[cat.id] || [];
+
+            return (
+              <CategorySection
+                key={cat.id}
+                category={cat}
+                products={products}
+                isExpanded={isExpanded}
+                onToggleCategory={handleToggleCategory}
+                onSelectProduct={handleSelectProduct}
+                onEditProduct={handleEditProduct}
+                accountType={accountType}
+              />
+            );
+          })}
+        </div>
+
+        {/* Модал за "Виж детайли" */}
+        {selectedProduct && (
+          <DetailsModal product={selectedProduct} onClose={handleCloseModal} />
         )}
 
-        {categories.map((cat) => {
-          const isExpanded = expandedCategories[cat.id] || false;
-          const products = categoryProducts[cat.id] || [];
-
-          return (
-            <CategorySection
-              key={cat.id}
-              category={cat}
-              products={products}
-              isExpanded={isExpanded}
-              onToggleCategory={handleToggleCategory}
-              onSelectProduct={handleSelectProduct}
-              onEditProduct={handleEditProduct}
-              accountType={accountType}
-            />
-          );
-        })}
+        {/* Модал за РЕДАКЦИЯ */}
+        {editingProduct && (
+          <EditProductModal
+            editingProduct={editingProduct}
+            editName={editName}
+            editPrice={editPrice}
+            editInfo={editInfo}
+            setEditName={setEditName}
+            setEditPrice={setEditPrice}
+            setEditInfo={setEditInfo}
+            setEditImageFile={setEditImageFile}
+            onDelete={handleDeleteProduct}
+            onSave={handleSaveProduct}
+            onClose={handleCloseEditModal}
+          />
+        )}
       </div>
-
-      {/* Модал за "Виж детайли" */}
-      {selectedProduct && (
-        <DetailsModal product={selectedProduct} onClose={handleCloseModal} />
-      )}
-
-      {/* Модал за РЕДАКЦИЯ */}
-      {editingProduct && (
-        <EditProductModal
-          editingProduct={editingProduct}
-          editName={editName}
-          editPrice={editPrice}
-          editInfo={editInfo}
-          setEditName={setEditName}
-          setEditPrice={setEditPrice}
-          setEditInfo={setEditInfo}
-          setEditImageFile={setEditImageFile}
-          onDelete={handleDeleteProduct}
-          onSave={handleSaveProduct}
-          onClose={handleCloseEditModal}
-        />
-      )}
     </div>
   );
 };
