@@ -1,39 +1,42 @@
 // ProductCard.jsx
-import React from "react";
-
-// Постави реалния адрес на бекенда
-const API_BASE_URL = import.meta.env.VITE_API_URL;
-
-// Хелпър функция за пълния път към снимката
-function getFullImageUrl(productImage) {
-  if (!productImage) {
-    return "";
-  }
-  return API_BASE_URL + productImage;
-}
+import React, { useState } from "react";
+import { getFullImageUrl } from "../api/adminDashboard";
 
 const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) => {
-  const imageUrl = getFullImageUrl(product.productImage);
-  const hasImage = imageUrl !== "";
+  const [imageError, setImageError] = useState(false);
+
+  // Ако productImage го има, вземи пълния URL чрез getFullImageUrl, иначе върни празен низ
+  const imageUrl = product?.productImage ? getFullImageUrl(product.productImage) : "";
+  // hasImage е true само ако имаме URL и досега не е имало грешка при зареждане
+  const hasImage = imageUrl && !imageError;
+
+  const handleImageError = () => {
+    console.error('Failed to load image:', imageUrl);
+    // При грешка казваме, че изображението е невалидно
+    setImageError(true);
+  };
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow hover:shadow-md transition">
-      {/* Блок с картинка или цветен фон */}
+      {/* Блок с картинка или черен фон */}
       <div
         className={`w-full h-40 flex items-center justify-center overflow-hidden ${
-          hasImage
-            ? "bg-gray-50 dark:bg-gray-700"
-            : "bg-blue-100 dark:bg-green-700"
+          hasImage ? "bg-gray-50 dark:bg-gray-700" : "bg-black"
         }`}
       >
         {hasImage ? (
           <img
             src={imageUrl}
             alt={product.productName}
-            className="object-cover h-full"
+            className="object-contain w-full h-full"
+            onError={handleImageError}
+            style={{
+              maxHeight: '160px',
+              objectPosition: 'center'
+            }}
           />
         ) : (
-          <span className="text-gray-700 dark:text-gray-100 font-semibold">
+          <span className="text-gray-100 font-semibold">
             Без снимка
           </span>
         )}
@@ -50,7 +53,6 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
           {product.productPrice?.toFixed(2)} лв
         </p>
 
-        {/* Бутоните "Виж детайли" и (ако е админ) "Редактирай" */}
         <div className="mt-3 flex items-center justify-between">
           <button
             onClick={() => onSelectProduct(product)}

@@ -368,3 +368,31 @@ export const uploadProfilePicture = async (token,file, accountId) => {
         throw new Error("Failed to upload profile picture");
     }
 };
+
+export const uploadMenuImageApi = async (token, menuId, imageFile) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+
+    const response = await fetch(`${API_BASE_URL}/api/menus/${menuId}/image`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        },
+        body: formData
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to upload menu image');
+    }
+
+    // Тук получаваш { menuImage: "...", message: "..." }
+    return response.json();
+};
+
+
+// Helper function to get full image URL
+export const getFullImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    // Remove any double slashes except after http(s):
+    return `${API_BASE_URL}${imagePath}`.replace(/([^:])\/+/g, '$1/');
+};

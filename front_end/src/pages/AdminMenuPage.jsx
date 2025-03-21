@@ -5,7 +5,9 @@ import {
   fetchCategoriesByMenuIdApi,
   fetchProductsByCategoryIdApi,
   updateProductApi,
-  deleteProductApi
+  deleteProductApi,
+  uploadMenuImageApi,
+  getFullImageUrl
 } from "../api/adminDashboard";
 
 import CategorySection from "../components/CategorySection";
@@ -18,28 +20,24 @@ const AdminMenuPage = () => {
   const token = localStorage.getItem("token");
   const accountType = localStorage.getItem("accountType");
 
-  // Добавяме state за банера и името на менюто
+  // Държим реалния пълен URL (а не просто /uploads/...):
   const [menuData, setMenuData] = useState({
     name: "Меню",
-    bannerImage: null
+    menuImage: null, // Тук ще държим вече готовия URL
   });
 
-  // Категории и разгъната им част
   const [categories, setCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
-  // Продукти за всяка категория
   const [categoryProducts, setCategoryProducts] = useState({});
-  // За двата модала (детайли/редакция)
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
 
-  // Полета за редактиране (когато отворим EditProductModal)
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editInfo, setEditInfo] = useState("");
   const [editImageFile, setEditImageFile] = useState(null);
 
-  // Зареждаме данните за менюто и категориите при mount
+  // Зареждаме данните при mount
   useEffect(() => {
     if (menuId) {
       loadMenuData();
@@ -47,18 +45,24 @@ const AdminMenuPage = () => {
     }
   }, [menuId]);
 
+  // Тук вече получаваме DTO с menuImage = "/uploads/menuImages/10/xyz.jpg"
+  // Преобразуваме го чрез getFullImageUrl и го слагаме в state.
   const loadMenuData = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/menus/${menuId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/menus/${menuId}`, 
+        { headers: { 'Authorization': `Bearer ${token}` } }
+      );
       if (response.ok) {
         const data = await response.json();
+        
+        // data.menuImage е "/uploads/menuImages/10/..."
+        // Превръщаме го в пълен URL
+        const fullUrl = data.menuImage ? getFullImageUrl(data.menuImage) : null;
+
         setMenuData({
-          name: data.name || "Меню",
-          bannerImage: data.bannerImage
+          name: data.category || "Меню",
+          menuImage: fullUrl // Тук вече е пълният адрес
         });
       }
     } catch (error) {
@@ -66,26 +70,18 @@ const AdminMenuPage = () => {
     }
   };
 
+  // Качваме банера => вземаме новия път => правим го на пълен URL => ъпдейтваме state
   const handleBannerUpload = async (file) => {
-    const formData = new FormData();
-    formData.append('banner', file);
-
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/menus/${menuId}/banner`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
+      const data = await uploadMenuImageApi(token, menuId, file);
+      // data.menuImage = "/uploads/menuImages/..."
+      const fullUrl = getFullImageUrl(data.menuImage);
 
-      if (response.ok) {
-        const data = await response.json();
-        setMenuData(prev => ({
-          ...prev,
-          bannerImage: data.bannerImage
-        }));
-      }
+      setMenuData(prev => ({
+        ...prev,
+        menuImage: fullUrl
+      }));
+      alert('Банерът е качен успешно!');
     } catch (error) {
       console.error('Error uploading banner:', error);
       alert('Грешка при качване на банера');
@@ -101,7 +97,6 @@ const AdminMenuPage = () => {
     }
   };
 
-  // Разгъване/сгъване на категория + зареждане на продуктите, ако ги нямаме
   const handleToggleCategory = async (catId) => {
     setExpandedCategories((prev) => ({
       ...prev,
@@ -118,17 +113,13 @@ const AdminMenuPage = () => {
     }
   };
 
-  // Отваряне на модала за детайли
   const handleSelectProduct = (product) => {
     setSelectedProduct(product);
   };
-
-  // Затваряне на модала с детайли
   const handleCloseModal = () => {
     setSelectedProduct(null);
   };
 
-  // Отваряне на формата за редактиране
   const handleEditProduct = (product) => {
     setEditingProduct(product);
     setEditName(product.productName || "");
@@ -136,13 +127,10 @@ const AdminMenuPage = () => {
     setEditInfo(product.productInfo || "");
     setEditImageFile(null);
   };
-
-  // Затваряне на формата за редактиране
   const handleCloseEditModal = () => {
     setEditingProduct(null);
   };
 
-  // Запазване на редактирания продукт
   const handleSaveProduct = async (e) => {
     e.preventDefault();
 
@@ -172,7 +160,6 @@ const AdminMenuPage = () => {
     }
   };
 
-  // Функция за изтриване на продукта
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm("Наистина ли искате да изтриете този продукт?")) {
       return;
@@ -180,17 +167,8 @@ const AdminMenuPage = () => {
     try {
       await deleteProductApi(token, productId);
       alert("Продуктът беше изтрит успешно!");
-
-      // Затваряме EditProductModal
       setEditingProduct(null);
-
-      // (По желание) презареждаме списъка с продукти
-      // Ако имаш данни за categoryId (editingProduct.categoryId), може да презаредиш конкретно нея
-      // Но, тъй като editingProduct вече е null, трябва да го запазим временно, 
-      // или да си предадем productId => catId по друг начин.
-      // Пример, ако си пазил oldCategoryId, може:
-      //   const newProducts = await fetchProductsByCategoryIdApi(token, oldCategoryId);
-      //   setCategoryProducts((prev) => ({ ...prev, [oldCategoryId]: newProducts }));
+      // При нужда може да презаредиш категорията
     } catch (error) {
       console.error("Error deleting product:", error);
       alert("Грешка при изтриване на продукта.");
@@ -199,16 +177,15 @@ const AdminMenuPage = () => {
 
   return (
     <div className="bg-white dark:bg-gray-800 min-h-screen">
-      {/* Add MenuBanner at the top */}
+      {/* Подаваме вече готовия пълен URL към MenuBanner */}
       <MenuBanner
-        bannerImage={menuData.bannerImage}
+        bannerImage={menuData.menuImage} 
         menuName={menuData.name}
         onBannerUpload={handleBannerUpload}
         isAdmin={accountType === "ROLE_ADMIN"}
       />
 
       <div className="p-4 sm:p-6">
-        {/* Списък с категории */}
         <div className="space-y-4">
           {categories.length === 0 && (
             <p className="text-gray-600 dark:text-gray-300">
