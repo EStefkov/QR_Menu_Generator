@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 
-const AccountsTable = ({ accounts, onEdit, onDelete }) => {
+const AccountsTable = ({ accounts = [], onEdit, onDelete }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [accountTypeFilter, setAccountTypeFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
@@ -8,11 +8,20 @@ const AccountsTable = ({ accounts, onEdit, onDelete }) => {
 
     // Filter accounts based on search term and account type
     const filteredAccounts = useMemo(() => {
+        if (!Array.isArray(accounts)) return [];
+        
         return accounts.filter(account => {
+            if (!account) return false;
+            
+            const searchTermLower = searchTerm.toLowerCase();
+            const firstName = account.firstName?.toLowerCase() || '';
+            const lastName = account.lastName?.toLowerCase() || '';
+            const email = account.mailAddress?.toLowerCase() || '';
+            
             const matchesSearch = 
-                account.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                account.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                account.mailAddress.toLowerCase().includes(searchTerm.toLowerCase());
+                firstName.includes(searchTermLower) ||
+                lastName.includes(searchTermLower) ||
+                email.includes(searchTermLower);
             
             const matchesType = accountTypeFilter === 'all' || account.accountType === accountTypeFilter;
             
@@ -24,6 +33,14 @@ const AccountsTable = ({ accounts, onEdit, onDelete }) => {
     const totalPages = Math.ceil(filteredAccounts.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedAccounts = filteredAccounts.slice(startIndex, startIndex + itemsPerPage);
+
+    if (!Array.isArray(accounts)) {
+        return (
+            <div className="text-center py-8 text-red-600">
+                <p>Error: Invalid accounts data</p>
+            </div>
+        );
+    }
 
     return (
         <section className="p-6 bg-white dark:bg-gray-800 shadow-xl rounded-xl border border-gray-200 dark:border-gray-700 transition-colors duration-200">

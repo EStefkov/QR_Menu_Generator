@@ -35,26 +35,39 @@ const AdminDashboard = () => {
     const [menus, setMenus] = useState({});
     const [editingAccount, setEditingAccount] = useState(null);
     const [editingRestaurant, setEditingRestaurant] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const [newMenu, setNewMenu] = useState({ category: "", restorantId: "" });
 
 
     const { userData } = useContext(AuthContext);
-  const token = userData?.token;
+    const token = userData?.token;
 
     useEffect(() => {
         if (token) {
             fetchAccounts();
             fetchRestaurants();
+        } else {
+            setError("No authentication token found. Please log in again.");
         }
     }, [token]);
 
     const fetchAccounts = async () => {
         try {
+            setIsLoading(true);
+            setError(null);
             const data = await fetchAccountsApi(token, 0, 10);
-            setAccounts(data.content);
+            if (!data || !data.content) {
+                throw new Error("Invalid response format from server");
+            }
+            setAccounts(data.content || []);
         } catch (error) {
             console.error("Error fetching accounts:", error);
+            setError("Failed to load accounts. Please try again later.");
+            setAccounts([]);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -193,12 +206,25 @@ const AdminDashboard = () => {
                 <main className="w-full md:w-3/4 p-4 md:p-6">
                     {/* 1) Акаунти */}
                     {activeComponent === "accounts" && (
-                        <AccountsTable
-                            accounts={accounts}
-                            onEdit={setEditingAccount}
-                            onDelete={handleDeleteAccount} // Ползваме нашата функция
-                            onChangeType={handleAccountTypeChange}
-                        />
+                        <>
+                            {error && (
+                                <div className="p-4 mb-4 text-red-700 bg-red-100 rounded-lg">
+                                    {error}
+                                </div>
+                            )}
+                            {isLoading ? (
+                                <div className="flex items-center justify-center p-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                                </div>
+                            ) : (
+                                <AccountsTable
+                                    accounts={accounts}
+                                    onEdit={setEditingAccount}
+                                    onDelete={handleDeleteAccount}
+                                    onChangeType={handleAccountTypeChange}
+                                />
+                            )}
+                        </>
                     )}
 
                     {/* 2) Ресторанти */}
