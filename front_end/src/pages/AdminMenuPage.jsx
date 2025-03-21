@@ -23,7 +23,8 @@ const AdminMenuPage = () => {
     name: "Меню",
     menuImage: null,
     id: null,
-    error: null
+    error: null,
+    textColor: 'text-white'
   });
 
   const [categories, setCategories] = useState([]);
@@ -66,7 +67,8 @@ const AdminMenuPage = () => {
         name: data.category || "Меню",
         menuImage: data.menuImage || null,
         id: data.id,
-        error: null
+        error: null,
+        textColor: data.textColor || 'text-white'
       };
 
       setMenuData(updatedMenuData);
@@ -192,6 +194,8 @@ const AdminMenuPage = () => {
         menuName={menuData.name}
         onBannerUpload={handleBannerUpload}
         isAdmin={accountType === "ROLE_ADMIN"}
+        menuId={menuId}
+        initialTextColor={menuData.textColor}
       />
 
       <div className="p-4 sm:p-6">

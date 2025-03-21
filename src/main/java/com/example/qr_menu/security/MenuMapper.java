@@ -16,6 +16,7 @@ public class MenuMapper {
                 .menuUrl(menu.getMenuUrl())
                 .qrCodeImage(menu.getQrCodeImage())
                 .menuImage(menu.getMenuImage())
+                .textColor(menu.getTextColor())
                 .build();
     }
 }

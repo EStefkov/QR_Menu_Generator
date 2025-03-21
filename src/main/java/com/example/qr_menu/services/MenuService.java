@@ -159,6 +159,8 @@ public class MenuService {
                         .updatedAt(menu.getUpdatedAt())
                         .menuUrl(menu.getMenuUrl())
                         .qrCodeImage(menu.getQrCodeImage())
+                        .menuImage(menu.getMenuImage())
+                        .textColor(menu.getTextColor())
                         .build()
                 )
                 .collect(Collectors.toList());
@@ -195,7 +197,18 @@ public class MenuService {
     public MenuDTO getMenuById(Long id) {
         Menu menu = menuRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu not found"));
-        return menuMapper.toDto(menu); // Преобразуване на entity към DTO
+        return menuMapper.toDto(menu);
+    }
+
+    public MenuDTO updateTextColor(Long id, String textColor) {
+        Menu menu = menuRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Menu not found"));
+        
+        menu.setTextColor(textColor);
+        menu.setUpdatedAt(new Date());
+        Menu updatedMenu = menuRepository.save(menu);
+        
+        return menuMapper.toDto(updatedMenu);
     }
 
     public List<CategoryDTO> getCategoriesByMenu(Long menuId) {

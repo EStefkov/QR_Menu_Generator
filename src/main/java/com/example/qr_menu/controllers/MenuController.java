@@ -97,5 +97,11 @@ public class MenuController {
         return menuService.getCategoriesByMenu(menuId);
     }
 
-
+    @PutMapping("/{id}/text-color")
+    public ResponseEntity<MenuDTO> updateTextColor(
+            @PathVariable Long id,
+            @RequestBody String textColor) {
+        MenuDTO updatedMenu = menuService.updateTextColor(id, textColor);
+        return ResponseEntity.ok(updatedMenu);
+    }
 }
