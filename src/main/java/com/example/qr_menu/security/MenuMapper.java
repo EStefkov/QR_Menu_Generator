@@ -6,12 +6,17 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MenuMapper {
-    public MenuDTO toDto(Menu menu){
-        MenuDTO dto = new MenuDTO();
-        dto.setId(menu.getId());
-        dto.setCategory(menu.getCategory());
-        dto.setCreatedAt(menu.getCreatedAt());
-        dto.setUpdatedAt(menu.getUpdatedAt());
-        return dto;
+    public MenuDTO toDto(Menu menu) {
+        return MenuDTO.builder()
+                .id(menu.getId())
+                .category(menu.getCategory())
+                .restorantId(menu.getRestorant() != null ? menu.getRestorant().getId() : null)
+                .createdAt(menu.getCreatedAt())
+                .updatedAt(menu.getUpdatedAt())
+                .menuUrl(menu.getMenuUrl())
+                .qrCodeImage(menu.getQrCodeImage())
+                .menuImage(menu.getMenuImage())
+                .textColor(menu.getTextColor())
+                .build();
     }
 }

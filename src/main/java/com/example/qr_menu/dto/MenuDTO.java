@@ -24,6 +24,6 @@ public class MenuDTO {
     private Date updatedAt;
     private String menuUrl; // Optional
     private byte[] qrCodeImage; // Optional
-    private String menuImage;
-
+    private String menuImage;  // This field is important for storing the image path
+    private String textColor;
 }

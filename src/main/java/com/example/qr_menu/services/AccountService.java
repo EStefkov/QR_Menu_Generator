@@ -177,7 +177,7 @@ public class AccountService {
     }
 
     /**
-     * Качва профилна снимка (Multipart), записва я в папка "uploads/" и ъпдейтва полето profilePicture.
+     * Качва профилна снимка (Multipart), записва я в папка "uploads/profilePictures/{userId}/" и ъпдейтва полето profilePicture.
      */
     public void uploadProfilePicture(Long accountId, MultipartFile profilePicture, String loggedInUserEmail) throws IOException {
         // 1. Намираме акаунта, чиято снимка се сменя
@@ -200,26 +200,47 @@ public class AccountService {
             throw new SecurityException("You are not allowed to change this profile picture.");
         }
 
-        // 4. Подготвяме папката "uploads" (ако не съществува, я създаваме)
-        Path uploadPath = Paths.get("uploads");
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        // 4. Create base upload directory
+        Path baseUploadPath = Paths.get("uploads", "profilePictures");
+        if (!Files.exists(baseUploadPath)) {
+            Files.createDirectories(baseUploadPath);
         }
 
-        // 5. Генерираме име на файла (примерно използваме оригиналното)
-        String originalFilename = StringUtils.cleanPath(profilePicture.getOriginalFilename());
+        // 5. Create user-specific directory
+        Path userUploadPath = baseUploadPath.resolve(accountId.toString());
+        if (!Files.exists(userUploadPath)) {
+            Files.createDirectories(userUploadPath);
+        }
 
-        // 6. Записваме файла
-        Path filePath = uploadPath.resolve(originalFilename);
+        // 6. Generate unique filename with timestamp and original extension
+        String originalFilename = StringUtils.cleanPath(profilePicture.getOriginalFilename());
+        String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String newFilename = System.currentTimeMillis() + fileExtension;
+
+        // 7. Save the file
+        Path filePath = userUploadPath.resolve(newFilename);
         try (InputStream inputStream = profilePicture.getInputStream()) {
             Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        // 7. Обновяваме полето profilePicture
-        String profilePicturePath = "/uploads/" + originalFilename;
-        accountToUpdate.setProfilePicture(profilePicturePath);
+        // 8. Delete old profile picture if it exists and is not the default
+        String oldProfilePicture = accountToUpdate.getProfilePicture();
+        if (oldProfilePicture != null && !oldProfilePicture.equals("default_profile.png")) {
+            try {
+                Path oldFilePath = Paths.get(oldProfilePicture.substring(1)); // Remove leading slash
+                Files.deleteIfExists(oldFilePath);
+            } catch (IOException e) {
+                // Log error but continue with the update
+                System.err.println("Failed to delete old profile picture: " + e.getMessage());
+            }
+        }
 
-        // 8. Записваме в базата
+        // 9. Update profile picture path in database
+        String profilePicturePath = "/uploads/profilePictures/" + accountId + "/" + newFilename;
+        accountToUpdate.setProfilePicture(profilePicturePath);
+        accountToUpdate.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+
+        // 10. Save to database
         accountRepository.save(accountToUpdate);
     }
 

@@ -18,19 +18,18 @@ import {
   
   const Layout = ({ children }) => {
     const location = useLocation();
-    // Не показваме NavBar на страниците за вход и регистрация
+    // Don't show NavBar on login and register pages
     const hideNavBar = location.pathname === "/login" || location.pathname === "/register";
   
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
         {!hideNavBar && <NavBar />}
-        <div className="container mx-auto p-4">{children}</div>
+        <div className="container mx-auto p-4 max-w-7xl">{children}</div>
       </div>
     );
   };
   
   const App = () => {
-    // Изтегляме userData от AuthContext, за да знаем дали сме логнати и с каква роля
     const { userData } = useContext(AuthContext);
     const isAuthenticated = !!userData.token;
     const accountType = userData.accountType;
@@ -52,7 +51,7 @@ import {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<RegisterPage />} />
   
-          {/* Примерна страница за меню по ID */}
+          {/* Menu page by ID */}
           <Route
             path="/menu/:menuId"
             element={

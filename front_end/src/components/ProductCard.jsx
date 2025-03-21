@@ -1,40 +1,61 @@
 // ProductCard.jsx
-import React from "react";
-
-// Постави реалния адрес на бекенда
-const API_BASE_URL = import.meta.env.VITE_API_URL;
-
-// Хелпър функция за пълния път към снимката
-function getFullImageUrl(productImage) {
-  if (!productImage) {
-    return "";
-  }
-  return API_BASE_URL + productImage;
-}
+import React, { useState, useEffect } from "react";
+import { getFullImageUrl } from "../api/adminDashboard";
 
 const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) => {
-  const imageUrl = getFullImageUrl(product.productImage);
-  const hasImage = imageUrl !== "";
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  // Get full URL for the product image
+  const imageUrl = product?.productImage ? getFullImageUrl(product.productImage) : "";
+  const hasImage = imageUrl && !imageError;
+
+  // Reset error state when product changes
+  useEffect(() => {
+    if (product?.productImage) {
+      setImageError(false);
+      setImageLoading(true);
+    }
+  }, [product]);
+
+  const handleImageError = () => {
+    setImageError(true);
+    setImageLoading(false);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+  };
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow hover:shadow-md transition">
-      {/* Блок с картинка или цветен фон */}
+      {/* Image container with loading state */}
       <div
         className={`w-full h-40 flex items-center justify-center overflow-hidden ${
-          hasImage
-            ? "bg-gray-50 dark:bg-gray-700"
-            : "bg-blue-100 dark:bg-green-700"
+          hasImage ? "bg-gray-50 dark:bg-gray-700" : "bg-black"
         }`}
       >
+        {imageLoading && hasImage && (
+          <div className="animate-pulse bg-gray-200 dark:bg-gray-600 w-full h-full" />
+        )}
+        
         {hasImage ? (
           <img
             src={imageUrl}
             alt={product.productName}
-            className="object-cover h-full"
+            className={`object-contain w-full h-full transition-opacity duration-200 ${
+              imageLoading ? 'opacity-0' : 'opacity-100'
+            }`}
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+            style={{
+              maxHeight: '160px',
+              objectPosition: 'center'
+            }}
           />
         ) : (
-          <span className="text-gray-700 dark:text-gray-100 font-semibold">
-            Без снимка
+          <span className="text-gray-100 font-semibold">
+            {imageError ? 'Грешка при зареждане' : 'Без снимка'}
           </span>
         )}
       </div>
@@ -50,7 +71,6 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
           {product.productPrice?.toFixed(2)} лв
         </p>
 
-        {/* Бутоните "Виж детайли" и (ако е админ) "Редактирай" */}
         <div className="mt-3 flex items-center justify-between">
           <button
             onClick={() => onSelectProduct(product)}

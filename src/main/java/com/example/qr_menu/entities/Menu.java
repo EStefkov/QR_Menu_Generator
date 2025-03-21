@@ -30,7 +30,6 @@ public class Menu {
 
     @Column(name= "updated_at")
     @Temporal(TemporalType.DATE)
-
     private Date updatedAt;
     // Many Menus can belong to one Restorant
 
@@ -51,13 +50,17 @@ public class Menu {
     )
     private String menuImage;
 
+    @Column(
+            name = "text_color",
+            columnDefinition = "VARCHAR(50) DEFAULT 'text-white'"
+    )
+    private String textColor;
+
     // One Menu can have many Products
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Product> products;
 
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Category> categories;
-
-
 
 }

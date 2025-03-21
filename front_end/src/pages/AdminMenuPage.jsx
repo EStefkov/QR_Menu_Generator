@@ -5,50 +5,114 @@ import {
   fetchCategoriesByMenuIdApi,
   fetchProductsByCategoryIdApi,
   updateProductApi,
-  deleteProductApi
+  deleteProductApi,
+  uploadMenuImageApi
 } from "../api/adminDashboard";
 
 import CategorySection from "../components/CategorySection";
 import DetailsModal from "../components/DetailsModal";
 import EditProductModal from "../components/EditProductModal";
+import MenuBanner from "../components/MenuBanner";
 
 const AdminMenuPage = () => {
   const { menuId } = useParams();
   const token = localStorage.getItem("token");
   const accountType = localStorage.getItem("accountType");
 
-  // Категории и разгъната им част
+  const [menuData, setMenuData] = useState({
+    name: "Меню",
+    menuImage: null,
+    id: null,
+    error: null,
+    textColor: 'text-white'
+  });
+
   const [categories, setCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
-  // Продукти за всяка категория
   const [categoryProducts, setCategoryProducts] = useState({});
-  // За двата модала (детайли/редакция)
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [editingProduct, setEditingProduct] = useState(null);
 
-  // Полета за редактиране (когато отворим EditProductModal)
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editInfo, setEditInfo] = useState("");
   const [editImageFile, setEditImageFile] = useState(null);
 
-  // Зареждаме категориите при mount (или при смяна на menuId)
   useEffect(() => {
     if (menuId) {
+      loadMenuData();
       loadCategories();
     }
   }, [menuId]);
+
+  const loadMenuData = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/menus/${menuId}`, 
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          } 
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      const updatedMenuData = {
+        name: data.category || "Меню",
+        menuImage: data.menuImage || null,
+        id: data.id,
+        error: null,
+        textColor: data.textColor || 'text-white'
+      };
+
+      setMenuData(updatedMenuData);
+
+    } catch (error) {
+      setMenuData(prev => ({
+        ...prev,
+        error: error.message
+      }));
+    }
+  };
+
+  const handleBannerUpload = async (file) => {
+    try {
+      const data = await uploadMenuImageApi(token, menuId, file);
+
+      if (!data.menuImage) {
+        throw new Error('No menuImage in upload response');
+      }
+
+      setMenuData(prev => ({
+        ...prev,
+        menuImage: data.menuImage
+      }));
+
+      setTimeout(async () => {
+        await loadMenuData();
+      }, 1000);
+
+      alert('Банерът е качен успешно!');
+    } catch (error) {
+      alert(`Грешка при качване на банера: ${error.message}`);
+    }
+  };
 
   const loadCategories = async () => {
     try {
       const data = await fetchCategoriesByMenuIdApi(token, menuId);
       setCategories(data);
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      alert("Грешка при зареждане на категориите");
     }
   };
 
-  // Разгъване/сгъване на категория + зареждане на продуктите, ако ги нямаме
   const handleToggleCategory = async (catId) => {
     setExpandedCategories((prev) => ({
       ...prev,
@@ -60,22 +124,18 @@ const AdminMenuPage = () => {
         const products = await fetchProductsByCategoryIdApi(token, catId);
         setCategoryProducts((prev) => ({ ...prev, [catId]: products }));
       } catch (error) {
-        console.error("Error fetching products:", error);
+        alert("Грешка при зареждане на продуктите");
       }
     }
   };
 
-  // Отваряне на модала за детайли
   const handleSelectProduct = (product) => {
     setSelectedProduct(product);
   };
-
-  // Затваряне на модала с детайли
   const handleCloseModal = () => {
     setSelectedProduct(null);
   };
 
-  // Отваряне на формата за редактиране
   const handleEditProduct = (product) => {
     setEditingProduct(product);
     setEditName(product.productName || "");
@@ -83,13 +143,10 @@ const AdminMenuPage = () => {
     setEditInfo(product.productInfo || "");
     setEditImageFile(null);
   };
-
-  // Затваряне на формата за редактиране
   const handleCloseEditModal = () => {
     setEditingProduct(null);
   };
 
-  // Запазване на редактирания продукт
   const handleSaveProduct = async (e) => {
     e.preventDefault();
 
@@ -107,19 +164,16 @@ const AdminMenuPage = () => {
       alert("Продуктът е успешно обновен!");
       setEditingProduct(null);
 
-      // Презареждаме продуктите след ъпдейта
       const catId = editingProduct.categoryId;
       if (catId) {
         const newProducts = await fetchProductsByCategoryIdApi(token, catId);
         setCategoryProducts((prev) => ({ ...prev, [catId]: newProducts }));
       }
     } catch (error) {
-      console.error("Error updating product:", error);
       alert("Неуспешен ъпдейт на продукт!");
     }
   };
 
-  // Функция за изтриване на продукта
   const handleDeleteProduct = async (productId) => {
     if (!window.confirm("Наистина ли искате да изтриете този продукт?")) {
       return;
@@ -127,77 +181,70 @@ const AdminMenuPage = () => {
     try {
       await deleteProductApi(token, productId);
       alert("Продуктът беше изтрит успешно!");
-
-      // Затваряме EditProductModal
       setEditingProduct(null);
-
-      // (По желание) презареждаме списъка с продукти
-      // Ако имаш данни за categoryId (editingProduct.categoryId), може да презаредиш конкретно нея
-      // Но, тъй като editingProduct вече е null, трябва да го запазим временно, 
-      // или да си предадем productId => catId по друг начин.
-      // Пример, ако си пазил oldCategoryId, може:
-      //   const newProducts = await fetchProductsByCategoryIdApi(token, oldCategoryId);
-      //   setCategoryProducts((prev) => ({ ...prev, [oldCategoryId]: newProducts }));
     } catch (error) {
-      console.error("Error deleting product:", error);
       alert("Грешка при изтриване на продукта.");
     }
   };
 
   return (
-    <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 min-h-screen">
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
-        Админ меню № {menuId}
-      </h1>
+    <div className="bg-white dark:bg-gray-800 min-h-screen">
+      <MenuBanner
+        bannerImage={menuData.menuImage} 
+        menuName={menuData.name}
+        onBannerUpload={handleBannerUpload}
+        isAdmin={accountType === "ROLE_ADMIN"}
+        menuId={menuId}
+        initialTextColor={menuData.textColor}
+      />
 
-      {/* Списък с категории */}
-      <div className="space-y-4">
-        {categories.length === 0 && (
-          <p className="text-gray-600 dark:text-gray-300">
-            Няма категории за това меню или все още не са заредени.
-          </p>
+      <div className="p-4 sm:p-6">
+        <div className="space-y-4">
+          {categories.length === 0 && (
+            <p className="text-gray-600 dark:text-gray-300">
+              Няма категории за това меню или все още не са заредени.
+            </p>
+          )}
+
+          {categories.map((cat) => {
+            const isExpanded = expandedCategories[cat.id] || false;
+            const products = categoryProducts[cat.id] || [];
+
+            return (
+              <CategorySection
+                key={cat.id}
+                category={cat}
+                products={products}
+                isExpanded={isExpanded}
+                onToggleCategory={handleToggleCategory}
+                onSelectProduct={handleSelectProduct}
+                onEditProduct={handleEditProduct}
+                accountType={accountType}
+              />
+            );
+          })}
+        </div>
+
+        {selectedProduct && (
+          <DetailsModal product={selectedProduct} onClose={handleCloseModal} />
         )}
 
-        {categories.map((cat) => {
-          const isExpanded = expandedCategories[cat.id] || false;
-          const products = categoryProducts[cat.id] || [];
-
-          return (
-            <CategorySection
-              key={cat.id}
-              category={cat}
-              products={products}
-              isExpanded={isExpanded}
-              onToggleCategory={handleToggleCategory}
-              onSelectProduct={handleSelectProduct}
-              onEditProduct={handleEditProduct}
-              accountType={accountType}
-            />
-          );
-        })}
+        {editingProduct && (
+          <EditProductModal
+            editingProduct={editingProduct}
+            editName={editName}
+            editPrice={editPrice}
+            editInfo={editInfo}
+            setEditName={setEditName}
+            setEditPrice={setEditPrice}
+            setEditInfo={setEditInfo}
+            setEditImageFile={setEditImageFile}
+            onDelete={handleDeleteProduct}
+            onSave={handleSaveProduct}
+            onClose={handleCloseEditModal}
+          />
+        )}
       </div>
-
-      {/* Модал за "Виж детайли" */}
-      {selectedProduct && (
-        <DetailsModal product={selectedProduct} onClose={handleCloseModal} />
-      )}
-
-      {/* Модал за РЕДАКЦИЯ */}
-      {editingProduct && (
-        <EditProductModal
-          editingProduct={editingProduct}
-          editName={editName}
-          editPrice={editPrice}
-          editInfo={editInfo}
-          setEditName={setEditName}
-          setEditPrice={setEditPrice}
-          setEditInfo={setEditInfo}
-          setEditImageFile={setEditImageFile}
-          onDelete={handleDeleteProduct}
-          onSave={handleSaveProduct}
-          onClose={handleCloseEditModal}
-        />
-      )}
     </div>
   );
 };

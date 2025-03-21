@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +24,24 @@ public class MenuController {
     public MenuController(MenuService menuService) {
         this.menuService = menuService;
     }
+
+    @PostMapping("/{id}/image")
+    public ResponseEntity<Map<String, String>> uploadMenuImage(
+            @PathVariable Long id,
+            @RequestParam("image") MultipartFile image) {
+        try {
+            String menuImagePath = menuService.uploadMenuImage(id, image);
+            return ResponseEntity.ok(Map.of(
+                "menuImage", menuImagePath,
+                "message", "Menu image uploaded successfully"
+            ));
+        } catch (IOException e) {
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to upload menu image: " + e.getMessage()));
+        }
+    }
+
 
     @PostMapping
     public ResponseEntity<Map<String, String>> createMenu(@RequestBody MenuDTO menuDTO) {
@@ -77,5 +97,19 @@ public class MenuController {
         return menuService.getCategoriesByMenu(menuId);
     }
 
+    @PutMapping("/{id}/text-color")
+    public ResponseEntity<MenuDTO> updateTextColor(
+            @PathVariable Long id,
+            @RequestBody String textColor) {
+        MenuDTO updatedMenu = menuService.updateTextColor(id, textColor);
+        return ResponseEntity.ok(updatedMenu);
+    }
 
+    @PutMapping("/{id}/name")
+    public ResponseEntity<MenuDTO> updateMenuName(
+            @PathVariable Long id,
+            @RequestBody String newName) {
+        MenuDTO updatedMenu = menuService.updateMenuName(id, newName);
+        return ResponseEntity.ok(updatedMenu);
+    }
 }

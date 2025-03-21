@@ -8,41 +8,55 @@ import org.springframework.web.filter.CorsFilter;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class CorsConfig {
-
 
     @Value("${server.hostTwo}")
     private String viteHost;
 
     @Bean
     public CorsFilter corsFilter() {
-
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allows credentials (e.g., cookies or authorization headers)
+        // Allow credentials
         config.setAllowCredentials(true);
 
-
-        // Replace "*" with specific domains for production
+        // Allow origins
         config.setAllowedOriginPatterns(Arrays.asList(
-                viteHost, // Frontend in development
-                "http://localhost:5173" // Frontend in production
+            viteHost,
+            "http://localhost:5173",
+            "http://localhost:8080"
         ));
 
-        // Allows all headers
-        config.addAllowedHeader("*");
+        // Allow all headers
+        config.setAllowedHeaders(Arrays.asList(
+            "Origin",
+            "Content-Type",
+            "Accept",
+            "Authorization",
+            "X-Requested-With",
+            "Access-Control-Request-Method",
+            "Access-Control-Request-Headers"
+        ));
 
-        // Allows specific HTTP methods
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // Expose headers
+        config.setExposedHeaders(Arrays.asList(
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Credentials",
+            "Authorization"
+        ));
 
-        // Optionally set maximum age for pre-flight requests`
-        config.setMaxAge(3600L); // 1 hour
+        // Allow methods
+        config.setAllowedMethods(Arrays.asList(
+            "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
+        ));
 
-        // Apply the configuration to all endpoints
+        // Set max age
+        config.setMaxAge(3600L);
+
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }

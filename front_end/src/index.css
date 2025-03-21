@@ -1,12 +1,54 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 @import "tailwindcss";
 
-html {
-  @apply bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white;
+@theme {
+  --font-sans: InterVariable, sans-serif;
+  
+  /* Colors */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  
+  /* Background colors */
+  --bg-white: var(--color-white);
+  --bg-gray-900: var(--color-gray-900);
+  
+  /* Text colors */
+  --text-black: var(--color-black);
+  --text-white: var(--color-white);
+  
+  /* Transitions */
+  --transition-colors: 200ms;
 }
 
-button {
-  @apply transition duration-300 ease-in-out;
+@layer base {
+  :root {
+    --background: 255, 255, 255;
+    --foreground: 0, 0, 0;
+  }
+
+  .dark {
+    --background: 17, 24, 39;
+    --foreground: 255, 255, 255;
+  }
+
+  html {
+    @apply bg-[var(--bg-white)] text-[var(--text-black)] dark:bg-[var(--bg-gray-900)] dark:text-[var(--text-white)] transition-colors duration-[var(--transition-colors)];
+  }
+
+  body {
+    @apply min-h-screen bg-[var(--bg-white)] text-[var(--text-black)] dark:bg-[var(--bg-gray-900)] dark:text-[var(--text-white)] transition-colors duration-[var(--transition-colors)];
+  }
+
+  button {
+    @apply transition duration-300 ease-in-out;
+  }
 }
