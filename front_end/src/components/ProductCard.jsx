@@ -1,35 +1,53 @@
 // ProductCard.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getFullImageUrl } from "../api/adminDashboard";
 
 const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) => {
   const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
 
-  // Ако productImage го има, вземи пълния URL чрез getFullImageUrl, иначе върни празен низ
+  // Get full URL for the product image
   const imageUrl = product?.productImage ? getFullImageUrl(product.productImage) : "";
-  // hasImage е true само ако имаме URL и досега не е имало грешка при зареждане
   const hasImage = imageUrl && !imageError;
 
+  // Reset error state when product changes
+  useEffect(() => {
+    if (product?.productImage) {
+      setImageError(false);
+      setImageLoading(true);
+    }
+  }, [product]);
+
   const handleImageError = () => {
-    console.error('Failed to load image:', imageUrl);
-    // При грешка казваме, че изображението е невалидно
     setImageError(true);
+    setImageLoading(false);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
   };
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow hover:shadow-md transition">
-      {/* Блок с картинка или черен фон */}
+      {/* Image container with loading state */}
       <div
         className={`w-full h-40 flex items-center justify-center overflow-hidden ${
           hasImage ? "bg-gray-50 dark:bg-gray-700" : "bg-black"
         }`}
       >
+        {imageLoading && hasImage && (
+          <div className="animate-pulse bg-gray-200 dark:bg-gray-600 w-full h-full" />
+        )}
+        
         {hasImage ? (
           <img
             src={imageUrl}
             alt={product.productName}
-            className="object-contain w-full h-full"
+            className={`object-contain w-full h-full transition-opacity duration-200 ${
+              imageLoading ? 'opacity-0' : 'opacity-100'
+            }`}
             onError={handleImageError}
+            onLoad={handleImageLoad}
             style={{
               maxHeight: '160px',
               objectPosition: 'center'
@@ -37,7 +55,7 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
           />
         ) : (
           <span className="text-gray-100 font-semibold">
-            Без снимка
+            {imageError ? 'Грешка при зареждане' : 'Без снимка'}
           </span>
         )}
       </div>

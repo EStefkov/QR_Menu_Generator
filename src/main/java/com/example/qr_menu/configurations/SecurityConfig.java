@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll() // Allow access to uploaded files
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow OPTIONS requests
                 .requestMatchers(HttpMethod.POST, "/api/accounts/uploadProfilePicture/**").permitAll()
-
+                 .requestMatchers(HttpMethod.GET,"/api/products/category/**").permitAll()
                 // Restricted endpoints for ADMIN role
                 .requestMatchers(HttpMethod.PUT, "/api/restaurants/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PATCH, "/api/restaurants/**").hasRole("ADMIN")
