@@ -1,61 +1,63 @@
 // AuthContext.js
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
+import { validateToken } from "./api/account";
 
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [userData, setUserData] = useState({});
+  const [userData, setUserData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // При първоначално зареждане четем token от localStorage:
-  // Ако има token, тогава прочитаме и останалите данни
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      setUserData({
-        id: localStorage.getItem("id"),
-        token: storedToken,
-        firstName: localStorage.getItem("firstName"),
-        lastName: localStorage.getItem("lastName"),
-        profilePicture: localStorage.getItem("profilePicture"),
-        accountType: localStorage.getItem("accountType"),
-      });
+    const token = localStorage.getItem("token");
+    if (token) {
+      validateToken(token)
+        .then((data) => {
+          setUserData({
+            ...data,
+            token
+          });
+        })
+        .catch(() => {
+          localStorage.removeItem("token");
+          setUserData(null);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
     }
   }, []);
 
-  // Функция за логин: записваме данните в localStorage и ъпдейтваме state
-  const login = (token, payload) => {
-    localStorage.setItem("id", payload.id);
+  const login = (token, userData) => {
     localStorage.setItem("token", token);
-    localStorage.setItem("firstName", payload.firstName);
-    localStorage.setItem("lastName", payload.lastName);
-    localStorage.setItem("profilePicture", payload.profilePicture);
-    localStorage.setItem("accountType", payload.accountType);
-
     setUserData({
-      id: payload.id,
-      token,
-      firstName: payload.firstName,
-      lastName: payload.lastName,
-      profilePicture: payload.profilePicture,
-      accountType: payload.accountType,
+      ...userData,
+      token
     });
   };
 
-  // Функция за logout: изчистваме localStorage и state
   const logout = () => {
-    localStorage.removeItem("id");
     localStorage.removeItem("token");
-    localStorage.removeItem("firstName");
-    localStorage.removeItem("lastName");
-    localStorage.removeItem("profilePicture");
-    localStorage.removeItem("accountType");
+    setUserData(null);
+  };
 
-    setUserData({});
+  const register = (userData) => {
+    setUserData(userData);
   };
 
   return (
-    <AuthContext.Provider value={{ userData, login, logout }}>
+    <AuthContext.Provider value={{ userData, isLoading, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );
 }
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
