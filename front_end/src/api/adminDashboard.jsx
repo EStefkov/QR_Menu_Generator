@@ -370,29 +370,77 @@ export const uploadProfilePicture = async (token,file, accountId) => {
 };
 
 export const uploadMenuImageApi = async (token, menuId, imageFile) => {
-    const formData = new FormData();
-    formData.append('image', imageFile);
+    try {
+        console.log('Starting upload with:', { 
+            menuId, 
+            fileName: imageFile.name,
+            fileSize: imageFile.size,
+            fileType: imageFile.type
+        });
+        
+        const formData = new FormData();
+        // Use 'image' to match @RequestParam("image") in MenuController
+        formData.append('image', imageFile);
+        
+        // Log the FormData contents
+        console.log('FormData contents:');
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
 
-    const response = await fetch(`${API_BASE_URL}/api/menus/${menuId}/image`, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        },
-        body: formData
-    });
+        const response = await fetch(`${API_BASE_URL}/api/menus/${menuId}/image`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+            body: formData
+        });
 
-    if (!response.ok) {
-        throw new Error('Failed to upload menu image');
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server response:', errorText);
+            console.error('Response status:', response.status);
+            console.error('Response headers:', Object.fromEntries([...response.headers]));
+            throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log('Upload successful:', data);
+        return data;
+    } catch (error) {
+        console.error('Error in uploadMenuImageApi:', error);
+        throw error;
     }
-
-    // Тук получаваш { menuImage: "...", message: "..." }
-    return response.json();
 };
 
-
 // Helper function to get full image URL
-export const getFullImageUrl = (imagePath) => {
-    if (!imagePath) return null;
-    // Remove any double slashes except after http(s):
-    return `${API_BASE_URL}${imagePath}`.replace(/([^:])\/+/g, '$1/');
+export const getFullImageUrl = (relativePath) => {
+    if (!relativePath) {
+        console.warn('No relative path provided to getFullImageUrl');
+        return null;
+    }
+    
+    // Debug log
+    console.log('Constructing URL from relative path:', relativePath);
+    
+    // Remove any leading slashes to avoid double slashes
+    const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+    
+    // Get the API URL from environment
+    const apiUrl = import.meta.env.VITE_API_URL;
+    if (!apiUrl) {
+        console.error('VITE_API_URL is not defined in environment');
+        return null;
+    }
+
+    // Remove trailing slash from API URL if it exists
+    const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+    
+    // Construct the full URL
+    const fullUrl = `${baseUrl}/${cleanPath}`;
+    
+    // Debug log
+    console.log('Constructed full URL:', fullUrl);
+    
+    return fullUrl;
 };

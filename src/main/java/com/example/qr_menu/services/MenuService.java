@@ -104,6 +104,7 @@ public class MenuService {
         // 8. Save to database
         try {
             menuRepository.save(menu);
+            return menuImagePath; // Return the path
         } catch (Exception e) {
             // If database save fails, try to delete the uploaded file
             try {
@@ -113,11 +114,7 @@ public class MenuService {
             }
             throw new RuntimeException("Failed to update menu with new image: " + e.getMessage());
         }
-
-        // 9. Return the path so the controller can send it back in the response
-        return menuImagePath;
     }
-
 
     public void createMenu(MenuDTO menuDTO) {
         // Намери ресторанта по ID

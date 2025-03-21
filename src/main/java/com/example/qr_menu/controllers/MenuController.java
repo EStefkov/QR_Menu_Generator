@@ -30,11 +30,11 @@ public class MenuController {
             @PathVariable Long id,
             @RequestParam("image") MultipartFile image) {
         try {
-            String newMenuImagePath = menuService.uploadMenuImage(id, image);
-            return ResponseEntity.ok(
-                    Map.of("menuImage", newMenuImagePath,
-                            "message", "Menu image uploaded successfully")
-            );
+            String menuImagePath = menuService.uploadMenuImage(id, image);
+            return ResponseEntity.ok(Map.of(
+                "menuImage", menuImagePath,
+                "message", "Menu image uploaded successfully"
+            ));
         } catch (IOException e) {
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)

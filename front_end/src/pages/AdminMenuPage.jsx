@@ -6,8 +6,7 @@ import {
   fetchProductsByCategoryIdApi,
   updateProductApi,
   deleteProductApi,
-  uploadMenuImageApi,
-  getFullImageUrl
+  uploadMenuImageApi
 } from "../api/adminDashboard";
 
 import CategorySection from "../components/CategorySection";
@@ -20,10 +19,11 @@ const AdminMenuPage = () => {
   const token = localStorage.getItem("token");
   const accountType = localStorage.getItem("accountType");
 
-  // Държим реалния пълен URL (а не просто /uploads/...):
   const [menuData, setMenuData] = useState({
     name: "Меню",
-    menuImage: null, // Тук ще държим вече готовия URL
+    menuImage: null,
+    id: null,
+    error: null
   });
 
   const [categories, setCategories] = useState([]);
@@ -49,42 +49,86 @@ const AdminMenuPage = () => {
   // Преобразуваме го чрез getFullImageUrl и го слагаме в state.
   const loadMenuData = async () => {
     try {
+      console.log('Fetching menu data for menuId:', menuId);
+      
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/menus/${menuId}`, 
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          } 
+        }
       );
-      if (response.ok) {
-        const data = await response.json();
-        
-        // data.menuImage е "/uploads/menuImages/10/..."
-        // Превръщаме го в пълен URL
-        const fullUrl = data.menuImage ? getFullImageUrl(data.menuImage) : null;
 
-        setMenuData({
-          name: data.category || "Меню",
-          menuImage: fullUrl // Тук вече е пълният адрес
-        });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
+      console.log('Raw menu data from server:', data);
+
+      // Check if we have a menuImage in the response
+      if (!data.menuImage) {
+        console.warn('No menuImage found in response:', data);
+      }
+      
+      // Update the menu data state with all the data we received
+      const updatedMenuData = {
+        name: data.category || "Меню",
+        menuImage: data.menuImage || null,
+        id: data.id,
+        error: null
+      };
+
+      console.log('Setting menu data to:', updatedMenuData);
+      setMenuData(updatedMenuData);
+
     } catch (error) {
       console.error("Error fetching menu data:", error);
+      setMenuData(prev => ({
+        ...prev,
+        error: error.message
+      }));
     }
   };
 
   // Качваме банера => вземаме новия път => правим го на пълен URL => ъпдейтваме state
   const handleBannerUpload = async (file) => {
     try {
-      const data = await uploadMenuImageApi(token, menuId, file);
-      // data.menuImage = "/uploads/menuImages/..."
-      const fullUrl = getFullImageUrl(data.menuImage);
+      console.log('Starting banner upload:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        menuId: menuId
+      });
 
-      setMenuData(prev => ({
-        ...prev,
-        menuImage: fullUrl
-      }));
+      const data = await uploadMenuImageApi(token, menuId, file);
+      console.log('Upload response:', data);
+
+      if (!data.menuImage) {
+        throw new Error('No menuImage in upload response');
+      }
+
+      // Immediately update the menuData state with the new image path
+      setMenuData(prev => {
+        const updated = {
+          ...prev,
+          menuImage: data.menuImage
+        };
+        console.log('Updating menuData to:', updated);
+        return updated;
+      });
+
+      // Reload menu data after a short delay
+      setTimeout(async () => {
+        await loadMenuData();
+      }, 1000);
+
       alert('Банерът е качен успешно!');
     } catch (error) {
       console.error('Error uploading banner:', error);
-      alert('Грешка при качване на банера');
+      alert(`Грешка при качване на банера: ${error.message}`);
     }
   };
 
