@@ -411,8 +411,9 @@ export const uploadMenuImageApi = async (token, menuId, imageFile) => {
 // Helper function to get full image URL
 export const getFullImageUrl = (relativePath) => {
     if (!relativePath) {
-        console.warn('No relative path provided to getFullImageUrl');
-        return null;
+        // Return the default banner image path
+        const apiUrl = import.meta.env.VITE_API_URL;
+        return `${apiUrl}/uploads/defaultBanner.png`;
     }
     
     // Remove any leading slashes to avoid double slashes
@@ -430,8 +431,6 @@ export const getFullImageUrl = (relativePath) => {
     
     // Construct the full URL
     const fullUrl = `${baseUrl}/${cleanPath}`;
-    
-    
     
     return fullUrl;
 };

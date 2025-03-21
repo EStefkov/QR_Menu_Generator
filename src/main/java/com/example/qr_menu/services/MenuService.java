@@ -211,6 +211,17 @@ public class MenuService {
         return menuMapper.toDto(updatedMenu);
     }
 
+    public MenuDTO updateMenuName(Long id, String newName) {
+        Menu menu = menuRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Menu not found"));
+        
+        menu.setCategory(newName);
+        menu.setUpdatedAt(new Date());
+        Menu updatedMenu = menuRepository.save(menu);
+        
+        return menuMapper.toDto(updatedMenu);
+    }
+
     public List<CategoryDTO> getCategoriesByMenu(Long menuId) {
         Menu menu = menuRepository.findById(menuId)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu not found"));

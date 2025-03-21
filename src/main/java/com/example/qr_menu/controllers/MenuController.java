@@ -104,4 +104,12 @@ public class MenuController {
         MenuDTO updatedMenu = menuService.updateTextColor(id, textColor);
         return ResponseEntity.ok(updatedMenu);
     }
+
+    @PutMapping("/{id}/name")
+    public ResponseEntity<MenuDTO> updateMenuName(
+            @PathVariable Long id,
+            @RequestBody String newName) {
+        MenuDTO updatedMenu = menuService.updateMenuName(id, newName);
+        return ResponseEntity.ok(updatedMenu);
+    }
 }
