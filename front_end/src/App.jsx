@@ -5,6 +5,7 @@ import {
     Navigate,
     useLocation,
   } from "react-router-dom";
+  import { useContext } from "react";
   import NavBar from "./components/NavBar";
   import Login from "./pages/Login.jsx";
   import RegisterPage from "./pages/Register.jsx";
@@ -13,7 +14,7 @@ import {
   import WaiterDashboard from "./pages/WaiterDashboard.jsx";
   import Home from "./pages/Home.jsx";
   import MenuPage from "./pages/AdminMenuPage.jsx";
-  import { useAuth } from "./AuthContext.jsx";
+  import { AuthContext } from "./AuthContext.jsx";
   
   const Layout = ({ children }) => {
     const location = useLocation();
@@ -28,20 +29,10 @@ import {
     );
   };
   
-  const LoadingSpinner = () => (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
-    </div>
-  );
-  
   const App = () => {
-    const { userData, isLoading } = useAuth();
-    const isAuthenticated = !!userData;
-    const accountType = userData?.accountType;
-  
-    if (isLoading) {
-      return <LoadingSpinner />;
-    }
+    const { userData } = useContext(AuthContext);
+    const isAuthenticated = !!userData.token;
+    const accountType = userData.accountType;
   
     return (
       <Router>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../AuthContext";
+import { useAuth } from '../AuthContext';
 import { registerAccount } from "../api/account";
 import { HiOutlineUser, HiOutlineMail, HiOutlineLockClosed, HiOutlineHome } from "react-icons/hi";
 
