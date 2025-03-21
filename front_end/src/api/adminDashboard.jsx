@@ -382,11 +382,6 @@ export const uploadMenuImageApi = async (token, menuId, imageFile) => {
         // Use 'image' to match @RequestParam("image") in MenuController
         formData.append('image', imageFile);
         
-        // Log the FormData contents
-        console.log('FormData contents:');
-        for (let pair of formData.entries()) {
-            console.log(pair[0] + ': ' + pair[1]);
-        }
 
         const response = await fetch(`${API_BASE_URL}/api/menus/${menuId}/image`, {
             method: 'POST',
@@ -420,9 +415,6 @@ export const getFullImageUrl = (relativePath) => {
         return null;
     }
     
-    // Debug log
-    console.log('Constructing URL from relative path:', relativePath);
-    
     // Remove any leading slashes to avoid double slashes
     const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
     
@@ -439,8 +431,7 @@ export const getFullImageUrl = (relativePath) => {
     // Construct the full URL
     const fullUrl = `${baseUrl}/${cleanPath}`;
     
-    // Debug log
-    console.log('Constructed full URL:', fullUrl);
+    
     
     return fullUrl;
 };

@@ -37,7 +37,6 @@ const AdminMenuPage = () => {
   const [editInfo, setEditInfo] = useState("");
   const [editImageFile, setEditImageFile] = useState(null);
 
-  // Зареждаме данните при mount
   useEffect(() => {
     if (menuId) {
       loadMenuData();
@@ -45,12 +44,8 @@ const AdminMenuPage = () => {
     }
   }, [menuId]);
 
-  // Тук вече получаваме DTO с menuImage = "/uploads/menuImages/10/xyz.jpg"
-  // Преобразуваме го чрез getFullImageUrl и го слагаме в state.
   const loadMenuData = async () => {
     try {
-      console.log('Fetching menu data for menuId:', menuId);
-      
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/menus/${menuId}`, 
         { 
@@ -66,14 +61,7 @@ const AdminMenuPage = () => {
       }
 
       const data = await response.json();
-      console.log('Raw menu data from server:', data);
-
-      // Check if we have a menuImage in the response
-      if (!data.menuImage) {
-        console.warn('No menuImage found in response:', data);
-      }
       
-      // Update the menu data state with all the data we received
       const updatedMenuData = {
         name: data.category || "Меню",
         menuImage: data.menuImage || null,
@@ -81,11 +69,9 @@ const AdminMenuPage = () => {
         error: null
       };
 
-      console.log('Setting menu data to:', updatedMenuData);
       setMenuData(updatedMenuData);
 
     } catch (error) {
-      console.error("Error fetching menu data:", error);
       setMenuData(prev => ({
         ...prev,
         error: error.message
@@ -93,41 +79,25 @@ const AdminMenuPage = () => {
     }
   };
 
-  // Качваме банера => вземаме новия път => правим го на пълен URL => ъпдейтваме state
   const handleBannerUpload = async (file) => {
     try {
-      console.log('Starting banner upload:', {
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        menuId: menuId
-      });
-
       const data = await uploadMenuImageApi(token, menuId, file);
-      console.log('Upload response:', data);
 
       if (!data.menuImage) {
         throw new Error('No menuImage in upload response');
       }
 
-      // Immediately update the menuData state with the new image path
-      setMenuData(prev => {
-        const updated = {
-          ...prev,
-          menuImage: data.menuImage
-        };
-        console.log('Updating menuData to:', updated);
-        return updated;
-      });
+      setMenuData(prev => ({
+        ...prev,
+        menuImage: data.menuImage
+      }));
 
-      // Reload menu data after a short delay
       setTimeout(async () => {
         await loadMenuData();
       }, 1000);
 
       alert('Банерът е качен успешно!');
     } catch (error) {
-      console.error('Error uploading banner:', error);
       alert(`Грешка при качване на банера: ${error.message}`);
     }
   };
@@ -137,7 +107,7 @@ const AdminMenuPage = () => {
       const data = await fetchCategoriesByMenuIdApi(token, menuId);
       setCategories(data);
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      alert("Грешка при зареждане на категориите");
     }
   };
 
@@ -152,7 +122,7 @@ const AdminMenuPage = () => {
         const products = await fetchProductsByCategoryIdApi(token, catId);
         setCategoryProducts((prev) => ({ ...prev, [catId]: products }));
       } catch (error) {
-        console.error("Error fetching products:", error);
+        alert("Грешка при зареждане на продуктите");
       }
     }
   };
@@ -192,14 +162,12 @@ const AdminMenuPage = () => {
       alert("Продуктът е успешно обновен!");
       setEditingProduct(null);
 
-      // Презареждаме продуктите след ъпдейта
       const catId = editingProduct.categoryId;
       if (catId) {
         const newProducts = await fetchProductsByCategoryIdApi(token, catId);
         setCategoryProducts((prev) => ({ ...prev, [catId]: newProducts }));
       }
     } catch (error) {
-      console.error("Error updating product:", error);
       alert("Неуспешен ъпдейт на продукт!");
     }
   };
@@ -212,16 +180,13 @@ const AdminMenuPage = () => {
       await deleteProductApi(token, productId);
       alert("Продуктът беше изтрит успешно!");
       setEditingProduct(null);
-      // При нужда може да презаредиш категорията
     } catch (error) {
-      console.error("Error deleting product:", error);
       alert("Грешка при изтриване на продукта.");
     }
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 min-h-screen">
-      {/* Подаваме вече готовия пълен URL към MenuBanner */}
       <MenuBanner
         bannerImage={menuData.menuImage} 
         menuName={menuData.name}
@@ -256,12 +221,10 @@ const AdminMenuPage = () => {
           })}
         </div>
 
-        {/* Модал за "Виж детайли" */}
         {selectedProduct && (
           <DetailsModal product={selectedProduct} onClose={handleCloseModal} />
         )}
 
-        {/* Модал за РЕДАКЦИЯ */}
         {editingProduct && (
           <EditProductModal
             editingProduct={editingProduct}
