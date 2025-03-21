@@ -126,7 +126,9 @@ const RestaurantsTable = ({
                 <td className="p-4 text-gray-700 dark:text-gray-300">{restaurant.id}</td>
                 <td className="p-4 text-gray-700 dark:text-gray-300">{restaurant.restorantName}</td>
                 <td className="p-4 text-gray-700 dark:text-gray-300">{restaurant.phoneNumber}</td>
-                <td className="p-4 text-gray-700 dark:text-gray-300">{restaurant.accountId}</td>
+                <td className="p-4 text-gray-700 dark:text-gray-300">
+                    {restaurant.accountId ? restaurant.accountId : 'No Owner'}
+                </td>
                 <td className="p-4">
                   <div className="flex flex-wrap gap-2 mb-4">
                     <button

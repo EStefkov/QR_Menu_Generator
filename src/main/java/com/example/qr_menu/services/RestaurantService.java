@@ -83,18 +83,21 @@ public class RestaurantService {
                 .id(restaurant.getId())
                 .restorantName(restaurant.getRestorantName())
                 .phoneNumber(restaurant.getPhoneNumber())
-                .accountId(restaurant.getAccount().getId())
+                .accountId(restaurant.getAccount() != null ? restaurant.getAccount().getId() : null)
                 .address(restaurant.getAddress())
+                .email(restaurant.getEmail())
                 .build());
     }
 
     private RestaurantDTO convertToDTO(Restorant restaurant) {
-        RestaurantDTO dto = new RestaurantDTO();
-        dto.setId(restaurant.getId());
-        dto.setRestorantName(restaurant.getRestorantName());
-        dto.setPhoneNumber(restaurant.getPhoneNumber());
-        dto.setAccountId(restaurant.getAccount().getId()); // Include account ID in the DTO
-        return dto;
+        return RestaurantDTO.builder()
+                .id(restaurant.getId())
+                .restorantName(restaurant.getRestorantName())
+                .phoneNumber(restaurant.getPhoneNumber())
+                .accountId(restaurant.getAccount() != null ? restaurant.getAccount().getId() : null)
+                .address(restaurant.getAddress())
+                .email(restaurant.getEmail())
+                .build();
     }
 
     public RestaurantDTO getRestaurantById(Long id) {
