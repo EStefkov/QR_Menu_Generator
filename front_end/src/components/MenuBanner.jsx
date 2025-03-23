@@ -14,8 +14,7 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
   // useEffect(() => {
   //   console.log('MenuBanner props:', { initialTextColor, menuName, menuId });
   // }, [initialTextColor, menuName, menuId]);
-const token = localStorage.getItem('token');
-  console.log(token );
+
 
   useEffect(() => {
     setEditedName(menuName?.replace(/['"]/g, ''));
