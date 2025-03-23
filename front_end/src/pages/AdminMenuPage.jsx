@@ -6,7 +6,8 @@ import {
   fetchProductsByCategoryIdApi,
   updateProductApi,
   deleteProductApi,
-  uploadMenuImageApi
+  uploadMenuImageApi,
+  getFullImageUrl
 } from "../api/adminDashboard";
 
 import CategorySection from "../components/CategorySection";
@@ -109,6 +110,7 @@ const AdminMenuPage = () => {
       const data = await fetchCategoriesByMenuIdApi(token, menuId);
       setCategories(data);
     } catch (error) {
+      console.error('Error loading categories:', error);
       alert("Грешка при зареждане на категориите");
     }
   };
@@ -122,15 +124,36 @@ const AdminMenuPage = () => {
     if (!categoryProducts[catId]) {
       try {
         const products = await fetchProductsByCategoryIdApi(token, catId);
-        setCategoryProducts((prev) => ({ ...prev, [catId]: products }));
+        const formattedProducts = products.map(product => ({
+          ...product,
+          productImage: product.productImage ? getFullImageUrl(product.productImage) : null,
+          productName: product.productName || '',
+          productPrice: product.productPrice || 0,
+          productInfo: product.productInfo || '',
+          allergens: product.allergens || [],
+          categoryId: product.categoryId,
+          id: product.id
+        }));
+        setCategoryProducts((prev) => ({ ...prev, [catId]: formattedProducts }));
       } catch (error) {
+        console.error('Error loading products:', error);
         alert("Грешка при зареждане на продуктите");
       }
     }
   };
 
   const handleSelectProduct = (product) => {
-    setSelectedProduct(product);
+    const formattedProduct = {
+      ...product,
+      productImage: product.productImage ? getFullImageUrl(product.productImage) : null,
+      productName: product.productName || '',
+      productPrice: product.productPrice || 0,
+      productInfo: product.productInfo || '',
+      allergens: product.allergens || [],
+      categoryId: product.categoryId,
+      id: product.id
+    };
+    setSelectedProduct(formattedProduct);
   };
   const handleCloseModal = () => {
     setSelectedProduct(null);
@@ -170,6 +193,7 @@ const AdminMenuPage = () => {
         setCategoryProducts((prev) => ({ ...prev, [catId]: newProducts }));
       }
     } catch (error) {
+      console.error('Error updating product:', error);
       alert("Неуспешен ъпдейт на продукт!");
     }
   };
@@ -183,6 +207,7 @@ const AdminMenuPage = () => {
       alert("Продуктът беше изтрит успешно!");
       setEditingProduct(null);
     } catch (error) {
+      console.error('Error deleting product:', error);
       alert("Грешка при изтриване на продукта.");
     }
   };

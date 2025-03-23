@@ -1,17 +1,18 @@
 // ProductCard.jsx
 import React, { useState, useEffect } from "react";
 import { getFullImageUrl } from "../api/adminDashboard";
-import { HiHeart, HiShoppingCart, HiOutlineHeart, HiUser } from 'react-icons/hi';
+import { HiHeart, HiShoppingCart, HiOutlineHeart, HiUser, HiInformationCircle } from 'react-icons/hi';
 import { useAuth } from '../AuthContext';
-import {favoritesApi} from '../api/favoritesProducts';
+import { favoritesApi } from '../api/favoritesProducts';
 
-const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) => {
+const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onFavoriteUpdate, isFavorite: initialIsFavorite }) => {
   const { userData } = useAuth();
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite || false);
   const [showLoginAlert, setShowLoginAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get full URL for the product image
   const imageUrl = product?.productImage ? getFullImageUrl(product.productImage) : "";
@@ -25,25 +26,24 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
     }
   }, [product]);
   
+  // Check favorite status when component mounts or product changes
   useEffect(() => {
-    const fetchIsFavorite = async () => {
-      if (userData.token && product?.id) {
-        try {
-          const isFav = await favoritesApi.isFavorite(product.id);
-          setIsFavorite(isFav);
-        } catch (error) {
-          console.error("Error fetching favorite status:", error);
-        }
-      } else {
-        setIsFavorite(false);
+    const checkFavoriteStatus = async () => {
+      if (!userData.token || onFavoriteUpdate) return;
+      
+      try {
+        const status = await favoritesApi.isFavorite(product.id);
+        setIsFavorite(status);
+      } catch (error) {
+        console.error('Error checking favorite status:', error);
       }
     };
-    
-    fetchIsFavorite();
-  }, [userData.token, product.id]);
-  
+
+    checkFavoriteStatus();
+  }, [product.id, userData.token, onFavoriteUpdate]);
 
   const handleImageError = () => {
+    console.error('Image failed to load:', imageUrl);
     setImageError(true);
     setImageLoading(false);
   };
@@ -62,18 +62,32 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
       return;
     }
   
+    setIsLoading(true);
     try {
-      if (!isFavorite) {
-        await favoritesApi.addFavorite(product.id);
-        setIsFavorite(true);
+      if (onFavoriteUpdate) {
+        // If onFavoriteUpdate is provided, use it (for Favorites page)
+        await onFavoriteUpdate(product.id);
+        setIsFavorite(false); // Always set to false in favorites page since we're removing
       } else {
-        await favoritesApi.removeFavorite(product.id);
-        setIsFavorite(false);
+        // Otherwise handle it internally (for regular product cards)
+        if (!isFavorite) {
+          await favoritesApi.addFavorite(product.id);
+          setIsFavorite(true);
+        } else {
+          await favoritesApi.removeFavorite(product.id);
+          setIsFavorite(false);
+        }
       }
     } catch (error) {
       console.error("Favorite operation error:", error);
-      setAlertMessage('Error updating favorites');
+      if (error.message === 'Authentication required') {
+        setAlertMessage('Please log in to continue');
+      } else {
+        setAlertMessage('Error updating favorites');
+      }
       setShowLoginAlert(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -88,6 +102,24 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
     }
     
     // TODO: Implement add to order functionality
+  };
+
+  const handleDetailsClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onSelectProduct) {
+      console.log('Showing details for:', product);
+      onSelectProduct({
+        ...product,
+        productImage: product.productImage ? getFullImageUrl(product.productImage) : null,
+        productName: product.productName || '',
+        productPrice: product.productPrice || 0,
+        productInfo: product.productInfo || '',
+        allergens: product.allergens || [],
+        categoryId: product.categoryId,
+        id: product.id
+      });
+    }
   };
 
   // Auto-hide alert after 3 seconds
@@ -114,8 +146,9 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
       <div className="absolute top-2 right-2 flex flex-col gap-2 z-10">
         <button
           onClick={handleFavoriteClick}
+          disabled={isLoading}
           className="p-2 rounded-full bg-white dark:bg-gray-700 shadow-md hover:shadow-lg transform transition-all duration-200 hover:scale-110 focus:outline-none group/btn"
-          title={userData.token ? "Add to favorites" : "Login to add to favorites"}
+          title={userData.token ? (isFavorite ? "Remove from favorites" : "Add to favorites") : "Login to add to favorites"}
         >
           {isFavorite ? (
             <HiHeart className="w-5 h-5 text-red-500" />
@@ -167,7 +200,7 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
         <h4 className="font-semibold text-gray-800 dark:text-gray-100 mb-1">
           {product.productName}
         </h4>
-        <p className="text-gray-600 dark:text-gray-300 text-sm">
+        <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2">
           {product.productInfo}
         </p>
         <p className="text-blue-600 dark:text-blue-400 font-semibold mt-2">
@@ -176,10 +209,11 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
 
         <div className="mt-3 flex items-center justify-between">
           <button
-            onClick={() => onSelectProduct(product)}
-            className="px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition"
+            onClick={handleDetailsClick}
+            className="px-4 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition flex items-center space-x-2"
           >
-            Детайли
+            <HiInformationCircle className="w-5 h-5" />
+            <span>Детайли</span>
           </button>
 
           {accountType === "ROLE_ADMIN" && (

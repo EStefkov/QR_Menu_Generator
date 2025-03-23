@@ -21,23 +21,30 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
   }, [menuName]);
 
   useEffect(() => {
-    // Get full URL, which will return default banner if bannerImage is null
-    const fullUrl = getFullImageUrl(bannerImage);
-    setImageUrl(fullUrl);
+    // Only attempt to load image if bannerImage exists
+    if (bannerImage) {
+      const fullUrl = getFullImageUrl(bannerImage);
+      setImageUrl(fullUrl);
 
-    // Preload image
-    const img = new Image();
-    img.onload = () => {
+      // Preload image
+      const img = new Image();
+      img.onload = () => {
+        setImageError(false);
+        setIsLoading(false);
+      };
+      img.onerror = () => {
+        console.error('Failed to load image:', fullUrl);
+        setImageError(true);
+        setIsLoading(false);
+      };
+      setIsLoading(true);
+      img.src = fullUrl;
+    } else {
+      // If no banner image, set default state
+      setImageUrl('');
       setImageError(false);
       setIsLoading(false);
-    };
-    img.onerror = () => {
-      console.error('Failed to load image:', fullUrl);
-      setImageError(true);
-      setIsLoading(false);
-    };
-    setIsLoading(true);
-    img.src = fullUrl;
+    }
   }, [bannerImage]);
 
   // Update textColor when initialTextColor prop changes

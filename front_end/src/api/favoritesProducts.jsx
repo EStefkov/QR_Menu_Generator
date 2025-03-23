@@ -4,78 +4,65 @@ import { getFullImageUrl } from './adminDashboard';
 export const favoritesApi = {
     addFavorite: async (productId) => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('No authentication token found');
-            }
-            const response = await axiosInstance.post(`/api/favorites/${productId}`, {}, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await axiosInstance.post(`/api/favorites/${productId}`);
             return response.data;
         } catch (error) {
-            console.error('Error adding favorite:', error);
+            if (error.response?.status === 403) {
+                throw new Error('Authentication required');
+            }
             throw error;
         }
     },
 
     removeFavorite: async (productId) => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('No authentication token found');
-            }
-            await axiosInstance.delete(`/api/favorites/${productId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await axiosInstance.delete(`/api/favorites/${productId}`);
+            return response.data;
         } catch (error) {
-            console.error('Error removing favorite:', error);
+            if (error.response?.status === 403) {
+                throw new Error('Authentication required');
+            }
             throw error;
         }
     },
 
     getFavorites: async () => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                throw new Error('No authentication token found');
-            }
-            const response = await axiosInstance.get('/api/favorites', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            // Transform the data to include full image URLs
-            return response.data.map(favorite => {
-                // If the product already has a full URL, use it
-                const productImage = favorite.productImage;
-                return {
-                    ...favorite,
-                    productImage: productImage ? getFullImageUrl(productImage) : null
-                };
-            });
+            const favoritesResponse = await axiosInstance.get('/api/favorites');
+            console.log('Raw favorites data:', favoritesResponse.data);
+
+            // Transform the favorites data to include all necessary fields
+            const favoritesWithDetails = favoritesResponse.data.map(favorite => ({
+                id: favorite.productId,
+                productId: favorite.productId,
+                productName: favorite.productName || '',
+                productPrice: favorite.productPrice || 0,
+                productInfo: favorite.productInfo || '',
+                productImage: favorite.productImage ? getFullImageUrl(favorite.productImage) : null,
+                allergens: favorite.allergens || [],
+                categoryId: favorite.categoryId,
+                accountId: favorite.accountId,
+                createdAt: favorite.createdAt
+            }));
+
+            console.log('Processed favorites:', favoritesWithDetails);
+            return favoritesWithDetails;
         } catch (error) {
-            console.error('Error getting favorites:', error);
+            if (error.response?.status === 403) {
+                throw new Error('Authentication required');
+            }
             throw error;
         }
     },
 
     isFavorite: async (productId) => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                return false;
-            }
-            const response = await axiosInstance.get(`/api/favorites/${productId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const response = await axiosInstance.get(`/api/favorites/${productId}`);
             return response.data;
         } catch (error) {
+            if (error.response?.status === 403) {
+                return false;
+            }
             console.error('Error checking favorite status:', error);
             return false;
         }

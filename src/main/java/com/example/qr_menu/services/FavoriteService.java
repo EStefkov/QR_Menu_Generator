@@ -4,6 +4,7 @@ import com.example.qr_menu.dto.FavoriteDTO;
 import com.example.qr_menu.entities.Account;
 import com.example.qr_menu.entities.Favorite;
 import com.example.qr_menu.entities.Product;
+import com.example.qr_menu.entities.Allergen;
 import com.example.qr_menu.repositories.FavoriteRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +69,10 @@ public class FavoriteService {
         dto.setProductName(favorite.getProduct().getProductName());
         dto.setProductImage(favorite.getProduct().getProductImage());
         dto.setProductPrice(favorite.getProduct().getProductPrice());
+        dto.setProductInfo(favorite.getProduct().getProductInfo());
+        dto.setAllergens(favorite.getProduct().getAllergens().stream()
+                .map(Allergen::getAllergenName)
+                .collect(Collectors.toList()));
         dto.setCreatedAt(favorite.getCreatedAt());
         return dto;
     }

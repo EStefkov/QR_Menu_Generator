@@ -1,6 +1,7 @@
 package com.example.qr_menu.controllers;
 
 import com.example.qr_menu.dto.ProductDTO;
+import com.example.qr_menu.entities.Product;
 import com.example.qr_menu.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -145,5 +146,19 @@ public class ProductController {
     public ResponseEntity<List<ProductDTO>> getProductsByCategoryId(@PathVariable Long categoryId) {
         List<ProductDTO> products = productService.getProductsByCategoryId(categoryId);
         return ResponseEntity.ok(products);
+    }
+
+    // Get single product by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
+        Product product = productService.getProductById(id);
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setId(product.getId());
+        productDTO.setProductName(product.getProductName());
+        productDTO.setProductPrice(product.getProductPrice());
+        productDTO.setProductInfo(product.getProductInfo());
+        productDTO.setProductImage(product.getProductImage());
+        productDTO.setCategoryId(product.getCategory().getId());
+        return ResponseEntity.ok(productDTO);
     }
 }
