@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -261,6 +262,17 @@ public class AccountService {
         return mapToDTO(account);
     }
 
+    @Transactional(readOnly = true)
+    public Account getAccountById(Long id) {
+        return accountRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public Account getAccountByMailAddress(String mailAddress) {
+        return accountRepository.findByMailAddress(mailAddress)
+            .orElseThrow(() -> new ResourceNotFoundException("Account not found with email: " + mailAddress));
+    }
 
     /**
      * Помощен метод за конверсия на Entity -> DTO.

@@ -14,6 +14,7 @@ import {
   import WaiterDashboard from "./pages/WaiterDashboard.jsx";
   import Home from "./pages/Home.jsx";
   import MenuPage from "./pages/AdminMenuPage.jsx";
+  import Favorites from "./pages/Favorites.jsx";
   import { AuthContext } from "./AuthContext.jsx";
   
   const Layout = ({ children }) => {
@@ -58,6 +59,20 @@ import {
               <Layout>
                 <MenuPage />
               </Layout>
+            }
+          />
+  
+          {/* Favorites */}
+          <Route
+            path="/favorites"
+            element={
+              isAuthenticated ? (
+                <Layout>
+                  <Favorites />
+                </Layout>
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
   

@@ -55,4 +55,19 @@ public class Product {
     )
     private List<Allergen> allergens = new ArrayList<>();
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Favorite> favorites = new HashSet<>();
+
+    // Add helper methods for favorites
+    public void addFavorite(Account account) {
+        Favorite favorite = new Favorite();
+        favorite.setProduct(this);
+        favorite.setAccount(account);
+        favorites.add(favorite);
+    }
+
+    public void removeFavorite(Account account) {
+        favorites.removeIf(favorite -> favorite.getAccount().equals(account));
+    }
+
 }

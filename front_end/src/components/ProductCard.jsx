@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { getFullImageUrl } from "../api/adminDashboard";
 import { HiHeart, HiShoppingCart, HiOutlineHeart, HiUser } from 'react-icons/hi';
 import { useAuth } from '../AuthContext';
+import { favoritesApi } from '../api/favoritesProducts';
 
 const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) => {
   const { userData } = useAuth();
@@ -11,6 +12,7 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
   const [isFavorite, setIsFavorite] = useState(false);
   const [showLoginAlert, setShowLoginAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get full URL for the product image
   const imageUrl = product?.productImage ? getFullImageUrl(product.productImage) : "";
@@ -23,6 +25,23 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
       setImageLoading(true);
     }
   }, [product]);
+  
+  useEffect(() => {
+    const fetchIsFavorite = async () => {
+      if (userData.token && product?.id) {
+        try {
+          const isFav = await favoritesApi.isFavorite(product.id);
+          setIsFavorite(isFav);
+        } catch (error) {
+          console.error("Error fetching favorite status:", error);
+        }
+      } else {
+        setIsFavorite(false);
+      }
+    };
+    
+    fetchIsFavorite();
+  }, [userData.token, product.id]);
 
   const handleImageError = () => {
     setImageError(true);
@@ -33,18 +52,32 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
     setImageLoading(false);
   };
 
-  const handleFavoriteClick = (e) => {
+  const handleFavoriteClick = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+  
     if (!userData.token) {
       setAlertMessage('Please log in to add items to favorites');
       setShowLoginAlert(true);
       return;
     }
-    
-    setIsFavorite(!isFavorite);
-    // TODO: Implement favorite functionality
+  
+    setIsLoading(true);
+    try {
+      if (!isFavorite) {
+        await favoritesApi.addFavorite(product.id);
+        setIsFavorite(true);
+      } else {
+        await favoritesApi.removeFavorite(product.id);
+        setIsFavorite(false);
+      }
+    } catch (error) {
+      console.error("Favorite operation error:", error);
+      setAlertMessage('Error updating favorites');
+      setShowLoginAlert(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddToOrder = (e) => {
@@ -84,11 +117,14 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType }) =
       <div className="absolute top-2 right-2 flex flex-col gap-2 z-10">
         <button
           onClick={handleFavoriteClick}
-          className="p-2 rounded-full bg-white dark:bg-gray-700 shadow-md hover:shadow-lg transform transition-all duration-200 hover:scale-110 focus:outline-none group/btn"
-          title={userData.token ? "Add to favorites" : "Login to add to favorites"}
+          disabled={isLoading}
+          className={`p-2 rounded-full bg-white dark:bg-gray-700 shadow-md hover:shadow-lg transform transition-all duration-200 hover:scale-110 focus:outline-none group/btn ${
+            isLoading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          title={userData.token ? (isFavorite ? "Remove from favorites" : "Add to favorites") : "Login to add to favorites"}
         >
           {isFavorite ? (
-            <HiHeart className="w-5 h-5 text-red-500" />
+            <HiHeart className="w-5 h-5 text-red-500 animate-pulse" />
           ) : (
             <HiOutlineHeart className="w-5 h-5 text-gray-600 dark:text-gray-300 group-hover/btn:text-red-500 transition-colors" />
           )}

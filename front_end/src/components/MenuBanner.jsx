@@ -11,9 +11,11 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
   const [editedName, setEditedName] = useState(menuName?.replace(/['"]/g, ''));
 
   // Debug log for props
-  useEffect(() => {
-    console.log('MenuBanner props:', { initialTextColor, menuName, menuId });
-  }, [initialTextColor, menuName, menuId]);
+  // useEffect(() => {
+  //   console.log('MenuBanner props:', { initialTextColor, menuName, menuId });
+  // }, [initialTextColor, menuName, menuId]);
+const token = localStorage.getItem('token');
+  console.log(token );
 
   useEffect(() => {
     setEditedName(menuName?.replace(/['"]/g, ''));
@@ -43,7 +45,7 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
   useEffect(() => {
     if (initialTextColor) {
       const cleanColor = initialTextColor.replace(/['"]/g, '');
-      console.log('Updating text color to:', cleanColor);
+      // console.log('Updating text color to:', cleanColor);
       setTextColor(cleanColor);
     }
   }, [initialTextColor]);
@@ -144,9 +146,7 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
     { value: 'text-purple-400', label: 'Purple' }
   ];
 
-  // Debug log for current state
-  console.log('Current MenuBanner state:', { textColor, isLoading, imageError });
-
+ 
   return (
     <div className="w-full h-[300px] relative overflow-hidden">
       {/* Base background */}

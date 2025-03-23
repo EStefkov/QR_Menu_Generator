@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Data
@@ -56,6 +58,21 @@ public class Account {
     // One Account can have many Restaurants
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Restorant> restorants;
+
+    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Favorite> favorites = new HashSet<>();
+
+    // Add helper methods for favorites
+    public void addFavorite(Product product) {
+        Favorite favorite = new Favorite();
+        favorite.setAccount(this);
+        favorite.setProduct(product);
+        favorites.add(favorite);
+    }
+
+    public void removeFavorite(Product product) {
+        favorites.removeIf(favorite -> favorite.getProduct().equals(product));
+    }
 
     public enum AccountType {
         ROLE_USER,

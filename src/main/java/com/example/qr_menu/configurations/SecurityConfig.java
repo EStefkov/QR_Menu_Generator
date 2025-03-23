@@ -53,7 +53,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/accounts/{id}").hasAnyRole("ADMIN", "USER")
                         .requestMatchers(HttpMethod.POST, "/api/accounts/uploadProfilePicture/**").hasAnyRole("ADMIN", "USER")
                         .requestMatchers(HttpMethod.PUT, "/api/accounts/update/**").hasAnyRole("ADMIN", "USER")
-                        
+
+                        // Favorites endpoints - allow all authenticated users
+                        .requestMatchers("/api/favorites/**").authenticated()
+
                         // Restaurant management endpoints - let the @PreAuthorize annotations handle these
                         .requestMatchers("/api/restaurants/**").authenticated()
                         
