@@ -15,4 +15,5 @@ public class FavoriteDTO {
     private String productInfo;
     private List<String> allergens;
     private LocalDateTime createdAt;
+    private String menuName;
 } 

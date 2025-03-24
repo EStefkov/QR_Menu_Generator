@@ -71,7 +71,7 @@ import {
                   <Favorites />
                 </Layout>
               ) : (
-                <Navigate to="/login" />
+                <Navigate to="/" />
               )
             }
           />

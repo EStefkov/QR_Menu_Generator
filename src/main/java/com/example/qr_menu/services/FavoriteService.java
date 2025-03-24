@@ -74,6 +74,15 @@ public class FavoriteService {
                 .map(Allergen::getAllergenName)
                 .collect(Collectors.toList()));
         dto.setCreatedAt(favorite.getCreatedAt());
+        
+        // Set menu name from product's category's menu
+        if (favorite.getProduct().getCategory() != null && 
+            favorite.getProduct().getCategory().getMenu() != null) {
+            dto.setMenuName(favorite.getProduct().getCategory().getMenu().getCategory());
+        } else {
+            dto.setMenuName("Uncategorized");
+        }
+        
         return dto;
     }
 } 

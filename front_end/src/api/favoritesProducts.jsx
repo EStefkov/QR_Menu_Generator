@@ -32,18 +32,21 @@ export const favoritesApi = {
             console.log('Raw favorites data:', favoritesResponse.data);
 
             // Transform the favorites data to include all necessary fields
-            const favoritesWithDetails = favoritesResponse.data.map(favorite => ({
-                id: favorite.productId,
-                productId: favorite.productId,
-                productName: favorite.productName || '',
-                productPrice: favorite.productPrice || 0,
-                productInfo: favorite.productInfo || '',
-                productImage: favorite.productImage ? getFullImageUrl(favorite.productImage) : null,
-                allergens: favorite.allergens || [],
-                categoryId: favorite.categoryId,
-                accountId: favorite.accountId,
-                createdAt: favorite.createdAt
-            }));
+            const favoritesWithDetails = favoritesResponse.data.map(favorite => {
+                return {
+                    id: favorite.productId,
+                    productId: favorite.productId,
+                    productName: favorite.productName || '',
+                    productPrice: favorite.productPrice || 0,
+                    productInfo: favorite.productInfo || '',
+                    productImage: favorite.productImage ? getFullImageUrl(favorite.productImage) : null,
+                    allergens: favorite.allergens || [],
+                    categoryId: favorite.categoryId,
+                    accountId: favorite.accountId,
+                    createdAt: favorite.createdAt,
+                    menuName: favorite.menuName || 'Uncategorized' // Use menuName from the backend
+                };
+            });
 
             console.log('Processed favorites:', favoritesWithDetails);
             return favoritesWithDetails;

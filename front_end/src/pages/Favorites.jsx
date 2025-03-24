@@ -3,8 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { favoritesApi } from '../api/favoritesProducts';
 import { useAuth } from '../AuthContext';
 import ProductCard from '../components/ProductCard';
-import { HiHeart, HiSearch, HiFilter } from 'react-icons/hi';
+import { HiHeart, HiSearch, HiFilter, HiChevronDown, HiChevronRight } from 'react-icons/hi';
 import DetailsModal from '../components/DetailsModal';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+// Helper function to get full image URL
+function getFullImageUrl(productImage) {
+  if (!productImage) {
+    return "";
+  }
+  if (productImage.startsWith('http://') || productImage.startsWith('https://')) {
+    return productImage;
+  }
+  return API_BASE_URL + productImage;
+}
 
 const Favorites = () => {
   const { userData } = useAuth();
@@ -14,9 +27,9 @@ const Favorites = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-  const [currentPage, setCurrentPage] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const itemsPerPage = 12;
+  const [expandedMenus, setExpandedMenus] = useState({});
+  const [menuFavorites, setMenuFavorites] = useState({});
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -24,13 +37,11 @@ const Favorites = () => {
         navigate('/login');
         return;
       }
-
       try {
         setLoading(true);
         const data = await favoritesApi.getFavorites();
         console.log('Fetched favorites with complete details:', data);
         
-        // Ensure all required fields are present
         const favoritesWithDefaults = data.map(favorite => ({
           ...favorite,
           productName: favorite.productName || '',
@@ -38,10 +49,22 @@ const Favorites = () => {
           productInfo: favorite.productInfo || '',
           allergens: favorite.allergens || [],
           categoryId: favorite.categoryId || null,
-          productImage: favorite.productImage || null
+          productImage: favorite.productImage ? getFullImageUrl(favorite.productImage) : null
         }));
         
-        console.log('Processed favorites:', favoritesWithDefaults);
+        console.log('Processed favorites with image URLs:', favoritesWithDefaults);
+        
+        // Group favorites by menu name
+        const groupedFavorites = favoritesWithDefaults.reduce((acc, favorite) => {
+          const menuName = favorite.menuName || 'Uncategorized';
+          if (!acc[menuName]) {
+            acc[menuName] = [];
+          }
+          acc[menuName].push(favorite);
+          return acc;
+        }, {});
+
+        setMenuFavorites(groupedFavorites);
         setFavorites(favoritesWithDefaults);
       } catch (err) {
         console.error('Error fetching favorites:', err);
@@ -62,6 +85,14 @@ const Favorites = () => {
     try {
       await favoritesApi.removeFavorite(productId);
       setFavorites(prevFavorites => prevFavorites.filter(fav => fav.id !== productId));
+      // Update menuFavorites as well
+      setMenuFavorites(prev => {
+        const updated = { ...prev };
+        Object.keys(updated).forEach(menuName => {
+          updated[menuName] = updated[menuName].filter(fav => fav.id !== productId);
+        });
+        return updated;
+      });
     } catch (error) {
       console.error('Error removing favorite:', error);
       setError('Failed to remove favorite. Please try again.');
@@ -70,7 +101,6 @@ const Favorites = () => {
 
   const handleSelectProduct = (product) => {
     console.log('Selected product for details:', product);
-    // Ensure all required fields are present
     const formattedProduct = {
       ...product,
       productName: product.productName || '',
@@ -88,19 +118,21 @@ const Favorites = () => {
     setSelectedProduct(null);
   };
 
-  // Filter favorites based on search term and price range
+  const toggleMenu = (menuName) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [menuName]: !prev[menuName]
+    }));
+  };
+
   const filteredFavorites = favorites.filter(favorite => {
     const matchesSearch = favorite.productName.toLowerCase().includes(searchTerm.toLowerCase());
     const price = favorite.productPrice;
-    const matchesPrice = (!priceRange.min || price >= Number(priceRange.min)) &&
-                        (!priceRange.max || price <= Number(priceRange.max));
+    const matchesPrice =
+      (!priceRange.min || price >= Number(priceRange.min)) &&
+      (!priceRange.max || price <= Number(priceRange.max));
     return matchesSearch && matchesPrice;
   });
-
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredFavorites.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedFavorites = filteredFavorites.slice(startIndex, startIndex + itemsPerPage);
 
   if (!userData.token) {
     return null;
@@ -199,44 +231,56 @@ const Favorites = () => {
             </p>
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {paginatedFavorites.map((favorite) => (
-                <ProductCard
-                  key={favorite.id || favorite.productId}
-                  product={favorite}
-                  onSelectProduct={handleSelectProduct}
-                  onEditProduct={() => {}}
-                  accountType={userData.role}
-                  onFavoriteUpdate={handleFavoriteUpdate}
-                  isFavorite={true}
-                />
-              ))}
-            </div>
+          <div className="space-y-6">
+            {Object.entries(menuFavorites).map(([menuName, menuItems]) => {
+              const filteredMenuItems = menuItems.filter(item => {
+                const matchesSearch = item.productName.toLowerCase().includes(searchTerm.toLowerCase());
+                const price = item.productPrice;
+                const matchesPrice =
+                  (!priceRange.min || price >= Number(priceRange.min)) &&
+                  (!priceRange.max || price <= Number(priceRange.max));
+                return matchesSearch && matchesPrice;
+              });
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex justify-center space-x-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  Previous
-                </button>
-                <span className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </>
+              if (filteredMenuItems.length === 0) return null;
+
+              return (
+                <div key={menuName} className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                  <button
+                    onClick={() => toggleMenu(menuName)}
+                    className="w-full px-6 py-4 flex items-center justify-between bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                      {menuName}
+                    </h2>
+                    {expandedMenus[menuName] ? (
+                      <HiChevronDown className="w-6 h-6 text-gray-500" />
+                    ) : (
+                      <HiChevronRight className="w-6 h-6 text-gray-500" />
+                    )}
+                  </button>
+                  
+                  {expandedMenus[menuName] && (
+                    <div className="p-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredMenuItems.map((favorite) => (
+                          <ProductCard
+                            key={favorite.id || favorite.productId}
+                            product={favorite}
+                            onSelectProduct={handleSelectProduct}
+                            onEditProduct={() => {}}
+                            accountType={userData.role}
+                            onFavoriteUpdate={handleFavoriteUpdate}
+                            isFavorite={true}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
 
         {/* Details Modal */}
@@ -248,4 +292,4 @@ const Favorites = () => {
   );
 };
 
-export default Favorites; 
+export default Favorites;
