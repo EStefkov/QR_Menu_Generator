@@ -256,25 +256,25 @@ public class MenuService {
         // Save the old default image path to update products later
         String oldDefaultImage = menu.getDefaultProductImage();
 
-        // 1) Create directory structure if it doesn't exist
-        String uploadDir = "uploads/" + menuId;
-        File directory = new File(uploadDir);
-        if (!directory.exists()) {
-            if (!directory.mkdirs()) {
-                throw new RuntimeException("Failed to create directory: " + uploadDir);
-            }
-        }
-
         try {
+            // 1) Create directory structure
+            Path uploadPath = Paths.get("uploads", menuId.toString());
+            
+            // Ensure the parent directory exists
+            Files.createDirectories(uploadPath);
+            
+            System.out.println("Created directory: " + uploadPath.toAbsolutePath());
+
             // 2) Generate filename with extension
             String originalFilename = file.getOriginalFilename();
             String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             String filename = "default_product" + extension;
-            String filePath = uploadDir + "/" + filename;
-
+            
             // 3) Save the file
-            File destFile = new File(filePath);
-            file.transferTo(destFile);
+            Path filePath = uploadPath.resolve(filename);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+            
+            System.out.println("Saved file to: " + filePath.toAbsolutePath());
 
             // 4) Create the URL with the full host address
             String newDefaultImage = "http://localhost:8080/uploads/" + menuId + "/default_product" + extension;

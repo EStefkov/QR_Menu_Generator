@@ -111,23 +111,36 @@ const AdminMenuPage = () => {
   const handleDefaultProductImageUpload = async (file) => {
     try {
       const formData = new FormData();
-      formData.append('defaultProductImage', file);
+      formData.append('file', file);
 
+      console.log('Uploading default product image for menu:', menuId);
+      console.log('Using token:', token);
+      
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/menus/${menuId}/default-product-image`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Upload failed with status:', response.status);
+        console.error('Error response:', errorText);
         throw new Error('Failed to upload default product image');
       }
 
       const updatedMenu = await response.json();
-      setMenuData(updatedMenu);
+      setMenuData(prev => ({
+        ...prev,
+        defaultProductImage: updatedMenu.defaultProductImage
+      }));
+      
       toast.success('Default product image updated successfully');
+      
+      // Reload menu data to get the updated image
+      await loadMenuData();
     } catch (error) {
       console.error('Error uploading default product image:', error);
       toast.error('Failed to upload default product image');

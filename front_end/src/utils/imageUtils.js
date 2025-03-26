@@ -15,6 +15,14 @@ export const getFullImageUrl = (imagePath) => {
     return '/uploads/default_product.png';
   }
 
+  // Handle menu-specific default product images
+  // This matches patterns like "/uploads/4/default_product.png" or "uploads/4/default_product.jpg"
+  if (/\/uploads\/\d+\/default_product(\.\w+)?$/.test(imagePath) || 
+      /^uploads\/\d+\/default_product(\.\w+)?$/.test(imagePath)) {
+    // The path is already in the correct format, just ensure it has a leading slash
+    return imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  }
+
   // If the path starts with a slash, it's already relative to the public directory
   if (imagePath.startsWith('/')) {
     return imagePath;

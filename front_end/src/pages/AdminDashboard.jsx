@@ -34,7 +34,7 @@ const AdminDashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const [newMenu, setNewMenu] = useState({ category: "", restorantId: "" });
+    const [newMenu, setNewMenu] = useState({ category: "", restaurantId: "" });
 
     const { userData } = useContext(AuthContext);
     const token = userData?.token;
@@ -147,6 +147,19 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleCreateMenu = async () => {
+        try {
+            console.log("Creating menu with token:", token);
+            await createMenuApi(token, newMenu);
+            fetchMenusByRestaurantId(newMenu.restaurantId);
+            setNewMenu({ category: "", restaurantId: "" });
+            alert("Menu created successfully!");
+        } catch (error) {
+            console.error("Error creating menu:", error);
+            alert("Failed to create menu: " + error.message);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
             <div className="flex flex-col md:flex-row">
@@ -232,14 +245,7 @@ const AdminDashboard = () => {
                             newMenu={newMenu}
                             setNewMenu={setNewMenu}
                             restaurants={restaurants}
-                            onCreate={async () => {
-                                try {
-                                    await createMenuApi(token, newMenu);
-                                    alert("Менюто е създадено успешно!");
-                                } catch (error) {
-                                    alert("Неуспешно създаване на меню!");
-                                }
-                            }}
+                            onCreate={handleCreateMenu}
                         />
                     )}
 

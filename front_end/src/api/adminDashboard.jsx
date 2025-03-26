@@ -117,18 +117,88 @@ export const fetchQRCodeApi = async (token, menuId) => {
  * @returns {Promise<any>} Създаденият обект (JSON).
  */
 export const createMenuApi = async (token, newMenu) => {
-    const response = await fetch(`${API_BASE_URL}/api/menus`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newMenu),
-    });
-    if (!response.ok) {
-        throw new Error("Failed to create menu");
+    if (!token) {
+        console.error("No token provided to createMenuApi");
+        throw new Error("Authentication required. Please log in again.");
     }
-    return response.json();
+
+    // Validate menu data
+    if (!newMenu.category || !newMenu.category.trim()) {
+        console.error("Menu category is required");
+        throw new Error("Menu category is required");
+    }
+
+    if (!newMenu.restaurantId) {
+        console.error("Restaurant ID is required");
+        throw new Error("Restaurant ID is required");
+    }
+
+    // Ensure restaurantId is a number
+    const menuPayload = {
+        ...newMenu,
+        restaurantId: Number(newMenu.restaurantId)
+    };
+
+    console.log("Creating menu with validated payload:", menuPayload);
+
+    try {
+        // Parse the token to check its contents
+        const tokenParts = token.split('.');
+        if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            console.log("Token payload:", payload);
+            console.log("Token expiration:", new Date(payload.exp * 1000).toLocaleString());
+            console.log("Current time:", new Date().toLocaleString());
+            console.log("Is token expired:", payload.exp * 1000 < Date.now());
+        }
+        
+        // First try the test endpoint
+        console.log("Trying test endpoint...");
+        const testEndpointResponse = await fetch(`${API_BASE_URL}/api/menus/test`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                category: menuPayload.category,
+                restaurantId: menuPayload.restaurantId // Note: backend expects restaurantId, not restorantId
+            }),
+        });
+        
+        const testResult = await testEndpointResponse.json();
+        console.log("Test endpoint response:", testResult);
+        
+        // Now try with a simpler payload without any unnecessary fields
+        // Make sure we use restaurantId which is what the backend expects
+        const simplePayload = {
+            category: menuPayload.category,
+            restaurantId: menuPayload.restaurantId // Note the field name change from restorantId to restaurantId
+        };
+        
+        console.log("Using corrected payload with restaurantId instead of restorantId:", simplePayload);
+        
+        // Try the actual request with authentication and corrected payload
+        const response = await fetch(`${API_BASE_URL}/api/menus`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify(simplePayload),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Create menu failed with status:", response.status);
+            console.error("Error response:", errorText);
+            throw new Error(`Failed to create menu: ${response.status} ${response.statusText}`);
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error("Error in createMenuApi:", error);
+        throw error;
+    }
 };
 
 /**
@@ -241,23 +311,22 @@ export const createCategoryApi = async (token, categoryData) => {
  */
 export const createProductApi = async (token, formData) => {
     const response = await fetch(`${API_BASE_URL}/api/products`, {
-      method: "POST",
-      headers: {
-        // При FormData не задаваме "Content-Type"
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+        body: formData
     });
-  
+
     if (!response.ok) {
-      throw new Error("Failed to create product");
+        throw new Error("Failed to create product");
     }
-  
+
     return await response.json();
 };
 
 /**
- * Създава нов ресторант (POST).
+ * Создава нов ресторант (POST).
  * @param {string} token - JWT токен.
  * @param {object} restaurantData - Данните за ресторанта (restorantName, phoneNumber, ...).
  * @returns {Promise<any>} Създаденият ресторант (JSON).
@@ -352,7 +421,7 @@ export const deleteProductApi = async (token, productId) => {
 };
 
 // Функция за качване на снимката
-export const uploadProfilePicture = async (token,file, accountId) => {
+export const uploadProfilePicture = async (token, file, accountId) => {
     if (!file) return;
     const formData = new FormData();
     formData.append("profilePicture", file);
@@ -419,6 +488,21 @@ export const getFullImageUrl = (relativePath) => {
   // If it's already a full URL, return as is
   if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
     return relativePath;
+  }
+  
+  // Special case for old default product paths
+  if (relativePath === 'default_product.png') {
+    console.warn('Using legacy default_product.png path. Update to menu-specific path.');
+    return `${API_BASE_URL}/uploads/default_product.png`;
+  }
+  
+  // Handle menu-specific default product images
+  // This matches patterns like "/uploads/4/default_product.png" or "uploads/4/default_product.jpg"
+  const menuPathRegex = /^(?:\/)?uploads\/(\d+)\/default_product(\.\w+)?$/;
+  if (menuPathRegex.test(relativePath)) {
+    // Make sure we have the correct format with API_BASE_URL
+    const formattedPath = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+    return `${API_BASE_URL}${formattedPath}`;
   }
   
   // If it's a path starting with /, add the API base URL

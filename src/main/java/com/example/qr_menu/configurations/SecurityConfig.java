@@ -49,9 +49,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/menus/restaurant/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/menus/{id}/qrcode").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/menus/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/menus/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/menus/{id}/default-product-image").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/menus/{id}/default-product-image").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.POST, "/api/menus").permitAll()
 
                         
                         // Account management endpoints
