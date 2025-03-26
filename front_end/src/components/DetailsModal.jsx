@@ -21,16 +21,16 @@ function getFullImageUrl(productImage) {
 const allergenIconMap = {
   "Gluten": "/allergens/Gluten.png",
   "Crustaceans": "/allergens/Crustaceans.png",
-  "Egg": "/allergens/Egg.png",
+  "Eggs": "/allergens/Egg.png",
   "Fish": "/allergens/Fish.png",
-  "Peanut": "/allergens/Peanut.png",
-  "Soya": "/allergens/Soya.png",
+  "Peanuts": "/allergens/Peanut.png",
+  "Soybeans": "/allergens/Soya.png",
   "Milk": "/allergens/Milk.png",
   "Nuts": "/allergens/Nuts.png",
   "Celery": "/allergens/Celery.png",
   "Mustard": "/allergens/Mustard.png",
   "Sesame": "/allergens/Sesame.png",
-  "Sulphites": "/allergens/Sulphites.png",
+  "Sulphur dioxide and sulphites": "/allergens/Sulphites.png",
   "Lupin": "/allergens/Lupin.png",
   "Molluscs": "/allergens/Molluscs.png"
 };

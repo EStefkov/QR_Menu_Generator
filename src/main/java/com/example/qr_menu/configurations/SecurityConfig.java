@@ -39,6 +39,10 @@ public class SecurityConfig {
                         // Static resources - make sure to include all possible paths
                         .requestMatchers("/uploads/**", "/uploads/profilePictures/**", "/uploads/profilePictures/*/**").permitAll()
                         .requestMatchers("/uploads/menuImages/**", "/uploads/menuImages/*/**").permitAll()
+                        .requestMatchers("/uploads/defaultProductImages/**", "/uploads/defaultProductImages/*/**").permitAll()
+                        .requestMatchers("/uploads/default_product.png").permitAll()
+                        // Allow access to all menu uploads directories 
+                        .requestMatchers("/uploads/*/**").permitAll()
                         
                         // Public API endpoints
                         .requestMatchers(HttpMethod.GET, "/api/products/menu/**").permitAll()
@@ -47,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/menus/{id}/default-product-image").hasRole("ADMIN")
+
                         
                         // Account management endpoints
                         .requestMatchers("/api/accounts/validate").permitAll()

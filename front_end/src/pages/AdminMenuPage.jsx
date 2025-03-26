@@ -14,6 +14,7 @@ import CategorySection from "../components/CategorySection";
 import DetailsModal from "../components/DetailsModal";
 import EditProductModal from "../components/EditProductModal";
 import MenuBanner from "../components/MenuBanner";
+import { toast } from "react-hot-toast";
 
 const AdminMenuPage = () => {
   const { menuId } = useParams();
@@ -23,6 +24,7 @@ const AdminMenuPage = () => {
   const [menuData, setMenuData] = useState({
     name: "Меню",
     menuImage: null,
+    defaultProductImage: null,
     id: null,
     error: null,
     textColor: 'text-white'
@@ -67,6 +69,7 @@ const AdminMenuPage = () => {
       const updatedMenuData = {
         name: data.category || "Меню",
         menuImage: data.menuImage || null,
+        defaultProductImage: data.defaultProductImage || null,
         id: data.id,
         error: null,
         textColor: data.textColor || 'text-white'
@@ -102,6 +105,33 @@ const AdminMenuPage = () => {
       alert('Банерът е качен успешно!');
     } catch (error) {
       alert(`Грешка при качване на банера: ${error.message}`);
+    }
+  };
+
+  const handleDefaultProductImageUpload = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('defaultProductImage', file);
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/menus/${menuId}/default-product-image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload default product image');
+      }
+
+      const updatedMenu = await response.json();
+      setMenuData(updatedMenu);
+      toast.success('Default product image updated successfully');
+    } catch (error) {
+      console.error('Error uploading default product image:', error);
+      toast.error('Failed to upload default product image');
+      throw error;
     }
   };
 
@@ -218,6 +248,8 @@ const AdminMenuPage = () => {
         bannerImage={menuData.menuImage} 
         menuName={menuData.name}
         onBannerUpload={handleBannerUpload}
+        onDefaultProductImageUpload={handleDefaultProductImageUpload}
+        defaultProductImage={menuData.defaultProductImage}
         isAdmin={accountType === "ROLE_ADMIN"}
         menuId={menuId}
         initialTextColor={menuData.textColor}

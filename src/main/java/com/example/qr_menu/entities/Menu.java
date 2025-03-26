@@ -56,6 +56,12 @@ public class Menu {
     )
     private String textColor;
 
+    @Column(
+            name = "default_product_image",
+            columnDefinition = "VARCHAR(255)"
+    )
+    private String defaultProductImage;
+
     // One Menu can have many Products
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Product> products;

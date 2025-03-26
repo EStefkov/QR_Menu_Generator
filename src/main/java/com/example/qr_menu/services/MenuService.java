@@ -4,10 +4,12 @@ import com.example.qr_menu.dto.CategoryDTO;
 import com.example.qr_menu.dto.MenuDTO;
 import com.example.qr_menu.entities.Category;
 import com.example.qr_menu.entities.Menu;
+import com.example.qr_menu.entities.Product;
 import com.example.qr_menu.entities.Restorant;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.repositories.CategoryRepository;
 import com.example.qr_menu.repositories.MenuRepository;
+import com.example.qr_menu.repositories.ProductRepository;
 import com.example.qr_menu.repositories.RestaurantRepository;
 import com.example.qr_menu.security.MenuMapper;
 import com.example.qr_menu.utils.QRCodeGenerator;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
@@ -33,6 +36,8 @@ public class MenuService {
     private final RestaurantRepository restaurantRepository;
     private final CategoryRepository categoryRepository;
 
+    private final ProductRepository productRepository;
+
     @Value("${server.host}")
     private String serverHost;
     @Value("${server.hostTwo}")
@@ -43,10 +48,11 @@ public class MenuService {
     @Autowired
     public MenuService(MenuRepository menuRepository,
                        RestaurantRepository restaurantRepository,
-                       CategoryRepository categoryRepository) {
+                       CategoryRepository categoryRepository, ProductRepository productRepository) {
         this.menuRepository = menuRepository;
         this.restaurantRepository = restaurantRepository;
         this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
     }
 
     public String uploadMenuImage(Long menuId, MultipartFile menuImage) throws IOException {
@@ -118,7 +124,7 @@ public class MenuService {
 
     public void createMenu(MenuDTO menuDTO) {
         // Намери ресторанта по ID
-        Restorant restorant = restaurantRepository.findById(menuDTO.getRestorantId())
+        Restorant restorant = restaurantRepository.findById(menuDTO.getRestaurantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
 
         // Създай обект Menu
@@ -154,7 +160,7 @@ public class MenuService {
                 .map(menu -> MenuDTO.builder()
                         .id(menu.getId())
                         .category(menu.getCategory())
-                        .restorantId(menu.getRestorant().getId())
+                        .restaurantId(menu.getRestorant().getId())
                         .createdAt(menu.getCreatedAt())
                         .updatedAt(menu.getUpdatedAt())
                         .menuUrl(menu.getMenuUrl())
@@ -230,5 +236,83 @@ public class MenuService {
         return categories.stream()
                 .map(category -> new CategoryDTO(category.getId(), category.getName(),category.getId(), category.getCategoryImage()))
                 .collect(Collectors.toList());
+    }
+
+    public MenuDTO uploadDefaultProductImage(Long menuId, MultipartFile file) {
+        Menu menu = menuRepository.findById(menuId)
+                .orElseThrow(() -> new RuntimeException("Menu not found"));
+
+        // Validate file
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("No file uploaded");
+        }
+
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files are allowed");
+        }
+
+        // Save the old default image path to update products later
+        String oldDefaultImage = menu.getDefaultProductImage();
+
+        // 1) Create directory structure if it doesn't exist
+        String uploadDir = "uploads/" + menuId;
+        File directory = new File(uploadDir);
+        if (!directory.exists()) {
+            if (!directory.mkdirs()) {
+                throw new RuntimeException("Failed to create directory: " + uploadDir);
+            }
+        }
+
+        try {
+            // 2) Generate filename with extension
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            String filename = "default_product" + extension;
+            String filePath = uploadDir + "/" + filename;
+
+            // 3) Save the file
+            File destFile = new File(filePath);
+            file.transferTo(destFile);
+
+            // 4) Create the URL with the full host address
+            String newDefaultImage = "http://localhost:8080/uploads/" + menuId + "/default_product" + extension;
+
+            // 5) Update the menu with the new default image
+            menu.setDefaultProductImage(newDefaultImage);
+            Menu updatedMenu = menuRepository.save(menu);
+
+            // 6) Find all products using the old default image and update them
+            if (oldDefaultImage != null && !oldDefaultImage.isBlank()) {
+                List<Product> productsToUpdate = productRepository.findByMenuAndProductImage(menu, oldDefaultImage);
+                
+                // Update all products that were using the old default image
+                for (Product product : productsToUpdate) {
+                    product.setProductImage(newDefaultImage);
+                }
+                
+                if (!productsToUpdate.isEmpty()) {
+                    productRepository.saveAll(productsToUpdate);
+                }
+            }
+
+            return convertToDTO(updatedMenu);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save default product image: " + e.getMessage(), e);
+        }
+    }
+
+
+    private MenuDTO convertToDTO(Menu menu) {
+        MenuDTO dto = new MenuDTO();
+        dto.setId(menu.getId());
+        dto.setCategory(menu.getCategory());
+        dto.setMenuImage(menu.getMenuImage());
+        dto.setDefaultProductImage(menu.getDefaultProductImage());
+        dto.setRestaurantId(menu.getRestorant().getId());
+        dto.setMenuUrl(menu.getMenuUrl());
+        dto.setTextColor(menu.getTextColor());
+        return dto;
     }
 }

@@ -111,17 +111,17 @@ public class RestaurantService {
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id: " + restaurantId));
 
         return menuRepository.findByRestorant(restaurant).stream()
-                .map(menu -> new MenuDTO(
-                    menu.getId(), 
-                    menu.getCategory(), 
-                    restaurant.getId(), 
-                    menu.getCreatedAt(), 
-                    menu.getUpdatedAt(), 
-                    menu.getMenuUrl(), 
-                    menu.getQrCodeImage(), 
-                    menu.getMenuImage(),
-                    menu.getTextColor()
-                ))
+                .map(menu -> MenuDTO.builder()
+                    .id(menu.getId())
+                    .category(menu.getCategory())
+                    .restaurantId(restaurant.getId())
+                    .createdAt(menu.getCreatedAt())
+                    .updatedAt(menu.getUpdatedAt())
+                    .menuUrl(menu.getMenuUrl())
+                    .qrCodeImage(menu.getQrCodeImage())
+                    .menuImage(menu.getMenuImage())
+                    .textColor(menu.getTextColor())
+                    .build())
                 .collect(Collectors.toList());
     }
 
@@ -129,7 +129,7 @@ public class RestaurantService {
         return MenuDTO.builder()
                 .id(menu.getId())
                 .category(menu.getCategory())
-                .restorantId(menu.getRestorant().getId())
+                .restaurantId(menu.getRestorant().getId())
                 .createdAt(menu.getCreatedAt())
                 .updatedAt(menu.getUpdatedAt())
                 .menuUrl(menu.getMenuUrl())

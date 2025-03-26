@@ -140,6 +140,9 @@ const CreateProductForm = ({
       // Ако е избран файл, добавяме го
       if (selectedImageFile) {
         formData.append("productImage", selectedImageFile);
+      } else {
+        // If no image is selected, we'll let the backend use the menu's default product image
+        formData.append("productImage", "");
       }
 
       // Добавяме всеки избран алерген ID
@@ -157,7 +160,7 @@ const CreateProductForm = ({
         productInfo: "",
         categoryId: "",
         menuId: "",
-        productImage:""
+        productImage: ""
       });
       setSelectedImageFile(null);
       setSelectedAllergens([]);
