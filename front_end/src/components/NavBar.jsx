@@ -1,10 +1,11 @@
 // NavBar.jsx
 import { useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { HiOutlineMenu, HiX, HiSun, HiMoon } from "react-icons/hi";
+import { HiOutlineMenu, HiX, HiSun, HiMoon, HiShoppingCart } from "react-icons/hi";
 import { AuthContext } from "../AuthContext";
 import { useTheme } from "../ThemeContext";
 import { validateToken } from "../api/account";
+import { useCart } from "../contexts/CartContext";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -14,6 +15,10 @@ const NavBar = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { cart } = useCart();
+  
+  // Calculate total items in cart
+  const cartItemCount = cart?.reduce((total, item) => total + item.quantity, 0) || 0;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -110,6 +115,22 @@ const NavBar = () => {
               )}
             </button>
 
+            {/* Cart Icon - only show for logged-in users */}
+            {userData?.firstName && (
+              <Link 
+                to="/cart"
+                className="relative p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                aria-label="Shopping cart"
+              >
+                <HiShoppingCart className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartItemCount > 99 ? '99+' : cartItemCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
             {/* User Menu */}
             {userData?.firstName ? (
               <div className="flex items-center space-x-4">
@@ -152,6 +173,20 @@ const NavBar = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                           </svg>
                           <span>Favorites</span>
+                        </Link>
+                        <Link
+                          to="/cart"
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                          </svg>
+                          <span>Cart</span>
+                          {cartItemCount > 0 && (
+                            <span className="ml-auto bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                              {cartItemCount}
+                            </span>
+                          )}
                         </Link>
                         <button
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
@@ -229,6 +264,21 @@ const NavBar = () => {
                   className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
                 >
                   About
+                </Link>
+                {/* Add Cart link for mobile menu */}
+                <Link 
+                  to="/cart" 
+                  className="flex items-center justify-between py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+                >
+                  <span className="flex items-center">
+                    <HiShoppingCart className="w-5 h-5 mr-2" />
+                    Cart
+                  </span>
+                  {cartItemCount > 0 && (
+                    <span className="bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {cartItemCount}
+                    </span>
+                  )}
                 </Link>
               </>
             )}
