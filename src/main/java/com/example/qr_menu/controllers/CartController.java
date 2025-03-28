@@ -26,53 +26,42 @@ public class CartController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CartDTO> getCart() {
-        Long accountId = securityUtils.getCurrentUserId();
-        if (accountId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
-        }
-        return ResponseEntity.ok(cartService.getCartByAccountId(accountId));
+        Long currentUserId = securityUtils.getCurrentUserId();
+        CartDTO cart = cartService.getCartForUser(currentUserId);
+        return ResponseEntity.ok(cart);
     }
 
-    @PostMapping("/items")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CartDTO> addCartItem(@RequestBody CartItemDTO itemDTO) {
+    @PostMapping("/add")
+    public ResponseEntity<CartDTO> addToCart(@RequestBody CartItemDTO itemDTO) {
         Long accountId = securityUtils.getCurrentUserId();
         if (accountId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
         }
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(cartService.addItemToCart(accountId, itemDTO));
+                .body(cartService.addToCart(accountId, itemDTO));
     }
 
-    @PutMapping("/items/{productId}")
+    @PutMapping("/update")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CartDTO> updateCartItem(
-            @PathVariable Long productId,
-            @RequestBody CartItemDTO itemDTO) {
+    public ResponseEntity<CartDTO> updateCart(@RequestBody CartItemDTO itemDTO) {
         Long accountId = securityUtils.getCurrentUserId();
         if (accountId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
         }
-        
-        // Ensure the productId in path matches the one in body
-        if (!productId.equals(itemDTO.getProductId())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product ID mismatch");
-        }
-        
         return ResponseEntity.ok(cartService.updateCartItem(accountId, itemDTO));
     }
 
-    @DeleteMapping("/items/{productId}")
+    @DeleteMapping("/remove/{productId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<CartDTO> removeCartItem(@PathVariable Long productId) {
+    public ResponseEntity<CartDTO> removeFromCart(@PathVariable Long productId) {
         Long accountId = securityUtils.getCurrentUserId();
         if (accountId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
         }
-        return ResponseEntity.ok(cartService.removeItemFromCart(accountId, productId));
+        return ResponseEntity.ok(cartService.removeFromCart(accountId, productId));
     }
 
-    @DeleteMapping
+    @DeleteMapping("/clear")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> clearCart() {
         Long accountId = securityUtils.getCurrentUserId();

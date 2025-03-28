@@ -1,11 +1,13 @@
 import { useCart } from '../contexts/CartContext';
 import { Link } from 'react-router-dom';
 import { ShoppingCartIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../AuthContext';
 
 function CartIcon() {
-  const { cart } = useCart();
+  const { cartItems, toggleCart } = useCart();
+  const { userData } = useAuth();
   
-  const itemCount = cart.reduce((total, item) => total + item.quantity, 0);
+  const itemCount = userData.token ? cartItems.reduce((total, item) => total + item.quantity, 0) : 0;
   
   return (
     <Link to="/cart" className="group -m-2 p-2 flex items-center">

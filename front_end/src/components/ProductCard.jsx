@@ -4,7 +4,6 @@ import { getFullImageUrl } from "../api/adminDashboard";
 import { HiHeart, HiShoppingCart, HiOutlineHeart, HiUser, HiInformationCircle, HiCheckCircle } from 'react-icons/hi';
 import { useAuth } from '../AuthContext';
 import { favoritesApi } from '../api/favoritesProducts';
-import { cartApi } from '../api/cartApi';
 import { useCart } from '../contexts/CartContext';
 
 const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onFavoriteUpdate, isFavorite: initialIsFavorite }) => {
@@ -118,6 +117,7 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
         categoryName: product.categoryName || ''
       };
       
+      console.log("Adding to cart:", cartItem);
       // Add to cart context (for local state)
       addToCart(cartItem);
       

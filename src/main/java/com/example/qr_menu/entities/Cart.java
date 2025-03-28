@@ -27,30 +27,70 @@ public class Cart {
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartItem> items = new ArrayList<>();
     
-    @Builder.Default
-    @Column(nullable = false)
-    private BigDecimal totalAmount = BigDecimal.ZERO;
+    @Column(name = "total_amount")
+    private Double totalAmount = 0.0;
     
     // Helper methods
     public void addItem(CartItem item) {
         items.add(item);
         item.setCart(this);
-        recalculateTotal();
+        updateTotalAmount();
     }
     
     public void removeItem(CartItem item) {
         items.remove(item);
-        recalculateTotal();
+        item.setCart(null);
+        updateTotalAmount();
     }
     
     public void clearItems() {
         items.clear();
-        totalAmount = BigDecimal.ZERO;
+        totalAmount = 0.0;
     }
     
+    public void updateTotalAmount() {
+        this.totalAmount = calculateTotal();
+    }
+
+    public Double calculateTotal() {
+        if (items == null || items.isEmpty()) {
+            return 0.0;
+        }
+        
+        return items.stream()
+            .mapToDouble(item -> item.getPrice() * item.getQuantity())
+            .sum();
+    }
+
+    public BigDecimal calculateTotalBigDecimal() {
+        if (items == null || items.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        
+        return items.stream()
+            .map(item -> BigDecimal.valueOf(item.getPrice())
+                .multiply(BigDecimal.valueOf(item.getQuantity())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal calculateTotalAsBigDecimal() {
+        if (items == null || items.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        
+        BigDecimal total = BigDecimal.ZERO;
+        for (CartItem item : items) {
+            BigDecimal price = BigDecimal.valueOf(item.getPrice());
+            BigDecimal quantity = BigDecimal.valueOf(item.getQuantity());
+            BigDecimal itemTotal = price.multiply(quantity);
+            total = total.add(itemTotal);
+        }
+        
+        return total;
+    }
+
+    // Алтернативно име за updateTotalAmount
     public void recalculateTotal() {
-        totalAmount = items.stream()
-                .map(item -> item.getPrice().multiply(new BigDecimal(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        this.totalAmount = calculateTotal();
     }
 } 

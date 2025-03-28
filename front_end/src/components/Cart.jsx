@@ -1,16 +1,24 @@
+import React, { useContext } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineTrash, HiOutlineMinus, HiOutlinePlus } from 'react-icons/hi';
+import { CartContext } from '../contexts/CartContext';
 
 function Cart() {
-  const { cart, totalPrice, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { cartItems, removeFromCart, updateCartItemQuantity, clearCart, cartTotal } = useContext(CartContext);
   const navigate = useNavigate();
+  
+  if (!cartItems) {
+    return <div className="p-4">Зареждане на количката...</div>;
+  }
+  
+  const itemCount = cartItems?.length || 0;
   
   const handleCheckout = () => {
     navigate('/order-review');
   };
   
-  if (cart.length === 0) {
+  if (itemCount === 0) {
     return (
       <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-0">
         <div className="text-center">
@@ -37,7 +45,7 @@ function Cart() {
         <div className="mt-8">
           <div className="flow-root">
             <ul className="-my-6 divide-y divide-gray-200">
-              {cart.map(item => (
+              {cartItems.map(item => (
                 <li key={item.id} className="py-6 flex">
                   {item.image && (
                     <div className="flex-shrink-0 w-24 h-24 border border-gray-200 rounded-md overflow-hidden">
@@ -65,7 +73,7 @@ function Cart() {
                         <button
                           type="button"
                           className="p-2 text-gray-500 hover:text-gray-700"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() => updateCartItemQuantity(item.id, item.quantity - 1)}
                         >
                           <HiOutlineMinus className="h-4 w-4" aria-hidden="true" />
                         </button>
@@ -73,7 +81,7 @@ function Cart() {
                         <button
                           type="button"
                           className="p-2 text-gray-500 hover:text-gray-700"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)}
                         >
                           <HiOutlinePlus className="h-4 w-4" aria-hidden="true" />
                         </button>
@@ -98,7 +106,7 @@ function Cart() {
         <div className="border-t border-gray-200 py-6 px-4 sm:px-6">
           <div className="flex justify-between text-base font-medium text-gray-900">
             <p>Subtotal</p>
-            <p>${totalPrice.toFixed(2)}</p>
+            <p>${cartTotal.toFixed(2)}</p>
           </div>
           <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
           

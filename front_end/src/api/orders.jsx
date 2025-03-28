@@ -2,7 +2,7 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 const ordersApi = axios.create({
-  baseURL: `${API_BASE_URL}/orders`,
+  baseURL: `${API_BASE_URL}/api/orders`,
 });
 
 // Add request interceptor to include auth token

@@ -1,13 +1,16 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+// Уверете се, че използвате същото име на токена като в останалата част на приложението
+const getToken = () => localStorage.getItem('token');
 
 export const cartApi = {
   getCart: async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/cart`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`
+          Authorization: `Bearer ${getToken()}`
         }
       });
       return response.data;
@@ -17,13 +20,14 @@ export const cartApi = {
     }
   },
 
+  // Променяме този URL да съответства на контролера
   addToCart: async (productId, quantity = 1) => {
     try {
-      const response = await axios.post(`${BASE_URL}/api/cart/items`, 
+      const response = await axios.post(`${BASE_URL}/api/cart/add`, 
         { productId, quantity },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken')}`
+            Authorization: `Bearer ${localStorage.getItem('token')}`
           }
         }
       );
@@ -34,13 +38,14 @@ export const cartApi = {
     }
   },
 
+  // Променяме и този URL
   updateCartItem: async (productId, quantity) => {
     try {
-      const response = await axios.put(`${BASE_URL}/api/cart/items/${productId}`, 
-        { quantity },
+      const response = await axios.put(`${BASE_URL}/api/cart/update`, 
+        { productId, quantity },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken')}`
+            Authorization: `Bearer ${getToken()}`
           }
         }
       );
@@ -51,11 +56,12 @@ export const cartApi = {
     }
   },
 
+  // И този URL
   removeFromCart: async (productId) => {
     try {
-      const response = await axios.delete(`${BASE_URL}/api/cart/items/${productId}`, {
+      const response = await axios.delete(`${BASE_URL}/api/cart/remove/${productId}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`
+          Authorization: `Bearer ${getToken()}`
         }
       });
       return response.data;
@@ -65,11 +71,12 @@ export const cartApi = {
     }
   },
 
+  // Този е правилен
   clearCart: async () => {
     try {
-      const response = await axios.delete(`${BASE_URL}/api/cart`, {
+      const response = await axios.delete(`${BASE_URL}/api/cart/clear`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`
+          Authorization: `Bearer ${getToken()}`
         }
       });
       return response.data;

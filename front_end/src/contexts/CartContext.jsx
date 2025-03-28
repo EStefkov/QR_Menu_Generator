@@ -1,77 +1,111 @@
-import { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { useAuth } from '../AuthContext';
 
 // Create the context
-const CartContext = createContext();
+export const CartContext = createContext();
 
 // Custom hook to use the cart context
 export const useCart = () => useContext(CartContext);
 
 export const CartProvider = ({ children }) => {
-  // Initialize cart from localStorage if it exists
-  const [cart, setCart] = useState(() => {
+  const [cartItems, setCartItems] = useState(() => {
+    // Зареждаме от localStorage ако има запазена количка
     const savedCart = localStorage.getItem('cart');
     return savedCart ? JSON.parse(savedCart) : [];
   });
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const { userData } = useAuth();
   
-  const [totalPrice, setTotalPrice] = useState(0);
-  
-  // Update localStorage and recalculate total whenever cart changes
+  // Запазваме количката в localStorage при всяка промяна
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-    
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    setTotalPrice(total);
-  }, [cart]);
+    localStorage.setItem('cart', JSON.stringify(cartItems));
+  }, [cartItems]);
   
-  // Add item to cart
-  const addToCart = (product) => {
-    setCart(prevCart => {
-      const existingItemIndex = prevCart.findIndex(item => item.id === product.id);
+  // Изчистваме количката при смяна на потребителя
+  useEffect(() => {
+    if (!userData.id) {
+      setCartItems([]);
+      localStorage.removeItem('cart');
+    }
+  }, [userData.id]);
+  
+  const addToCart = (product, quantity = 1) => {
+    setCartItems(prevItems => {
+      // Проверяваме дали продуктът вече е в количката
+      const existingItemIndex = prevItems.findIndex(item => item.id === product.id);
       
-      if (existingItemIndex >= 0) {
-        // Item already exists, update quantity
-        const updatedCart = [...prevCart];
-        updatedCart[existingItemIndex].quantity += 1;
-        return updatedCart;
+      if (existingItemIndex !== -1) {
+        // Ако продуктът вече е в количката, обновяваме количеството
+        const updatedItems = [...prevItems];
+        updatedItems[existingItemIndex].quantity += quantity;
+        return updatedItems;
       } else {
-        // Item doesn't exist, add new item
-        return [...prevCart, { ...product, quantity: 1 }];
+        // Ако продуктът не е в количката, добавяме го
+        return [...prevItems, {
+          id: product.id,
+          name: product.name || product.productName,
+          price: product.price || product.productPrice,
+          quantity: quantity,
+          image: product.image || product.productImage,
+          categoryId: product.categoryId,
+          categoryName: product.categoryName || ''
+        }];
       }
     });
-  };
-  
-  // Remove item from cart
-  const removeFromCart = (productId) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== productId));
-  };
-  
-  // Update item quantity
-  const updateQuantity = (productId, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
     
-    setCart(prevCart => 
-      prevCart.map(item => 
-        item.id === productId ? { ...item, quantity } : item
-      )
-    );
+    // Показваме количката след добавяне
+    setIsCartOpen(true);
+    
+    // Връщаме успех
+    return Promise.resolve({ success: true });
   };
   
-  // Clear the entire cart
-  const clearCart = () => {
-    setCart([]);
+  const removeFromCart = (productId) => {
+    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+    return Promise.resolve({ success: true });
   };
+  
+  const updateCartItemQuantity = (productId, quantity) => {
+    setCartItems(prevItems => {
+      return prevItems.map(item => 
+        item.id === productId ? { ...item, quantity } : item
+      );
+    });
+    return Promise.resolve({ success: true });
+  };
+  
+  const clearCart = () => {
+    setCartItems([]);
+    localStorage.removeItem('cart');
+    return Promise.resolve({ success: true });
+  };
+  
+  const toggleCart = () => {
+    setIsCartOpen(!isCartOpen);
+  };
+  
+  const cartTotal = cartItems.reduce(
+    (total, item) => total + item.quantity * item.price, 
+    0
+  );
+  
+  // Изчисляваме общия брой артикули в количката
+  const itemCount = cartItems.reduce(
+    (count, item) => count + item.quantity, 
+    0
+  );
   
   return (
-    <CartContext.Provider value={{ 
-      cart, 
-      totalPrice, 
-      addToCart, 
-      removeFromCart, 
-      updateQuantity, 
-      clearCart 
+    <CartContext.Provider value={{
+      cartItems,
+      addToCart,
+      removeFromCart,
+      updateCartItemQuantity,
+      clearCart,
+      isCartOpen,
+      toggleCart,
+      cartTotal,
+      itemCount
     }}>
       {children}
     </CartContext.Provider>
