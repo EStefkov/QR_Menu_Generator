@@ -42,6 +42,9 @@ public class CartItem {
     @Column(name = "category_name")
     private String categoryName;
     
+    @Column(name = "restaurant_id")
+    private Long restaurantId;
+    
     // Helper method for total price calculation
     @Transient
     public BigDecimal getTotalPrice() {

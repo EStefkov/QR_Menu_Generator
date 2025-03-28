@@ -2,7 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useContext } from "react";
 import { loginAccount } from "../api/account";
-import { AuthContext } from "../contexts/AuthContext";
+import { AuthContext } from "../AuthContext";
 import { HiOutlineMail, HiOutlineLockClosed, HiOutlineHome } from "react-icons/hi";
 
 const Login = () => {

@@ -60,13 +60,17 @@ public class CartService {
         Product product = productRepository.findById(itemDTO.getProductId())
             .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + itemDTO.getProductId()));
         
+        // Ensure quantity is at least 1
+        int quantity = Math.max(1, itemDTO.getQuantity());
+        itemDTO.setQuantity(quantity);
+        
         // Check if the item already exists in the cart
         Optional<CartItem> existingItemOpt = cartItemRepository.findByCartIdAndProductId(cart.getId(), product.getId());
         
         if (existingItemOpt.isPresent()) {
             // Update quantity if item exists
             CartItem existingItem = existingItemOpt.get();
-            existingItem.setQuantity(existingItem.getQuantity() + itemDTO.getQuantity());
+            existingItem.setQuantity(existingItem.getQuantity() + quantity);
             cartItemRepository.save(existingItem);
         } else {
             // Add new item to cart
@@ -75,10 +79,14 @@ public class CartService {
                 .product(product)
                 .name(product.getProductName())
                 .price(BigDecimal.valueOf(product.getProductPrice()))
-                .quantity(itemDTO.getQuantity())
+                .quantity(quantity)
                 .image(product.getProductImage())
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .categoryName(product.getCategory() != null ? product.getCategory().getName() : null)
+                .restaurantId(itemDTO.getRestaurantId() != null ? itemDTO.getRestaurantId() : 
+                    (product.getCategory() != null && product.getCategory().getMenu() != null && 
+                     product.getCategory().getMenu().getRestorant() != null ? 
+                     product.getCategory().getMenu().getRestorant().getId() : null))
                 .build();
             
             cart.getItems().add(newItem);
@@ -106,8 +114,11 @@ public class CartService {
             cart.getItems().remove(cartItem);
             cartItemRepository.delete(cartItem);
         } else {
+            // Ensure quantity is at least 1
+            int quantity = Math.max(1, itemDTO.getQuantity());
+            
             // Update the cart item quantity
-            cartItem.setQuantity(itemDTO.getQuantity());
+            cartItem.setQuantity(quantity);
             cartItemRepository.save(cartItem);
         }
         
@@ -193,6 +204,7 @@ public class CartService {
                 dto.setImage(item.getImage());
                 dto.setCategoryId(item.getCategoryId());
                 dto.setCategoryName(item.getCategoryName());
+                dto.setRestaurantId(item.getRestaurantId());
                 return dto;
             })
             .collect(Collectors.toList());

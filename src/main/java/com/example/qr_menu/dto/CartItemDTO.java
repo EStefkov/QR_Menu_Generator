@@ -23,6 +23,7 @@ public class CartItemDTO {
     private String image;
     private Long categoryId;
     private String categoryName;
+    private Long restaurantId;
     
     // Explicit getters to ensure they exist
     public Long getId() {
@@ -91,5 +92,13 @@ public class CartItemDTO {
     
     public String getCategoryName() {
         return categoryName != null ? categoryName : "";
+    }
+    
+    public Long getRestaurantId() {
+        return restaurantId;
+    }
+    
+    public void setRestaurantId(Long restaurantId) {
+        this.restaurantId = restaurantId;
     }
 } 

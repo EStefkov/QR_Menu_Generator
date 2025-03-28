@@ -86,18 +86,23 @@ export const CartProvider = ({ children }) => {
   const updateCartItemQuantity = async (productId, quantity) => {
     try {
       setIsLoading(true);
+      
+      // Ensure quantity is always at least 1 to prevent negative quantities
+      const safeQuantity = Math.max(1, parseInt(quantity) || 1);
+      
       if (isAuthenticated) {
         // Use API if authenticated
-        const result = await cartApi.updateCartItem(productId, quantity);
+        const result = await cartApi.updateCartItem(productId, safeQuantity);
         setCartItems(result.items || []);
       } else {
         // Update local state only
         setCartItems(prevItems => {
+          // Only filter out if quantity is 0 (for removal)
           if (quantity <= 0) {
             return prevItems.filter(item => item.productId !== productId);
           }
           return prevItems.map(item => 
-            item.productId === productId ? { ...item, quantity } : item
+            item.productId === productId ? { ...item, quantity: safeQuantity } : item
           );
         });
       }

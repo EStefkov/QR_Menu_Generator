@@ -117,7 +117,8 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
         quantity: 1,
         image: product.productImage,
         categoryId: product.categoryId,
-        categoryName: product.categoryName || ''
+        categoryName: product.categoryName || '',
+        restaurantId: product.restaurantId || (product.category && product.category.menu && product.category.menu.restaurant ? product.category.menu.restaurant.id : null)
       };
       
       console.log("Adding to cart:", cartItem);
