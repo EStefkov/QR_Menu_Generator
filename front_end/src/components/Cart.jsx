@@ -1,5 +1,4 @@
 import React, { useContext } from 'react';
-import { useCart } from '../contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { HiOutlineTrash, HiOutlineMinus, HiOutlinePlus } from 'react-icons/hi';
 import { CartContext } from '../contexts/CartContext';
@@ -46,7 +45,7 @@ function Cart() {
           <div className="flow-root">
             <ul className="-my-6 divide-y divide-gray-200">
               {cartItems.map(item => (
-                <li key={item.id} className="py-6 flex">
+                <li key={item.productId || item.id} className="py-6 flex">
                   {item.image && (
                     <div className="flex-shrink-0 w-24 h-24 border border-gray-200 rounded-md overflow-hidden">
                       <img
@@ -61,10 +60,12 @@ function Cart() {
                     <div>
                       <div className="flex justify-between text-base font-medium text-gray-900">
                         <h3>{item.name}</h3>
-                        <p className="ml-4">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="ml-4">
+                          ${(((item.productPrice || item.price) || 0) * (item.quantity || 1)).toFixed(2)}
+                        </p>
                       </div>
                       <p className="mt-1 text-sm text-gray-500">
-                        ${item.price.toFixed(2)} each
+                        ${((item.productPrice || item.price) || 0).toFixed(2)} each
                       </p>
                     </div>
                     
@@ -73,15 +74,15 @@ function Cart() {
                         <button
                           type="button"
                           className="p-2 text-gray-500 hover:text-gray-700"
-                          onClick={() => updateCartItemQuantity(item.id, item.quantity - 1)}
+                          onClick={() => updateCartItemQuantity(item.productId || item.id, item.quantity - 1)}
                         >
                           <HiOutlineMinus className="h-4 w-4" aria-hidden="true" />
                         </button>
-                        <span className="px-3 py-1 text-gray-700">{item.quantity}</span>
+                        <span className="px-3 py-1 text-gray-700">{item.quantity || 1}</span>
                         <button
                           type="button"
                           className="p-2 text-gray-500 hover:text-gray-700"
-                          onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)}
+                          onClick={() => updateCartItemQuantity(item.productId || item.id, item.quantity + 1)}
                         >
                           <HiOutlinePlus className="h-4 w-4" aria-hidden="true" />
                         </button>
@@ -90,7 +91,7 @@ function Cart() {
                       <button
                         type="button"
                         className="font-medium text-red-600 hover:text-red-500 flex items-center"
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={() => removeFromCart(item.productId || item.id)}
                       >
                         <HiOutlineTrash className="h-4 w-4 mr-1" aria-hidden="true" />
                         Remove
@@ -106,7 +107,7 @@ function Cart() {
         <div className="border-t border-gray-200 py-6 px-4 sm:px-6">
           <div className="flex justify-between text-base font-medium text-gray-900">
             <p>Subtotal</p>
-            <p>${cartTotal.toFixed(2)}</p>
+            <p>${(cartTotal || 0).toFixed(2)}</p>
           </div>
           <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
           

@@ -17,26 +17,35 @@ public class CartItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id")
     private Cart cart;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "product_id")
     private Product product;
     
+    @Column(nullable = false)
     private Integer quantity;
     
+    @Column(nullable = false)
     private String name;
-    private Double price;
+    
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
+    
     private String image;
+    
+    @Column(name = "category_id")
     private Long categoryId;
+    
+    @Column(name = "category_name")
     private String categoryName;
     
     // Helper method for total price calculation
     @Transient
     public BigDecimal getTotalPrice() {
-        return new BigDecimal(price).multiply(new BigDecimal(quantity));
+        return price.multiply(BigDecimal.valueOf(quantity));
     }
 
     // Getters and Setters
@@ -74,6 +83,6 @@ public class CartItem {
 
     // Допълнително можете да добавите метод за изчисляване на обща сума за елемента
     public Double getItemTotal() {
-        return price * quantity;
+        return price.doubleValue() * quantity;
     }
 } 

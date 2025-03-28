@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-// Уверете се, че използвате същото име на токена като в останалата част на приложението
+// Get the auth token from localStorage
 const getToken = () => localStorage.getItem('token');
 
 export const cartApi = {
@@ -20,14 +20,18 @@ export const cartApi = {
     }
   },
 
-  // Променяме този URL да съответства на контролера
   addToCart: async (productId, quantity = 1) => {
     try {
-      const response = await axios.post(`${BASE_URL}/api/cart/add`, 
-        { productId, quantity },
+      const response = await axios.post(
+        `${BASE_URL}/api/cart/add`, 
+        { 
+          productId, 
+          quantity 
+        },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+            Authorization: `Bearer ${getToken()}`,
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -38,14 +42,18 @@ export const cartApi = {
     }
   },
 
-  // Променяме и този URL
   updateCartItem: async (productId, quantity) => {
     try {
-      const response = await axios.put(`${BASE_URL}/api/cart/update`, 
-        { productId, quantity },
+      const response = await axios.put(
+        `${BASE_URL}/api/cart/update`, 
+        { 
+          productId, 
+          quantity 
+        },
         {
           headers: {
-            Authorization: `Bearer ${getToken()}`
+            Authorization: `Bearer ${getToken()}`,
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -56,7 +64,6 @@ export const cartApi = {
     }
   },
 
-  // И този URL
   removeFromCart: async (productId) => {
     try {
       const response = await axios.delete(`${BASE_URL}/api/cart/remove/${productId}`, {
@@ -71,7 +78,6 @@ export const cartApi = {
     }
   },
 
-  // Този е правилен
   clearCart: async () => {
     try {
       const response = await axios.delete(`${BASE_URL}/api/cart/clear`, {

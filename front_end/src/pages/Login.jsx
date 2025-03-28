@@ -2,7 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useContext } from "react";
 import { loginAccount } from "../api/account";
-import { AuthContext } from "../AuthContext";
+import { AuthContext } from "../contexts/AuthContext";
 import { HiOutlineMail, HiOutlineLockClosed, HiOutlineHome } from "react-icons/hi";
 
 const Login = () => {
@@ -29,10 +29,49 @@ const Login = () => {
 
     try {
       const response = await loginAccount(formData);
-      const payload = JSON.parse(atob(response.split(".")[1]));
-      login(response, payload);
-      navigate("/");
+      
+      // Log the raw token for debugging
+      console.log("Raw JWT token:", response);
+      
+      try {
+        // Parse the token and log the payload
+        const parts = response.split('.');
+        if (parts.length !== 3) {
+          throw new Error("Invalid JWT token format");
+        }
+        
+        // Base64 decode the payload
+        const payload = JSON.parse(atob(parts[1]));
+        console.log("Decoded JWT payload:", payload);
+        
+        // Ensure payload has an id property as number
+        if (!payload.id && payload.userId) {
+          console.log("Using userId as id in token payload");
+          payload.id = payload.userId;
+        } else if (!payload.id && payload.accountId) {
+          console.log("Using accountId as id in token payload");
+          payload.id = payload.accountId;
+        } else if (!payload.id && payload.sub) {
+          console.log("Using sub as id in token payload");
+          payload.id = payload.sub;
+        }
+        
+        // Convert IDs to numbers if they're strings
+        if (typeof payload.id === 'string') {
+          payload.id = Number(payload.id);
+        }
+        
+        console.log("Final ID being saved:", payload.id);
+        
+        // Log in the user
+        login(response, payload);
+        navigate("/");
+      } catch (parseError) {
+        console.error("Error parsing JWT token:", parseError);
+        setError("Invalid authentication response from server");
+      }
     } catch (err) {
+      console.error("Login error:", err);
       setError(err.message || "Login failed. Please try again.");
     } finally {
       setIsLoading(false);

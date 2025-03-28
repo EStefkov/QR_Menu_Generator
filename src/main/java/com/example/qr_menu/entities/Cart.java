@@ -27,8 +27,8 @@ public class Cart {
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartItem> items = new ArrayList<>();
     
-    @Column(name = "total_amount")
-    private Double totalAmount = 0.0;
+    @Column(name = "total_amount", precision = 10, scale = 2)
+    private BigDecimal totalAmount = BigDecimal.ZERO;
     
     // Helper methods
     public void addItem(CartItem item) {
@@ -45,21 +45,11 @@ public class Cart {
     
     public void clearItems() {
         items.clear();
-        totalAmount = 0.0;
+        totalAmount = BigDecimal.ZERO;
     }
     
     public void updateTotalAmount() {
-        this.totalAmount = calculateTotal();
-    }
-
-    public Double calculateTotal() {
-        if (items == null || items.isEmpty()) {
-            return 0.0;
-        }
-        
-        return items.stream()
-            .mapToDouble(item -> item.getPrice() * item.getQuantity())
-            .sum();
+        this.totalAmount = calculateTotalBigDecimal();
     }
 
     public BigDecimal calculateTotalBigDecimal() {
@@ -68,29 +58,12 @@ public class Cart {
         }
         
         return items.stream()
-            .map(item -> BigDecimal.valueOf(item.getPrice())
-                .multiply(BigDecimal.valueOf(item.getQuantity())))
+            .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    public BigDecimal calculateTotalAsBigDecimal() {
-        if (items == null || items.isEmpty()) {
-            return BigDecimal.ZERO;
-        }
-        
-        BigDecimal total = BigDecimal.ZERO;
-        for (CartItem item : items) {
-            BigDecimal price = BigDecimal.valueOf(item.getPrice());
-            BigDecimal quantity = BigDecimal.valueOf(item.getQuantity());
-            BigDecimal itemTotal = price.multiply(quantity);
-            total = total.add(itemTotal);
-        }
-        
-        return total;
-    }
-
-    // Алтернативно име за updateTotalAmount
+    // Alias for updateTotalAmount for better readability
     public void recalculateTotal() {
-        this.totalAmount = calculateTotal();
+        updateTotalAmount();
     }
 } 

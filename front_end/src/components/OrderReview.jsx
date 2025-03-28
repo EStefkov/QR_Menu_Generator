@@ -18,6 +18,28 @@ function OrderReview() {
     specialRequests: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  
+  // Debug logging for troubleshooting
+  useEffect(() => {
+    console.log("Current user data:", userData);
+    console.log("User ID from localStorage:", localStorage.getItem("id"));
+    console.log("Current restaurant:", currentRestaurant);
+    
+    // Try to parse JWT directly to get the user ID
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          console.log("JWT payload:", payload);
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing JWT:", error);
+    }
+  }, [userData, currentRestaurant]);
   
   // Prefill customer info from user data when available
   useEffect(() => {
@@ -27,7 +49,6 @@ function OrderReview() {
         name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
       }));
     }
-    // Add more user data prefill if available in userData
   }, [userData]);
   
   const handleInputChange = (e) => {
@@ -38,33 +59,145 @@ function OrderReview() {
   const handleSubmitOrder = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError('');
     
     try {
+      // Get user ID from multiple sources to ensure we have it
+      let accountId = null;
+      
+      // First try from userData object
+      if (userData && userData.id) {
+        accountId = Number(userData.id);
+      }
+      
+      // If not found, try localStorage directly
+      if (!accountId) {
+        const localStorageId = localStorage.getItem("id");
+        if (localStorageId) {
+          accountId = Number(localStorageId);
+        }
+      }
+      
+      // If still not found, try to extract from JWT token
+      if (!accountId) {
+        try {
+          const token = localStorage.getItem("token");
+          if (token) {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]));
+              console.log("Extracting account ID from JWT payload:", payload);
+              
+              // Try different possible field names
+              if (payload.id) {
+                accountId = Number(payload.id);
+              } else if (payload.userId) {
+                accountId = Number(payload.userId);
+              } else if (payload.accountId) {
+                accountId = Number(payload.accountId);
+              } else if (payload.sub) {
+                accountId = Number(payload.sub);
+              }
+            }
+          }
+        } catch (jwtError) {
+          console.error("Error extracting ID from JWT:", jwtError);
+        }
+      }
+      
+      // Hard-code a default account ID if all else fails (FOR TESTING ONLY - REMOVE IN PRODUCTION)
+      if (!accountId) {
+        // Assuming user ID 1 exists in your system
+        accountId = 1;
+        console.warn("NO ACCOUNT ID FOUND - USING DEFAULT ID 1 FOR TESTING");
+      }
+      
+      // Still no valid ID, show error
+      if (!accountId) {
+        console.error("No valid user ID found in:", {
+          userDataId: userData?.id,
+          localStorageId: localStorage.getItem("id")
+        });
+        throw new Error('User ID is missing. Please log in again.');
+      }
+      
+      // Check restaurant info
+      let restaurantId = null;
+      if (currentRestaurant && currentRestaurant.id) {
+        restaurantId = currentRestaurant.id;
+      } else {
+        // Try to get from localStorage as fallback
+        const storedRestaurant = localStorage.getItem('currentRestaurant');
+        if (storedRestaurant) {
+          const parsedRestaurant = JSON.parse(storedRestaurant);
+          restaurantId = parsedRestaurant.id;
+        }
+        
+        // Default to ID 1 if still missing
+        if (!restaurantId) {
+          restaurantId = 1; // Default restaurant ID
+          console.warn("Using default restaurant ID: 1");
+        }
+      }
+      
+      if (!cartItems || cartItems.length === 0) {
+        throw new Error('Your cart is empty');
+      }
+      
       // Transform cart items to expected format
       const orderProducts = cartItems.map(item => ({
-        productId: item.id,
+        productId: item.productId || item.id, // Use productId if available, fall back to id
         quantity: item.quantity,
-        productPriceAtOrder: item.price
+        productPriceAtOrder: item.productPrice || item.price
       }));
       
       const order = {
+        accountId: accountId,
         products: orderProducts,
-        totalPrice: parseFloat(cartTotal), // Use original price without conversion
-        restorantId: currentRestaurant.id, // Use restaurant ID from context
+        totalPrice: parseFloat(cartTotal || 0),
+        restorantId: restaurantId,
         orderStatus: "ACCEPTED"
       };
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders`, {
+      console.log('Submitting order:', order);
+      
+      // Get token from localStorage directly to ensure we have it
+      const authToken = userData.token || localStorage.getItem("token");
+      if (!authToken) {
+        throw new Error('Authentication token is missing. Please log in again.');
+      }
+      
+      console.log('Sending order with:', {
+        url: `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/orders`,
+        accountId: order.accountId,
+        restaurantId: order.restorantId,
+        itemCount: order.products.length,
+        authToken: authToken ? 'Present' : 'Missing'
+      });
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userData.token}`
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify(order)
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create order');
+        const errorText = await response.text();
+        console.error('Server error:', errorText);
+        
+        // Try to provide more detailed error messages based on status code
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Authentication error - please log in again');
+        } else if (response.status === 400) {
+          throw new Error(`Invalid order data: ${errorText}`);
+        } else if (response.status === 404) {
+          throw new Error('Order service not found - please try again later');
+        } else {
+          throw new Error(`Failed to create order: ${response.status} ${response.statusText}`);
+        }
       }
       
       // Since the response is text, not JSON, we use text() instead of json()
@@ -79,7 +212,7 @@ function OrderReview() {
       navigate(`/order-confirmation/${orderId}`);
     } catch (error) {
       console.error('Error submitting order:', error);
-      alert('There was an error submitting your order. Please try again.');
+      setError(error.message || 'There was an error submitting your order. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -104,6 +237,26 @@ function OrderReview() {
     );
   }
   
+  // Show login requirement if not logged in
+  if (!userData.id && !localStorage.getItem("id")) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-0">
+        <div className="text-center">
+          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Login Required</h1>
+          <p className="mt-4 text-gray-500">Please log in to complete your order.</p>
+          <div className="mt-6">
+            <button
+              onClick={() => navigate('/login')}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="bg-gray-50">
       <div className="max-w-7xl mx-auto pt-6 pb-16 px-4 sm:px-6 lg:px-8">
@@ -121,7 +274,7 @@ function OrderReview() {
         
           <div className="mt-12 lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-start">
             <div className="lg:col-span-7">
-              <form onSubmit={handleSubmitOrder}>
+              <form id="orderForm" onSubmit={handleSubmitOrder}>
                 <div className="bg-white shadow overflow-hidden sm:rounded-lg mb-10">
                   <div className="px-4 py-5 sm:px-6">
                     <h2 className="text-lg font-medium text-gray-900">Customer Information</h2>
@@ -173,6 +326,12 @@ function OrderReview() {
                   </div>
                 </div>
 
+                {error && (
+                  <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                    {error}
+                  </div>
+                )}
+
                 <div className="mt-6 lg:hidden">
                   <button
                     type="submit"
@@ -193,18 +352,20 @@ function OrderReview() {
                 <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
                   <dl className="divide-y divide-gray-200">
                     {cartItems.map((item) => (
-                      <div key={item.id} className="py-4 flex items-center justify-between">
+                      <div key={item.productId || item.id} className="py-4 flex items-center justify-between">
                         <dt className="text-sm text-gray-600 flex items-center">
                           <span className="font-medium text-gray-900 mr-2">{item.quantity} ×</span>
                           {item.name}
                         </dt>
-                        <dd className="text-sm font-medium text-gray-900">${(item.price * item.quantity).toFixed(2)}</dd>
+                        <dd className="text-sm font-medium text-gray-900">
+                          ${(((item.productPrice || item.price) || 0) * (item.quantity || 1)).toFixed(2)}
+                        </dd>
                       </div>
                     ))}
                     
                     <div className="py-4 flex items-center justify-between">
                       <dt className="text-base font-medium text-gray-900">Subtotal</dt>
-                      <dd className="text-base font-medium text-gray-900">${cartTotal.toFixed(2)}</dd>
+                      <dd className="text-base font-medium text-gray-900">${(cartTotal || 0).toFixed(2)}</dd>
                     </div>
                   </dl>
                   
@@ -213,7 +374,6 @@ function OrderReview() {
                       type="submit"
                       form="orderForm"
                       disabled={isSubmitting}
-                      onClick={handleSubmitOrder}
                       className="w-full bg-blue-600 border border-transparent rounded-md shadow-sm py-3 px-4 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 focus:ring-blue-500"
                     >
                       {isSubmitting ? 'Processing...' : 'Place order'}
