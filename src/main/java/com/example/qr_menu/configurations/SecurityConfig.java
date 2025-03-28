@@ -55,7 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/menus/{id}/default-product-image").hasAnyRole("ADMIN", "USER")
                         .requestMatchers(HttpMethod.POST, "/api/menus").permitAll()
-
+                        .requestMatchers(HttpMethod.POST, "/api/orders").authenticated()
                         
                         // Account management endpoints
                         .requestMatchers("/api/accounts/validate").permitAll()

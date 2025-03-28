@@ -4,7 +4,8 @@ import { createProductApi } from "../api/adminDashboard";
 // Примерен URL за зареждане на всички алергени
 // Ако имаш baseUrl, можеш да го сглобяваш динамично,
 // или пък да ползваш axios, etc.
-const ALLERGENS_URL = "http://localhost:8080/api/allergens"; 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+const ALLERGENS_URL = `${API_BASE_URL}/api/allergens`; 
 
 const CreateProductForm = ({ 
   token,

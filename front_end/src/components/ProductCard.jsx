@@ -1,18 +1,22 @@
 // ProductCard.jsx
 import React, { useState, useEffect } from "react";
 import { getFullImageUrl } from "../api/adminDashboard";
-import { HiHeart, HiShoppingCart, HiOutlineHeart, HiUser, HiInformationCircle } from 'react-icons/hi';
+import { HiHeart, HiShoppingCart, HiOutlineHeart, HiUser, HiInformationCircle, HiCheckCircle } from 'react-icons/hi';
 import { useAuth } from '../AuthContext';
 import { favoritesApi } from '../api/favoritesProducts';
+import { cartApi } from '../api/cartApi';
+import { useCart } from '../contexts/CartContext';
 
 const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onFavoriteUpdate, isFavorite: initialIsFavorite }) => {
   const { userData } = useAuth();
+  const { addToCart } = useCart();  // Get addToCart from CartContext
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite || false);
   const [showLoginAlert, setShowLoginAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
 
   // Get full URL for the product image
   const imageUrl = product?.productImage ? getFullImageUrl(product.productImage) : "";
@@ -91,7 +95,7 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
     }
   };
 
-  const handleAddToOrder = (e) => {
+  const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -101,7 +105,38 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
       return;
     }
     
-    // TODO: Implement add to order functionality
+    setIsLoading(true);
+    try {
+      // Create a cart item object from the product
+      const cartItem = {
+        id: product.id,
+        name: product.productName,
+        price: product.productPrice,
+        quantity: 1,
+        image: product.productImage,
+        categoryId: product.categoryId,
+        categoryName: product.categoryName || ''
+      };
+      
+      // Add to cart context (for local state)
+      addToCart(cartItem);
+      
+      // Show visual feedback
+      setAddedToCart(true);
+      setAlertMessage('Added to cart!');
+      setShowLoginAlert(true);
+      
+      // Reset added to cart status after 2 seconds
+      setTimeout(() => {
+        setAddedToCart(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Add to cart error:", error);
+      setAlertMessage('Error adding item to cart');
+      setShowLoginAlert(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDetailsClick = (e) => {
@@ -137,7 +172,11 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
       {/* Login Alert */}
       {showLoginAlert && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 flex items-center space-x-2 animate-fade-in">
-          <HiUser className="w-5 h-5 text-blue-500" />
+          {addedToCart ? (
+            <HiCheckCircle className="w-5 h-5 text-green-500" />
+          ) : (
+            <HiUser className="w-5 h-5 text-blue-500" />
+          )}
           <span className="text-sm text-gray-700 dark:text-gray-300">{alertMessage}</span>
         </div>
       )}
@@ -157,11 +196,20 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
           )}
         </button>
         <button
-          onClick={handleAddToOrder}
-          className="p-2 rounded-full bg-white dark:bg-gray-700 shadow-md hover:shadow-lg transform transition-all duration-200 hover:scale-110 focus:outline-none group/btn"
+          onClick={handleAddToCart}
+          disabled={isLoading}
+          className={`p-2 rounded-full ${
+            addedToCart 
+              ? 'bg-green-100 dark:bg-green-800' 
+              : 'bg-white dark:bg-gray-700'
+          } shadow-md hover:shadow-lg transform transition-all duration-200 hover:scale-110 focus:outline-none group/btn`}
           title={userData.token ? "Add to cart" : "Login to add to cart"}
         >
-          <HiShoppingCart className="w-5 h-5 text-blue-500 dark:text-blue-400 group-hover/btn:text-blue-600 transition-colors" />
+          <HiShoppingCart className={`w-5 h-5 ${
+            addedToCart 
+              ? 'text-green-500 dark:text-green-400' 
+              : 'text-blue-500 dark:text-blue-400 group-hover/btn:text-blue-600'
+          } transition-colors`} />
         </button>
       </div>
 
