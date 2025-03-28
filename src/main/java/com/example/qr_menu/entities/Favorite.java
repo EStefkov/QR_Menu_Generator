@@ -1,10 +1,14 @@
 package com.example.qr_menu.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"account", "product"})
 @Entity
 @Table(name = "favorites", 
        indexes = {
@@ -36,12 +40,22 @@ public class Favorite {
         if (this == o) return true;
         if (!(o instanceof Favorite)) return false;
         Favorite favorite = (Favorite) o;
-        return account.getId().equals(favorite.getAccount().getId()) &&
-               product.getId().equals(favorite.getProduct().getId());
+        
+        Long accountId = account != null ? account.getId() : null;
+        Long productId = product != null ? product.getId() : null;
+        Long otherAccountId = favorite.getAccount() != null ? favorite.getAccount().getId() : null;
+        Long otherProductId = favorite.getProduct() != null ? favorite.getProduct().getId() : null;
+        
+        return (accountId != null && accountId.equals(otherAccountId)) &&
+               (productId != null && productId.equals(otherProductId));
     }
 
     @Override
     public int hashCode() {
-        return 31 * account.getId().hashCode() + product.getId().hashCode();
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((account != null && account.getId() != null) ? account.getId().hashCode() : 0);
+        result = prime * result + ((product != null && product.getId() != null) ? product.getId().hashCode() : 0);
+        return result;
     }
 } 

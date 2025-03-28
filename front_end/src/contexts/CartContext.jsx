@@ -30,6 +30,9 @@ export const CartProvider = ({ children }) => {
   }, [userData.id]);
   
   const addToCart = (product, quantity = 1) => {
+    // Ensure quantity is a number and at least 1
+    const safeQuantity = Math.max(1, parseInt(quantity) || 1);
+    
     setCartItems(prevItems => {
       // Проверяваме дали продуктът вече е в количката
       const existingItemIndex = prevItems.findIndex(item => item.id === product.id);
@@ -37,7 +40,7 @@ export const CartProvider = ({ children }) => {
       if (existingItemIndex !== -1) {
         // Ако продуктът вече е в количката, обновяваме количеството
         const updatedItems = [...prevItems];
-        updatedItems[existingItemIndex].quantity += quantity;
+        updatedItems[existingItemIndex].quantity += safeQuantity;
         return updatedItems;
       } else {
         // Ако продуктът не е в количката, добавяме го
@@ -45,7 +48,7 @@ export const CartProvider = ({ children }) => {
           id: product.id,
           name: product.name || product.productName,
           price: product.price || product.productPrice,
-          quantity: quantity,
+          quantity: safeQuantity,
           image: product.image || product.productImage,
           categoryId: product.categoryId,
           categoryName: product.categoryName || ''

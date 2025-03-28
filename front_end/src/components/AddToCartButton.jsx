@@ -6,8 +6,18 @@ function AddToCartButton({ product, className = '' }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
   
-  const handleAddToCart = () => {
-    addToCart(product);
+  const handleAddToCart = (e) => {
+    // Prevent event propagation to avoid double triggers
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Disable the button while adding to prevent multiple clicks
+    if (added) return;
+    
+    // Add the product to cart with explicitly set quantity of 1
+    addToCart(product, 1);
     setAdded(true);
     
     // Reset the "Added" state after a few seconds

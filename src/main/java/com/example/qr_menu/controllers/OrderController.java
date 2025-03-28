@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -48,7 +49,35 @@ public class OrderController {
                 .body("Order created successfully with ID: " + createdOrder.getId());
     }
 
-
+    // Get a single order by ID
+    @GetMapping("/{orderId}")
+    public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long orderId, @RequestHeader("Authorization") String token) {
+        // Extract accountId from JWT token
+        String jwtToken = token.substring(7); // Remove "Bearer " prefix from the token
+        Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken);
+        Long accountId = claims.get("accountId", Long.class);
+        
+        // Find the order
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        
+        if (orderOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        Order order = orderOpt.get();
+        
+        // Check if the order belongs to the user making the request
+        // Users should only see their own orders unless they're admins
+        if (!order.getAccount().getId().equals(accountId) && 
+            !claims.get("role", String.class).equals("ROLE_ADMIN")) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
+        // Convert to DTO and return
+        OrderDTO orderDTO = orderService.getOrderWithDetails(orderId);
+        
+        return ResponseEntity.ok(orderDTO);
+    }
 
     // New GET endpoint for paginated order retrieval
     @GetMapping

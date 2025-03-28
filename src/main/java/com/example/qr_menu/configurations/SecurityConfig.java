@@ -55,7 +55,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/menus/{id}/default-product-image").hasAnyRole("ADMIN", "USER")
                         .requestMatchers(HttpMethod.POST, "/api/menus").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/orders").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/qrcode/generate").permitAll()
+
                         
                         // Account management endpoints
                         .requestMatchers("/api/accounts/validate").permitAll()
@@ -65,6 +66,12 @@ public class SecurityConfig {
 
                         // Favorites endpoints - allow all authenticated users
                         .requestMatchers("/api/favorites/**").authenticated()
+
+                        // Cart endpoints - allow all authenticated users
+                        .requestMatchers("/api/cart/**").authenticated()
+                        
+                        // Order endpoints - allow all authenticated users
+                        .requestMatchers("/api/orders/**").authenticated()
 
                         // Restaurant management endpoints - let the @PreAuthorize annotations handle these
                         .requestMatchers("/api/restaurants/**").authenticated()

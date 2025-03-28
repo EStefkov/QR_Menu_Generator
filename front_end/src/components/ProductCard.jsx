@@ -104,6 +104,9 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
       return;
     }
     
+    // If already in the process of adding to cart, return
+    if (isLoading || addedToCart) return;
+    
     setIsLoading(true);
     try {
       // Create a cart item object from the product
@@ -118,8 +121,8 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
       };
       
       console.log("Adding to cart:", cartItem);
-      // Add to cart context (for local state)
-      addToCart(cartItem);
+      // Add to cart context with explicit quantity of 1
+      addToCart(cartItem, 1);
       
       // Show visual feedback
       setAddedToCart(true);

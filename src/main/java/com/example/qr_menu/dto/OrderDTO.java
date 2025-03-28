@@ -20,7 +20,7 @@ public class OrderDTO {
     private Order.OrderStatus orderStatus;
     private List<ProductOrderDTO> products;
     private Date orderTime;
-    private Long totalPrice;
+    private Double totalPrice;
 
 
     @Data
@@ -29,6 +29,8 @@ public class OrderDTO {
     @NoArgsConstructor
     public static class ProductOrderDTO {
         private Long productId;
+        private String productName;
+        private String productImage;
         private int quantity;
         private Double productPriceAtOrder;
     }

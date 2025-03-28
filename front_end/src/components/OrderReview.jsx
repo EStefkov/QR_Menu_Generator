@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../AuthContext';
+import { useRestaurant } from '../contexts/RestaurantContext';
 import { HiOutlineChevronLeft } from 'react-icons/hi';
 
 function OrderReview() {
-  const { cart, totalPrice, clearCart } = useCart();
+  const { cartItems, cartTotal, clearCart } = useCart();
+  const { userData } = useAuth();
+  const { currentRestaurant } = useRestaurant();
   const navigate = useNavigate();
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -14,6 +18,17 @@ function OrderReview() {
     specialRequests: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Prefill customer info from user data when available
+  useEffect(() => {
+    if (userData.firstName || userData.lastName) {
+      setCustomerInfo(prev => ({
+        ...prev,
+        name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
+      }));
+    }
+    // Add more user data prefill if available in userData
+  }, [userData]);
   
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -25,17 +40,25 @@ function OrderReview() {
     setIsSubmitting(true);
     
     try {
+      // Transform cart items to expected format
+      const orderProducts = cartItems.map(item => ({
+        productId: item.id,
+        quantity: item.quantity,
+        productPriceAtOrder: item.price
+      }));
+      
       const order = {
-        items: cart,
-        totalAmount: totalPrice,
-        customerInfo,
-        orderDate: new Date().toISOString()
+        products: orderProducts,
+        totalPrice: parseFloat(cartTotal), // Use original price without conversion
+        restorantId: currentRestaurant.id, // Use restaurant ID from context
+        orderStatus: "ACCEPTED"
       };
       
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userData.token}`
         },
         body: JSON.stringify(order)
       });
@@ -44,9 +67,16 @@ function OrderReview() {
         throw new Error('Failed to create order');
       }
       
-      const data = await response.json();
+      // Since the response is text, not JSON, we use text() instead of json()
+      const responseText = await response.text();
+      console.log("Order created:", responseText);
+      
+      // Extract the order ID from the response text using regex
+      const idMatch = responseText.match(/ID: (\d+)/);
+      const orderId = idMatch ? idMatch[1] : '0';
+      
       clearCart();
-      navigate(`/order-confirmation/${data.id}`);
+      navigate(`/order-confirmation/${orderId}`);
     } catch (error) {
       console.error('Error submitting order:', error);
       alert('There was an error submitting your order. Please try again.');
@@ -55,7 +85,7 @@ function OrderReview() {
     }
   };
   
-  if (cart.length === 0) {
+  if (cartItems.length === 0) {
     return (
       <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-0">
         <div className="text-center">
@@ -96,7 +126,7 @@ function OrderReview() {
                   <div className="px-4 py-5 sm:px-6">
                     <h2 className="text-lg font-medium text-gray-900">Customer Information</h2>
                     <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                      Please enter your details below.
+                      Your information will be automatically included with your order.
                     </p>
                   </div>
                   <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
@@ -105,44 +135,9 @@ function OrderReview() {
                         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                           Full name
                         </label>
-                        <input
-                          type="text"
-                          name="name"
-                          id="name"
-                          value={customerInfo.name}
-                          onChange={handleInputChange}
-                          required
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-
-                      <div className="col-span-6 sm:col-span-3">
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                          Email address
-                        </label>
-                        <input
-                          type="email"
-                          name="email"
-                          id="email"
-                          value={customerInfo.email}
-                          onChange={handleInputChange}
-                          required
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
-                      </div>
-
-                      <div className="col-span-6 sm:col-span-3">
-                        <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                          Phone number
-                        </label>
-                        <input
-                          type="tel"
-                          name="phone"
-                          id="phone"
-                          value={customerInfo.phone}
-                          onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                        />
+                        <div className="mt-1 block w-full py-2 px-3 bg-gray-100 rounded-md text-gray-700 text-sm">
+                          {userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : 'Not provided'}
+                        </div>
                       </div>
 
                       <div className="col-span-6 sm:col-span-3">
@@ -156,12 +151,13 @@ function OrderReview() {
                           value={customerInfo.tableNumber}
                           onChange={handleInputChange}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          placeholder="Enter your table number"
                         />
                       </div>
 
                       <div className="col-span-6">
                         <label htmlFor="specialRequests" className="block text-sm font-medium text-gray-700">
-                          Special requests
+                          Special requests (optional)
                         </label>
                         <textarea
                           name="specialRequests"
@@ -170,6 +166,7 @@ function OrderReview() {
                           value={customerInfo.specialRequests}
                           onChange={handleInputChange}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          placeholder="Any special requests for your order?"
                         />
                       </div>
                     </div>
@@ -195,7 +192,7 @@ function OrderReview() {
                 </div>
                 <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
                   <dl className="divide-y divide-gray-200">
-                    {cart.map((item) => (
+                    {cartItems.map((item) => (
                       <div key={item.id} className="py-4 flex items-center justify-between">
                         <dt className="text-sm text-gray-600 flex items-center">
                           <span className="font-medium text-gray-900 mr-2">{item.quantity} ×</span>
@@ -207,7 +204,7 @@ function OrderReview() {
                     
                     <div className="py-4 flex items-center justify-between">
                       <dt className="text-base font-medium text-gray-900">Subtotal</dt>
-                      <dd className="text-base font-medium text-gray-900">${totalPrice.toFixed(2)}</dd>
+                      <dd className="text-base font-medium text-gray-900">${cartTotal.toFixed(2)}</dd>
                     </div>
                   </dl>
                   

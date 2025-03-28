@@ -1,15 +1,15 @@
 package com.example.qr_menu.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"account", "menus"})
+@EqualsAndHashCode(exclude = {"account", "menus"})
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,7 +27,7 @@ public class Restorant {
     private String phoneNumber;
 
     // Many Restorants can belong to one Account
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id")
     private Account account;
 

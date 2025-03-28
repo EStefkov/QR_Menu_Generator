@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { HiOutlineCheckCircle } from 'react-icons/hi';
+import { useAuth } from '../AuthContext';
 
 function OrderConfirmation() {
   const { orderId } = useParams();
+  const { userData } = useAuth();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,17 +14,45 @@ function OrderConfirmation() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}`);
+        if (!userData.token) {
+          throw new Error('You must be logged in to view this order');
+        }
+        
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}`, {
+          headers: {
+            'Authorization': `Bearer ${userData.token}`
+          }
+        });
         
         if (!response.ok) {
           throw new Error('Failed to fetch order');
         }
         
         const data = await response.json();
-        setOrder(data);
+        
+        // Format order data for display
+        const formattedOrder = {
+          id: data.id,
+          orderDate: data.orderTime,
+          totalAmount: parseFloat(data.totalPrice),
+          status: data.orderStatus,
+          items: (data.products || []).map(product => ({
+            id: product.productId,
+            name: product.productName || `Product ${product.productId}`,
+            price: product.productPriceAtOrder || 0,
+            quantity: product.quantity,
+            image: product.productImage || '/uploads/default_product.png'
+          })),
+          customerInfo: {
+            name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+            tableNumber: 'N/A' // Would need to be stored in order
+          }
+        };
+        
+        setOrder(formattedOrder);
         
         // Generate QR code for this order
-        generateQRCode(data);
+        generateQRCode(formattedOrder);
       } catch (error) {
         console.error('Error fetching order:', error);
         setError('Could not load order information. Please check your order ID.');
@@ -32,7 +62,7 @@ function OrderConfirmation() {
     };
     
     fetchOrder();
-  }, [orderId]);
+  }, [orderId, userData]);
   
   const generateQRCode = async (orderData) => {
     try {
@@ -46,7 +76,8 @@ function OrderConfirmation() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/qrcode/generate`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userData.token}`
         },
         body: JSON.stringify(qrCodeData)
       });
@@ -55,12 +86,20 @@ function OrderConfirmation() {
         throw new Error('Failed to generate QR code');
       }
       
-      const data = await response.json();
-      
-      if (data.success) {
-        setQrCode(data.qrCode);
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        if (data.success) {
+          setQrCode(data.qrCode);
+        } else {
+          console.error('QR code generation failed:', data.error);
+        }
       } else {
-        console.error('QR code generation failed:', data.error);
+        // If the response is not JSON, try to get it as text for QR code image
+        const textData = await response.text();
+        if (textData) {
+          setQrCode(textData);
+        }
       }
     } catch (error) {
       console.error('Error generating QR code:', error);
@@ -102,16 +141,39 @@ function OrderConfirmation() {
   if (!order) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900">Order not found</h2>
-          <p className="mt-2 text-gray-500">We couldn't find the order you're looking for.</p>
-          <div className="mt-6">
-            <Link
-              to="/"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Return to menu
-            </Link>
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="bg-green-50 px-4 py-5 sm:px-6">
+            <div className="flex items-center">
+              <HiOutlineCheckCircle className="h-8 w-8 text-green-400" aria-hidden="true" />
+              <h2 className="ml-3 text-2xl font-bold text-green-800">
+                Order Confirmed!
+              </h2>
+            </div>
+            <p className="mt-2 max-w-2xl text-sm text-green-700">
+              Thank you for your order. Your order has been received and is being processed.
+            </p>
+          </div>
+          
+          <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+              <div className="sm:col-span-1">
+                <dt className="text-sm font-medium text-gray-500">Order number</dt>
+                <dd className="mt-1 text-sm text-gray-900">#{orderId}</dd>
+              </div>
+              <div className="sm:col-span-1">
+                <dt className="text-sm font-medium text-gray-500">Date placed</dt>
+                <dd className="mt-1 text-sm text-gray-900">{new Date().toLocaleString()}</dd>
+              </div>
+            </dl>
+            
+            <div className="mt-8 flex justify-center">
+              <Link
+                to="/"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Return to Menu
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -156,7 +218,7 @@ function OrderConfirmation() {
                 </div>
                 <div className="sm:col-span-1">
                   <dt className="text-sm font-medium text-gray-500">Total amount</dt>
-                  <dd className="mt-1 text-sm font-semibold text-gray-900">${order.totalAmount.toFixed(2)}</dd>
+                  <dd className="mt-1 text-sm font-semibold text-gray-900">${(parseFloat(order.totalAmount)).toFixed(2)}</dd>
                 </div>
                 <div className="sm:col-span-1">
                   <dt className="text-sm font-medium text-gray-500">Status</dt>
@@ -201,15 +263,26 @@ function OrderConfirmation() {
               <div className="px-4 py-5 sm:px-6">
                 <ul className="divide-y divide-gray-200">
                   {order.items.map((item, index) => (
-                    <li key={index} className="py-4 flex justify-between">
+                    <li key={index} className="py-4 flex justify-between items-center">
                       <div className="flex items-center">
-                        <span className="font-medium text-gray-900 mr-2">{item.quantity} ×</span>
+                        {item.image && (
+                          <img 
+                            src={`${import.meta.env.VITE_API_URL}${item.image}`} 
+                            alt={item.name}
+                            className="h-16 w-16 object-cover rounded-md mr-4"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = `${import.meta.env.VITE_API_URL}/uploads/default_product.png`;
+                            }}
+                          />
+                        )}
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                          <p className="text-sm text-gray-500">${item.price.toFixed(2)} each</p>
+                          <span className="font-medium text-gray-900 mr-2">{item.quantity} ×</span>
+                          <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                          <p className="text-sm text-gray-500">${parseFloat(item.price).toFixed(2)} each</p>
                         </div>
                       </div>
-                      <p className="text-sm font-medium text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="text-sm font-medium text-gray-900">${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
                     </li>
                   ))}
                 </ul>

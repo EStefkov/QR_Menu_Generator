@@ -1,16 +1,16 @@
 package com.example.qr_menu.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Date;
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"restorant", "products", "categories"})
+@EqualsAndHashCode(exclude = {"restorant", "products", "categories"})
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -68,5 +68,4 @@ public class Menu {
 
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Category> categories;
-
 }

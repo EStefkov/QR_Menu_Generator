@@ -1,10 +1,7 @@
 package com.example.qr_menu.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -12,7 +9,10 @@ import java.util.Set;
 import java.util.HashSet;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"restorants", "favorites"})
+@EqualsAndHashCode(exclude = {"restorants", "favorites"})
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
