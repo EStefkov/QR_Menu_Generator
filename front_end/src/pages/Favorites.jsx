@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { favoritesApi } from '../api/favoritesProducts';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import ProductCard from '../components/ProductCard';
 import { HiHeart, HiSearch, HiFilter, HiChevronDown, HiChevronRight } from 'react-icons/hi';
 import DetailsModal from '../components/DetailsModal';

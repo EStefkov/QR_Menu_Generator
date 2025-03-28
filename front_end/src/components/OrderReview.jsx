@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useRestaurant } from '../contexts/RestaurantContext';
 import { HiOutlineChevronLeft } from 'react-icons/hi';
 

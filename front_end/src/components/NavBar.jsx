@@ -1,21 +1,23 @@
 // NavBar.jsx
 import { useContext, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { HiOutlineMenu, HiX, HiSun, HiMoon, HiShoppingCart } from "react-icons/hi";
-import { AuthContext } from "../AuthContext";
-import { useTheme } from "../ThemeContext";
+import { HiOutlineMenu, HiX, HiShoppingCart } from "react-icons/hi";
+import { AuthContext } from "../contexts/AuthContext";
 import { validateToken } from "../api/account";
 import { useCart } from "../contexts/CartContext";
+import { useLanguage } from "../contexts/LanguageContext";
+import ThemeToggle from "./ThemeToggle";
+import LanguageToggle from "./LanguageToggle";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 const NavBar = () => {
   const navigate = useNavigate();
   const { userData, logout } = useContext(AuthContext);
-  const { isDarkMode, toggleTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { cart } = useCart();
+  const { t } = useLanguage();
   
   // Calculate total items in cart
   const cartItemCount = cart?.reduce((total, item) => total + item.quantity, 0) || 0;
@@ -72,14 +74,20 @@ const NavBar = () => {
               to="/" 
               className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
             >
-              Home
+              {t('nav_home')}
+            </Link>
+            <Link 
+              to="/demo" 
+              className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+            >
+              {t('nav_demo')}
             </Link>
             {userData?.accountType === "ROLE_ADMIN" && (
               <Link 
                 to="/admin" 
                 className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
               >
-                Admin Dashboard
+                {t('nav_admin')}
               </Link>
             )}
             {userData?.accountType === "ROLE_USER" && (
@@ -88,13 +96,13 @@ const NavBar = () => {
                   to="/menus" 
                   className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
                 >
-                  Menus
+                  {t('nav_menu')}
                 </Link>
                 <Link 
                   to="/about" 
                   className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
                 >
-                  About
+                  {t('nav_about')}
                 </Link>
               </>
             )}
@@ -102,131 +110,111 @@ const NavBar = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              aria-label="Toggle theme"
-            >
-              {isDarkMode ? (
-                <HiSun className="w-5 h-5 text-yellow-500" />
-              ) : (
-                <HiMoon className="w-5 h-5 text-gray-700" />
-              )}
-            </button>
+            {/* Theme Toggle and Language Toggle with more space before profile on mobile */}
+            <div className="flex items-center space-x-4 mr-4 md:mr-8">
+              <ThemeToggle className="order-1 md:order-none" />
+              <LanguageToggle className="order-2 md:order-none" showText={true} />
+            </div>
 
-            {/* Cart Icon - only show for logged-in users */}
-            {userData?.firstName && (
-              <Link 
-                to="/cart"
-                className="relative p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                aria-label="Shopping cart"
-              >
-                <HiShoppingCart className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                    {cartItemCount > 99 ? '99+' : cartItemCount}
+            {/* User Profile and Mobile Menu Button grouped together on mobile */}
+            <div className="flex items-center space-x-2 md:space-x-4">
+              {/* User Menu */}
+              {userData?.firstName ? (
+                <div className="flex items-center space-x-0 md:space-x-4 order-4 md:order-none">
+                  <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {userData.firstName} {userData.lastName}
                   </span>
-                )}
-              </Link>
-            )}
-
-            {/* User Menu */}
-            {userData?.firstName ? (
-              <div className="flex items-center space-x-4">
-                <span className="hidden md:block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {userData.firstName} {userData.lastName}
-                </span>
-                <div className="relative profile-dropdown">
-                  <button
-                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <img
-                      src={`${BASE_URL}${userData.profilePicture}`}
-                      alt="Profile"
-                      className="w-10 h-10 rounded-full border-2 border-blue-500 dark:border-blue-400 hover:border-blue-600 dark:hover:border-blue-300 transition-colors"
-                    />
-                    <svg 
-                      className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
-                        isProfileOpen ? 'transform rotate-180' : ''
-                      }`}
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
+                  <div className="relative profile-dropdown">
+                    <button
+                      onClick={() => setIsProfileOpen(!isProfileOpen)}
+                      className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  {isProfileOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 border border-gray-200 dark:border-gray-700">
-                      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">{userData.firstName} {userData.lastName}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{userData.mailAddress}</p>
+                      <img
+                        src={`${BASE_URL}${userData.profilePicture}`}
+                        alt="Profile"
+                        className="w-10 h-10 rounded-full border-2 border-blue-500 dark:border-blue-400 hover:border-blue-600 dark:hover:border-blue-300 transition-colors"
+                      />
+                      <svg 
+                        className={`hidden md:block w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
+                          isProfileOpen ? 'transform rotate-180' : ''
+                        }`}
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {isProfileOpen && (
+                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 border border-gray-200 dark:border-gray-700">
+                        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{userData.firstName} {userData.lastName}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{userData.mailAddress}</p>
+                        </div>
+                        <div className="py-1">
+                          <Link
+                            to="/favorites"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                            <span>{t('nav_favorites')}</span>
+                          </Link>
+                          <Link
+                            to="/cart"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                            <span>{t('nav_cart')}</span>
+                            {cartItemCount > 0 && (
+                              <span className="ml-auto bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                {cartItemCount}
+                              </span>
+                            )}
+                          </Link>
+                          <button
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                            onClick={handleLogout}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            <span>{t('nav_logout')}</span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="py-1">
-                        <Link
-                          to="/favorites"
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                          <span>Favorites</span>
-                        </Link>
-                        <Link
-                          to="/cart"
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                          </svg>
-                          <span>Cart</span>
-                          {cartItemCount > 0 && (
-                            <span className="ml-auto bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                              {cartItemCount}
-                            </span>
-                          )}
-                        </Link>
-                        <button
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
-                          onClick={handleLogout}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                          </svg>
-                          <span>Logout</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="hidden md:flex space-x-4">
-                <Link 
-                  to="/login" 
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors font-medium"
-                >
-                  Login
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors font-medium"
-                >
-                  Register
-                </Link>
-              </div>
-            )}
+              ) : (
+                <div className="hidden md:flex space-x-4 order-4 md:order-none">
+                  <Link 
+                    to="/login" 
+                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors font-medium"
+                  >
+                    {t('nav_login')}
+                  </Link>
+                  <Link 
+                    to="/register" 
+                    className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors font-medium"
+                  >
+                    {t('nav_register')}
+                  </Link>
+                </div>
+              )}
 
-            {/* Mobile Menu Button */}
-            <button 
-              onClick={() => setIsOpen(!isOpen)} 
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Toggle menu"
-            >
-              {isOpen ? <HiX className="w-6 h-6" /> : <HiOutlineMenu className="w-6 h-6" />}
-            </button>
+              {/* Mobile Menu Button */}
+              <button 
+                onClick={() => setIsOpen(!isOpen)} 
+                className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors order-5 md:order-none"
+                aria-label="Toggle menu"
+              >
+                {isOpen ? <HiX className="w-6 h-6" /> : <HiOutlineMenu className="w-6 h-6" />}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -241,14 +229,20 @@ const NavBar = () => {
               to="/" 
               className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
             >
-              Home
+              {t('nav_home')}
+            </Link>
+            <Link 
+              to="/demo" 
+              className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+            >
+              {t('nav_demo')}
             </Link>
             {userData?.accountType === "ROLE_ADMIN" && (
               <Link 
                 to="/admin" 
                 className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
               >
-                Admin Dashboard
+                {t('nav_admin')}
               </Link>
             )}
             {userData?.accountType === "ROLE_USER" && (
@@ -257,13 +251,13 @@ const NavBar = () => {
                   to="/menus" 
                   className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
                 >
-                  Menus
+                  {t('nav_menu')}
                 </Link>
                 <Link 
                   to="/about" 
                   className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
                 >
-                  About
+                  {t('nav_about')}
                 </Link>
                 {/* Add Cart link for mobile menu */}
                 <Link 
@@ -272,7 +266,7 @@ const NavBar = () => {
                 >
                   <span className="flex items-center">
                     <HiShoppingCart className="w-5 h-5 mr-2" />
-                    Cart
+                    {t('nav_cart')}
                   </span>
                   {cartItemCount > 0 && (
                     <span className="bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
@@ -287,7 +281,7 @@ const NavBar = () => {
                 className="w-full text-left py-2 text-red-600 hover:text-red-700 transition-colors font-medium"
                 onClick={handleLogout}
               >
-                Logout
+                {t('nav_logout')}
               </button>
             ) : (
               <div className="space-y-2 pt-2">
@@ -295,13 +289,13 @@ const NavBar = () => {
                   to="/login" 
                   className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
-                  Login
+                  {t('nav_login')}
                 </Link>
                 <Link 
                   to="/register" 
                   className="block w-full text-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
-                  Register
+                  {t('nav_register')}
                 </Link>
               </div>
             )}

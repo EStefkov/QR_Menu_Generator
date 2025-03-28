@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { getFullImageUrl, getCategoryDetails } from "../api/adminDashboard";
 import { HiHeart, HiShoppingCart, HiOutlineHeart, HiUser, HiInformationCircle, HiCheckCircle } from 'react-icons/hi';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { favoritesApi } from '../api/favoritesProducts';
 import { useCart } from '../contexts/CartContext';
 

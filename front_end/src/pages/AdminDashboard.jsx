@@ -1,5 +1,5 @@
 import { useEffect, useState,useContext } from "react";
-import { AuthContext } from "../AuthContext"; 
+import { AuthContext } from "../contexts/AuthContext"; 
 import AccountsTable from "../components/AccountsTable";
 import RestaurantsTable from "../components/RestaurantsTable.jsx";
 import CreateMenuForm from "../components/CreateMenuForm.jsx";

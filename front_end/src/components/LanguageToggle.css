@@ -1,0 +1,125 @@
+.language-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.language-toggle-btn {
+  display: flex;
+  align-items: center;
+  border: none;
+  background-color: #f0f0f0;
+  border-radius: 1.5rem;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .language-toggle-btn {
+  background-color: #2d3748;
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.language-toggle-btn:hover {
+  background-color: #e2e2e2;
+  transform: scale(1.05);
+}
+
+.dark .language-toggle-btn:hover {
+  background-color: #3a4a61;
+}
+
+.language-icon {
+  font-size: 1.1rem;
+  color: #4a5568;
+  transition: transform 0.3s ease;
+}
+
+.language-toggle-btn:hover .language-icon {
+  transform: rotate(15deg);
+}
+
+.dark .language-icon {
+  color: #e2e8f0;
+}
+
+.language-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 10;
+  min-width: 180px;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+}
+
+.dark .language-dropdown-menu {
+  background-color: #2d3748;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.language-dropdown-menu.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.language-dropdown-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.dark .language-option {
+  color: #e2e8f0;
+}
+
+.language-option:hover {
+  background-color: #f7fafc;
+}
+
+.dark .language-option:hover {
+  background-color: #3a4a61;
+}
+
+.language-option.active {
+  background-color: #ebf4ff;
+  color: #3182ce;
+  font-weight: 500;
+}
+
+.dark .language-option.active {
+  background-color: #2c5282;
+  color: #bee3f8;
+}
+
+.language-text {
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .language-dropdown-menu {
+    right: -20px;
+  }
+} 

@@ -2,22 +2,24 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
-import "tailwindcss"
-import { AuthProvider } from './AuthContext.jsx'
-import { ThemeProvider } from './ThemeContext.jsx'
+import { AuthProvider } from './contexts/AuthContext.jsx'
+import { ThemeProvider } from './contexts/ThemeContext.jsx'
+import { LanguageProvider } from './contexts/LanguageContext.jsx'
 import { CartProvider } from './contexts/CartContext.jsx'
 import { RestaurantProvider } from './contexts/RestaurantContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ThemeProvider>
-      <AuthProvider>
-        <RestaurantProvider>
-          <CartProvider>
-            <App />
-          </CartProvider>
-        </RestaurantProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <RestaurantProvider>
+            <CartProvider>
+              <App />
+            </CartProvider>
+          </RestaurantProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </ThemeProvider>
   </StrictMode>,
 )

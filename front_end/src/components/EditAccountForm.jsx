@@ -1,6 +1,6 @@
 import { useState,useContext } from "react";
 import { updateAccountApi, uploadProfilePicture } from "../api/adminDashboard";
-import { AuthContext } from "../AuthContext";
+import { AuthContext } from "../contexts/AuthContext";
 
 const EditAccountForm = ({ account, onSave, onCancel, token }) => {
     const [editedAccount, setEditedAccount] = useState(account);

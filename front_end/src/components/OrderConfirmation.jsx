@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { HiOutlineCheckCircle } from 'react-icons/hi';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 function OrderConfirmation() {
   const { orderId } = useParams();

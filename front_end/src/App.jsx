@@ -15,7 +15,7 @@ import {
   import Home from "./pages/Home.jsx";
   import MenuPage from "./pages/AdminMenuPage.jsx";
   import Favorites from "./pages/Favorites.jsx";
-  import { AuthContext } from "./AuthContext.jsx";
+  import { AuthContext } from "./contexts/AuthContext.jsx";
   import { CartProvider } from './contexts/CartContext';
   import Cart from "./components/Cart.jsx";
   import OrderReview from "./components/OrderReview.jsx";
@@ -23,6 +23,7 @@ import {
   import OrderHistory from "./components/OrderHistory.jsx";
   import OrderDetail from './components/OrderDetail.jsx';
   import ProtectedRoute from './components/ProtectedRoute';
+  import Demo from './pages/Demo';
   
   const Layout = ({ children }) => {
     const location = useLocation();
@@ -43,114 +44,122 @@ import {
     const accountType = userData.accountType;
   
     return (
-      <CartProvider>
-        <Router>
-          <Routes>
-            {/* Home / Public */}
-            <Route
-              path="/"
-              element={
+      <Router>
+        <Routes>
+          {/* Home / Public */}
+          <Route
+            path="/"
+            element={
+              <Layout>
+                <Home />
+              </Layout>
+            }
+          />
+  
+          {/* Login / Register */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<RegisterPage />} />
+  
+          {/* Menu page by ID */}
+          <Route
+            path="/menu/:menuId"
+            element={
+              <Layout>
+                <MenuPage />
+              </Layout>
+            }
+          />
+  
+          {/* Favorites */}
+          <Route
+            path="/favorites"
+            element={
+              isAuthenticated ? (
                 <Layout>
-                  <Home />
+                  <Favorites />
                 </Layout>
-              }
-            />
-    
-            {/* Login / Register */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<RegisterPage />} />
-    
-            {/* Menu page by ID */}
-            <Route
-              path="/menu/:menuId"
-              element={
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+  
+          {/* Admin Dashboard */}
+          <Route
+            path="/admin"
+            element={
+              isAuthenticated && accountType === "ROLE_ADMIN" ? (
                 <Layout>
-                  <MenuPage />
+                  <AdminDashboard />
                 </Layout>
-              }
-            />
-    
-            {/* Favorites */}
-            <Route
-              path="/favorites"
-              element={
-                isAuthenticated ? (
-                  <Layout>
-                    <Favorites />
-                  </Layout>
-                ) : (
-                  <Navigate to="/" />
-                )
-              }
-            />
-    
-            {/* Admin Dashboard */}
-            <Route
-              path="/admin"
-              element={
-                isAuthenticated && accountType === "ROLE_ADMIN" ? (
-                  <Layout>
-                    <AdminDashboard />
-                  </Layout>
-                ) : (
-                  <Navigate to="/" />
-                )
-              }
-            />
-    
-            {/* User Dashboard */}
-            <Route
-              path="/user"
-              element={
-                isAuthenticated && accountType === "ROLE_USER" ? (
-                  <Layout>
-                    <UserDashboard />
-                  </Layout>
-                ) : (
-                  <Navigate to="/" />
-                )
-              }
-            />
-    
-            {/* Waiter Dashboard */}
-            <Route
-              path="/waiter"
-              element={
-                isAuthenticated && accountType === "ROLE_WAITER" ? (
-                  <Layout>
-                    <WaiterDashboard />
-                  </Layout>
-                ) : (
-                  <Navigate to="/" />
-                )
-              }
-            />
-    
-            {/* Add new routes for cart functionality */}
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/order-review" element={<OrderReview />} />
-            <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
-            
-            {/* Admin route for order history */}
-            <Route 
-              path="/admin/orders" 
-              element={
-                <ProtectedRoute role="ROLE_ADMIN">
-                  <OrderHistory />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/admin/orders/:orderId" 
-              element={
-                <ProtectedRoute role="ROLE_ADMIN">
-                  <OrderDetail />
-                </ProtectedRoute>
-              } 
-            />
-          </Routes>
-        </Router>
-      </CartProvider>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+  
+          {/* User Dashboard */}
+          <Route
+            path="/user"
+            element={
+              isAuthenticated && accountType === "ROLE_USER" ? (
+                <Layout>
+                  <UserDashboard />
+                </Layout>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+  
+          {/* Waiter Dashboard */}
+          <Route
+            path="/waiter"
+            element={
+              isAuthenticated && accountType === "ROLE_WAITER" ? (
+                <Layout>
+                  <WaiterDashboard />
+                </Layout>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+  
+          {/* Add new routes for cart functionality */}
+          <Route path="/cart" element={<Cart />} />
+          <Route path="/order-review" element={<OrderReview />} />
+          <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+          
+          {/* Admin route for order history */}
+          <Route 
+            path="/admin/orders" 
+            element={
+              <ProtectedRoute role="ROLE_ADMIN">
+                <OrderHistory />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/orders/:orderId" 
+            element={
+              <ProtectedRoute role="ROLE_ADMIN">
+                <OrderDetail />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Demo page for language/theme switching */}
+          <Route
+            path="/demo"
+            element={
+              <Layout>
+                <Demo />
+              </Layout>
+            }
+          />
+        </Routes>
+      </Router>
     );
   };
   
