@@ -1,6 +1,6 @@
 // ProductCard.jsx
 import React, { useState, useEffect } from "react";
-import { getFullImageUrl } from "../api/adminDashboard";
+import { getFullImageUrl, getCategoryDetails } from "../api/adminDashboard";
 import { HiHeart, HiShoppingCart, HiOutlineHeart, HiUser, HiInformationCircle, HiCheckCircle } from 'react-icons/hi';
 import { useAuth } from '../AuthContext';
 import { favoritesApi } from '../api/favoritesProducts';
@@ -109,19 +109,75 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
     
     setIsLoading(true);
     try {
+      // Try to get restaurant ID from different sources
+      let restaurantId = product.restaurantId || product.restorantId;
+      
+      // If restaurant ID is not directly available from product, try from category.menu.restorant
+      if (!restaurantId && product.category && product.category.menu && product.category.menu.restorant) {
+        restaurantId = product.category.menu.restorant.id;
+        console.log(`Found restaurant ID ${restaurantId} directly from product.category.menu.restorant`);
+      }
+      
+      // If we only have categoryId, fetch the full category details to get restaurant ID
+      if (!restaurantId && product.categoryId) {
+        console.log("Fetching restaurant ID from category ID:", product.categoryId);
+        
+        try {
+          // Add a timeout to the category details fetch to prevent hanging
+          const fetchPromise = getCategoryDetails(product.categoryId);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Category fetch timeout')), 5000)
+          );
+          
+          const categoryDetails = await Promise.race([fetchPromise, timeoutPromise]);
+          console.log("Category details retrieved:", categoryDetails);
+          
+          // Check for both spellings of restaurant ID
+          if (categoryDetails) {
+            if (categoryDetails.restaurantId) {
+              restaurantId = categoryDetails.restaurantId;
+              console.log("Found restaurantId in category details:", restaurantId);
+            } else if (categoryDetails.restorantId) {
+              restaurantId = categoryDetails.restorantId;
+              console.log("Found restorantId in category details:", restaurantId);
+            } else if (categoryDetails.menu && categoryDetails.menu.restorant) {
+              restaurantId = categoryDetails.menu.restorant.id;
+              console.log("Found restaurant ID from category.menu.restorant:", restaurantId);
+            } else if (categoryDetails.menuId) {
+              // If we have menuId but no direct restaurant access
+              console.log("Menu ID from category:", categoryDetails.menuId);
+              // We would need to fetch the menu to get the restaurant ID
+            }
+          }
+        } catch (categoryError) {
+          console.error("Error fetching category details:", categoryError.message);
+          // Fallback for category fetch errors - continue with default
+        }
+      }
+      
+      // Fallback if we still don't have a restaurant ID
+      if (!restaurantId) {
+        console.warn("Could not determine restaurant ID, using default restaurant ID 1");
+        // Based on your logs, restaurant ID 1 seems to be correct
+        restaurantId = 1;
+      }
+      
       // Create a cart item object from the product
       const cartItem = {
         id: product.id,
+        productId: product.id,
         name: product.productName,
         price: product.productPrice,
+        productPrice: product.productPrice,
         quantity: 1,
         image: product.productImage,
         categoryId: product.categoryId,
         categoryName: product.categoryName || '',
-        restaurantId: product.restaurantId || (product.category && product.category.menu && product.category.menu.restaurant ? product.category.menu.restaurant.id : null)
+        restaurantId: restaurantId,
+        restorantId: restaurantId // Add both spellings for compatibility
       };
       
-      console.log("Adding to cart:", cartItem);
+      console.log("Adding to cart with restaurant ID:", restaurantId);
       // Add to cart context with explicit quantity of 1
       addToCart(cartItem, 1);
       

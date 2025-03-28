@@ -90,5 +90,34 @@ export const cartApi = {
       console.error('Error clearing cart:', error);
       throw error;
     }
+  },
+
+  createOrder: async (orderData) => {
+    try {
+      // Ensure restaurant ID is included
+      if (!orderData.restorantId) {
+        console.warn('No restaurant ID provided for order.');
+      }
+      
+      // Log full order data for debugging
+      console.log("Creating order with data:", JSON.stringify({
+        url: `${BASE_URL}/api/orders`,
+        accountId: orderData.accountId,
+        restaurantId: orderData.restorantId,
+        itemCount: orderData.products?.length || 0,
+        authToken: getToken() ? 'Present' : 'Missing'
+      }));
+      
+      const response = await axios.post(`${BASE_URL}/api/orders`, orderData, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating order:', error);
+      throw error;
+    }
   }
 }; 

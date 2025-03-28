@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -25,6 +26,16 @@ public class CategoryController {
     public ResponseEntity<List<CategoryDTO>> getCategoriesByMenuId(@PathVariable Long menuId) {
         List<CategoryDTO> categories = categoryService.getCategoriesByMenuId(menuId);
         return ResponseEntity.ok(categories);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCategoryById(@PathVariable Long id) {
+        try {
+            Map<String, Object> categoryWithDetails = categoryService.getCategoryWithDetails(id);
+            return ResponseEntity.ok(categoryWithDetails);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/{id}")

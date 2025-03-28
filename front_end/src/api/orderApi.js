@@ -28,7 +28,10 @@ export const orderApi = {
   
   createOrder: async (orderData) => {
     try {
+      console.log("orderAPI - Creating order with data:", JSON.stringify(orderData, null, 2));
+      
       const response = await axiosInstance.post('', orderData);
+      console.log("orderAPI - Order creation successful:", response.data);
       return response.data;
     } catch (error) {
       console.error('Error creating order:', error);

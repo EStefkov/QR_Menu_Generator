@@ -513,3 +513,49 @@ export const getFullImageUrl = (relativePath) => {
   // Otherwise, assume it's a relative path and add the leading slash
   return `${API_BASE_URL}/${relativePath}`;
 };
+
+// Get category details including menu and restaurant info
+export async function getCategoryDetails(categoryId) {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn('No authentication token available for getCategoryDetails');
+      throw new Error('Authentication required');
+    }
+
+    console.log(`Fetching category details for ID ${categoryId} with auth token`);
+    
+    const response = await fetch(`${API_BASE_URL}/api/categories/${categoryId}`, {
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      const statusText = response.statusText;
+      console.error(`Category details fetch failed: ${response.status} ${statusText}`);
+      throw new Error(`Failed to fetch category: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`Successfully retrieved category details for ID ${categoryId}:`, data);
+    
+    // Extract restaurant ID from the response
+    let restaurantId = null;
+    if (data.menu && data.menu.restorant) {
+      restaurantId = data.menu.restorant.id;
+      console.log(`Found restaurant ID ${restaurantId} in category details`);
+    }
+    
+    // Add a restorantId field to make it easier to access
+    return {
+      ...data,
+      restorantId: restaurantId,
+      restaurantId: restaurantId // Add both spellings for compatibility
+    };
+  } catch (error) {
+    console.error(`Error fetching category details for ID ${categoryId}:`, error);
+    throw error;
+  }
+}

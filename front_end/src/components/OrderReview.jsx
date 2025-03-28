@@ -123,65 +123,77 @@ function OrderReview() {
       
       // Check restaurant info
       let restaurantId = null;
-      if (currentRestaurant && currentRestaurant.id) {
+      
+      // First, try to get restaurant ID from cart items
+      // This should be our primary source as it comes from the actual products being ordered
+      if (cartItems && cartItems.length > 0) {
+        for (const item of cartItems) {
+          if (item.restaurantId) {
+            restaurantId = item.restaurantId;
+            console.log(`Found restaurantId ${restaurantId} in cart item ${item.productId}`);
+            break;
+          } else if (item.restorantId) {
+            restaurantId = item.restorantId;
+            console.log(`Found restorantId ${restaurantId} in cart item ${item.productId}`);
+            break;
+          }
+        }
+      }
+      
+      // Fallback to currentRestaurant if we didn't find restaurant ID in cart items
+      if (!restaurantId && currentRestaurant && currentRestaurant.id) {
         restaurantId = currentRestaurant.id;
-      } else {
-        // Try to get from localStorage as fallback
+        console.log(`Using currentRestaurant ID: ${restaurantId}`);
+      } 
+      
+      // Try to get from localStorage as second fallback
+      if (!restaurantId) {
         const storedRestaurant = localStorage.getItem('currentRestaurant');
         if (storedRestaurant) {
-          const parsedRestaurant = JSON.parse(storedRestaurant);
-          restaurantId = parsedRestaurant.id;
+          try {
+            const parsedRestaurant = JSON.parse(storedRestaurant);
+            restaurantId = parsedRestaurant.id;
+            console.log(`Using restaurant ID ${restaurantId} from localStorage`);
+          } catch (e) {
+            console.error('Error parsing storedRestaurant from localStorage:', e);
+          }
         }
         
         // Default to ID 1 if still missing
         if (!restaurantId) {
           restaurantId = 1; // Default restaurant ID
-          console.warn("Using default restaurant ID: 1");
+          console.warn("No restaurant ID found anywhere. Using default restaurant ID: 1");
         }
       }
+      
+      console.log(`Final restaurant ID for order: ${restaurantId}`);
       
       if (!cartItems || cartItems.length === 0) {
         throw new Error('Your cart is empty');
       }
       
-      // Transform cart items to expected format
-      const orderProducts = cartItems.map(item => ({
-        productId: item.productId || item.id, // Use productId if available, fall back to id
-        quantity: item.quantity,
-        productPriceAtOrder: item.productPrice || item.price
-      }));
-      
-      const order = {
-        accountId: accountId,
-        products: orderProducts,
+      const token = localStorage.getItem('token');
+      console.log('Submitting order:', {
+        accountId,
+        products: cartItems.map(item => ({ productId: item.productId, quantity: item.quantity, totalPrice: (item.price * item.quantity) })),
         totalPrice: parseFloat(cartTotal || 0),
         restorantId: restaurantId,
-        orderStatus: "ACCEPTED"
-      };
-      
-      console.log('Submitting order:', order);
-      
-      // Get token from localStorage directly to ensure we have it
-      const authToken = userData.token || localStorage.getItem("token");
-      if (!authToken) {
-        throw new Error('Authentication token is missing. Please log in again.');
-      }
-      
-      console.log('Sending order with:', {
-        url: `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/orders`,
-        accountId: order.accountId,
-        restaurantId: order.restorantId,
-        itemCount: order.products.length,
-        authToken: authToken ? 'Present' : 'Missing'
+        orderStatus: 'ACCEPTED'
       });
       
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(order)
+        body: JSON.stringify({
+          accountId,
+          products: cartItems.map(item => ({ productId: item.productId, quantity: item.quantity, totalPrice: (item.price * item.quantity) })),
+          totalPrice: parseFloat(cartTotal || 0),
+          restorantId: restaurantId,
+          orderStatus: 'ACCEPTED'
+        })
       });
       
       if (!response.ok) {
