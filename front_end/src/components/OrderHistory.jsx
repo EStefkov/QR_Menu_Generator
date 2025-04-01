@@ -115,12 +115,12 @@ function OrderHistory() {
   
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-12 pb-20">
+      <div className="min-h-screen bg-gray-900 pt-12 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-            <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
-            <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="h-8 bg-gray-700 rounded w-1/4"></div>
+            <div className="h-12 bg-gray-700 rounded"></div>
+            <div className="h-64 bg-gray-700 rounded"></div>
           </div>
         </div>
       </div>
@@ -129,16 +129,16 @@ function OrderHistory() {
   
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-12 pb-20">
+      <div className="min-h-screen bg-gray-900 pt-12 pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-md bg-red-50 dark:bg-red-900 p-4">
+          <div className="rounded-md bg-red-900 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
-                <HiOutlineX className="h-5 w-5 text-red-400 dark:text-red-300" aria-hidden="true" />
+                <HiOutlineX className="h-5 w-5 text-red-300" aria-hidden="true" />
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Error</h3>
-                <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                <h3 className="text-sm font-medium text-red-200">Error</h3>
+                <div className="mt-2 text-sm text-red-300">
                   <p>{error}</p>
                 </div>
               </div>
@@ -349,7 +349,7 @@ function OrderHistory() {
                                   ? 'text-red-400'
                                   : 'text-yellow-400'
                               }`}>
-                                {order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending'}
+                                {(order.status || 'PENDING').replace('_', ' ')}
                               </span>
                             </div>
                           </td>

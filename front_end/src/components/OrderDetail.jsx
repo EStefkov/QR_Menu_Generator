@@ -235,7 +235,7 @@ function OrderDetail() {
               ) : (
                 <HiOutlineClock className="mr-1 h-4 w-4" />
               )}
-              {order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending'}
+              {(order.status || 'PENDING').replace('_', ' ')}
             </div>
           </div>
           
@@ -313,7 +313,7 @@ function OrderDetail() {
                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 focus:ring-offset-gray-900`}
               >
                 <HiOutlineClock className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Mark as Pending
+                Pending
               </button>
               
               <button
@@ -328,7 +328,7 @@ function OrderDetail() {
                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 focus:ring-offset-gray-900`}
               >
                 <HiOutlineCheckCircle className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Mark as Completed
+                Completed
               </button>
               
               <button
@@ -343,7 +343,7 @@ function OrderDetail() {
                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 focus:ring-offset-gray-900`}
               >
                 <HiOutlineX className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Mark as Cancelled
+                Cancelled
               </button>
             </div>
           </div>

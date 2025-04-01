@@ -224,7 +224,7 @@ function OrderConfirmation() {
                   <dt className="text-sm font-medium text-gray-400">Status</dt>
                   <dd className="mt-1 text-sm text-gray-200">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-200">
-                      {order.status || 'Pending'}
+                      {(order.status || 'PENDING').replace('_', ' ')}
                     </span>
                   </dd>
                 </div>

@@ -232,14 +232,14 @@ function OrderReview() {
   
   if (cartItems.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-0">
+      <div className="bg-gray-900 max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-0">
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Your cart is empty</h1>
-          <p className="mt-4 text-gray-500">Please add items before proceeding to checkout.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">Your cart is empty</h1>
+          <p className="mt-4 text-gray-400">Please add items before proceeding to checkout.</p>
           <div className="mt-6">
             <button
               onClick={() => navigate('/')}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-900"
             >
               Continue Shopping
             </button>
@@ -252,14 +252,14 @@ function OrderReview() {
   // Show login requirement if not logged in
   if (!userData.id && !localStorage.getItem("id")) {
     return (
-      <div className="max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-0">
+      <div className="bg-gray-900 max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-0">
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Login Required</h1>
-          <p className="mt-4 text-gray-500">Please log in to complete your order.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">Login Required</h1>
+          <p className="mt-4 text-gray-400">Please log in to complete your order.</p>
           <div className="mt-6">
             <button
               onClick={() => navigate('/login')}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-900"
             >
               Login
             </button>

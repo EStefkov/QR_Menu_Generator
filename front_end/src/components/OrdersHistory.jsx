@@ -151,17 +151,17 @@ const OrdersHistory = ({ token }) => {
     const getStatusClass = (status) => {
         switch (status) {
             case 'PENDING':
-                return 'bg-yellow-100 text-yellow-800 border border-yellow-200';
+                return 'bg-yellow-800 text-yellow-100 border border-yellow-700';
             case 'PREPARING':
-                return 'bg-blue-100 text-blue-800 border border-blue-200';
+                return 'bg-blue-800 text-blue-100 border border-blue-700';
             case 'READY':
-                return 'bg-green-100 text-green-800 border border-green-200';
+                return 'bg-green-800 text-green-100 border border-green-700';
             case 'DELIVERED':
-                return 'bg-purple-100 text-purple-800 border border-purple-200';
+                return 'bg-purple-800 text-purple-100 border border-purple-700';
             case 'CANCELLED':
-                return 'bg-red-100 text-red-800 border border-red-200';
+                return 'bg-red-800 text-red-100 border border-red-700';
             default:
-                return 'bg-gray-100 text-gray-800 border border-gray-200';
+                return 'bg-gray-700 text-gray-100 border border-gray-600';
         }
     };
 
@@ -179,27 +179,27 @@ const OrdersHistory = ({ token }) => {
     const getStatusIcon = (status) => {
         switch (status) {
             case 'PENDING':
-                return <svg className="h-4 w-4 text-yellow-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                return <svg className="h-4 w-4 text-yellow-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>;
             case 'PREPARING':
-                return <svg className="h-4 w-4 text-blue-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                return <svg className="h-4 w-4 text-blue-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>;
             case 'READY':
-                return <svg className="h-4 w-4 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                return <svg className="h-4 w-4 text-green-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>;
             case 'DELIVERED':
-                return <svg className="h-4 w-4 text-purple-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                return <svg className="h-4 w-4 text-purple-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7M3 17h6m4 0h8" />
                 </svg>;
             case 'CANCELLED':
-                return <svg className="h-4 w-4 text-red-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                return <svg className="h-4 w-4 text-red-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>;
             default:
-                return <svg className="h-4 w-4 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                return <svg className="h-4 w-4 text-gray-100" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>;
         }
@@ -215,7 +215,7 @@ const OrdersHistory = ({ token }) => {
 
     if (error) {
         return (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <div className="bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded relative" role="alert">
                 <strong className="font-bold">{t('common.error')}!</strong>
                 <span className="block sm:inline"> {error}</span>
             </div>
@@ -256,7 +256,7 @@ const OrdersHistory = ({ token }) => {
                                         <p className="text-sm text-gray-300">
                                             <span className="font-medium">{t('orders.status')}:</span> 
                                             <span className={`ml-2 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(orderDetails.orderStatus)}`}>
-                                                {t(`orders.status${orderDetails.orderStatus}`)}
+                                                {orderDetails.orderStatus.replace('_', ' ')}
                                             </span>
                                         </p>
                                         <p className="text-sm text-gray-300">
@@ -444,7 +444,7 @@ const OrdersHistory = ({ token }) => {
                                                         >
                                                             {getStatusIcon(order.orderStatus)}
                                                             <span className="ml-1">
-                                                                {t(`orders.status${order.orderStatus}`)}
+                                                                {order.orderStatus.replace('_', ' ')}
                                                             </span>
                                                             <svg className="ml-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
