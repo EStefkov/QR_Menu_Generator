@@ -16,6 +16,10 @@ const OrdersHistory = ({ token }) => {
     const [loadingDetails, setLoadingDetails] = useState(false);
     const [editingOrderStatus, setEditingOrderStatus] = useState(null);
     const [updatingStatus, setUpdatingStatus] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [orderToDelete, setOrderToDelete] = useState(null);
+    const [showClearAllModal, setShowClearAllModal] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const { t } = useTranslation();
 
     const pageSize = 10;
@@ -146,6 +150,68 @@ const OrdersHistory = ({ token }) => {
     const handleCancelStatusEdit = (event) => {
         event.stopPropagation(); // Prevent triggering the row click
         setEditingOrderStatus(null);
+    };
+
+    const handleDeleteClick = (order, event) => {
+        if (event) {
+            event.stopPropagation(); // Prevent triggering the row click
+        }
+        setOrderToDelete(order);
+        setShowDeleteModal(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!orderToDelete) return;
+        
+        setIsDeleting(true);
+        try {
+            await orderApi.deleteOrder(orderToDelete.id);
+            
+            // Remove from local state
+            setOrders(prevOrders => prevOrders.filter(o => o.id !== orderToDelete.id));
+            
+            // If this was the selected order in details view, close it
+            if (selectedOrder && selectedOrder.id === orderToDelete.id) {
+                setSelectedOrder(null);
+                setOrderDetails(null);
+            }
+            
+            setShowDeleteModal(false);
+            setOrderToDelete(null);
+        } catch (err) {
+            console.error('Error deleting order:', err);
+            setError(t('errors.failedToDeleteOrder'));
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleClearAllClick = () => {
+        setShowClearAllModal(true);
+    };
+
+    const handleConfirmClearAll = async () => {
+        setIsDeleting(true);
+        try {
+            // For this example, we're assuming all orders in the list are from the same restaurant
+            // In a real app, you might need to pass the restaurant ID explicitly
+            if (orders.length > 0) {
+                const restaurantId = orders[0].restorantId;
+                await orderApi.deleteAllOrdersByRestaurant(restaurantId);
+                
+                // Clear local state
+                setOrders([]);
+                setSelectedOrder(null);
+                setOrderDetails(null);
+            }
+            
+            setShowClearAllModal(false);
+        } catch (err) {
+            console.error('Error clearing order history:', err);
+            setError(t('errors.failedToClearOrderHistory'));
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const getStatusClass = (status) => {
@@ -367,6 +433,12 @@ const OrdersHistory = ({ token }) => {
                                     <>{t('common.sortNewestFirst')} <span className="ml-1">↓</span></>
                                 }
                             </button>
+                            <button
+                                onClick={handleClearAllClick}
+                                className="flex items-center justify-center px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring focus:border-red-500 bg-red-700 border-red-600 text-white hover:bg-red-800"
+                            >
+                                Clear All History
+                            </button>
                         </div>
                     </div>
 
@@ -394,6 +466,9 @@ const OrdersHistory = ({ token }) => {
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                                                 {t('orders.total')}
+                                            </th>
+                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                                Actions
                                             </th>
                                         </tr>
                                     </thead>
@@ -455,6 +530,29 @@ const OrdersHistory = ({ token }) => {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                                                     {order.totalPrice ? `${order.totalPrice.toFixed(2)} лв.` : '-'}
                                                 </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <div className="flex justify-end space-x-2">
+                                                        <button 
+                                                            onClick={(e) => handleOrderClick(order)}
+                                                            className="text-blue-400 hover:text-blue-300"
+                                                            title="View details"
+                                                        >
+                                                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                            </svg>
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => handleDeleteClick(order, e)}
+                                                            className="text-red-400 hover:text-red-300"
+                                                            title="Delete order"
+                                                        >
+                                                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -495,6 +593,85 @@ const OrdersHistory = ({ token }) => {
                         </>
                     )}
                 </>
+            )}
+
+            {/* Delete Order Confirmation Modal */}
+            {showDeleteModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                        <h3 className="text-lg font-semibold text-white mb-4">Confirm Delete</h3>
+                        <p className="text-gray-300 mb-6">
+                            Are you sure you want to delete order #{orderToDelete?.id}? This action cannot be undone.
+                        </p>
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={() => {
+                                    setShowDeleteModal(false);
+                                    setOrderToDelete(null);
+                                }}
+                                className="px-4 py-2 border border-gray-600 rounded-md text-sm text-gray-300 hover:bg-gray-700"
+                                disabled={isDeleting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmDelete}
+                                className="px-4 py-2 bg-red-600 border border-red-700 rounded-md text-sm text-white hover:bg-red-700"
+                                disabled={isDeleting}
+                            >
+                                {isDeleting ? (
+                                    <span className="flex items-center">
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Deleting...
+                                    </span>
+                                ) : (
+                                    'Delete'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Clear All Orders Confirmation Modal */}
+            {showClearAllModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full">
+                        <h3 className="text-lg font-semibold text-white mb-4">Clear All Order History</h3>
+                        <p className="text-gray-300 mb-6">
+                            Are you sure you want to delete ALL orders for this restaurant? This action cannot be undone and will remove {orders.length} orders.
+                        </p>
+                        <div className="flex justify-end space-x-3">
+                            <button
+                                onClick={() => setShowClearAllModal(false)}
+                                className="px-4 py-2 border border-gray-600 rounded-md text-sm text-gray-300 hover:bg-gray-700"
+                                disabled={isDeleting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmClearAll}
+                                className="px-4 py-2 bg-red-600 border border-red-700 rounded-md text-sm text-white hover:bg-red-700"
+                                disabled={isDeleting}
+                            >
+                                {isDeleting ? (
+                                    <span className="flex items-center">
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Deleting...
+                                    </span>
+                                ) : (
+                                    'Delete All'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

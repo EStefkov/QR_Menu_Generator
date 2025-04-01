@@ -75,5 +75,25 @@ export const orderApi = {
       console.error('Error fetching user orders:', error);
       throw new Error(error.response?.data?.message || 'Failed to fetch your orders');
     }
+  },
+  
+  deleteOrder: async (orderId) => {
+    try {
+      const response = await axiosInstance.delete(`/${orderId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      throw new Error(error.response?.data?.message || 'Failed to delete order');
+    }
+  },
+  
+  deleteAllOrdersByRestaurant: async (restaurantId) => {
+    try {
+      const response = await axiosInstance.delete(`/restaurant/${restaurantId}/all`);
+      return response.data;
+    } catch (error) {
+      console.error('Error clearing restaurant orders:', error);
+      throw new Error(error.response?.data?.message || 'Failed to clear restaurant order history');
+    }
   }
 }; 
