@@ -8,6 +8,7 @@ import EditRestaurantForm from "../components/EditRestaurantForm.jsx";
 import CreateCategoryForm from "../components/CreateCategoryForm";
 import CreateProductForm from "../components/CreateProductForm.jsx";
 import CreateRestaurantForm from "../components/CreateRestaurantForm";
+import OrdersHistory from "../components/OrdersHistory.jsx";
 
 import {
     fetchAccountsApi,
@@ -174,7 +175,8 @@ const AdminDashboard = () => {
                             { id: "createRestaurant", name: "Създай Ресторант"},
                             { id: "createMenu", name: "Създай Меню" },
                             { id: "createCategory", name: "Създай Категория" },
-                            { id: "createProduct", name: "Създай Продукт" }
+                            { id: "createProduct", name: "Създай Продукт" },
+                            { id: "ordersHistory", name: "История на Поръчките" }
                         ].map(({ id, name }) => (
                             <button
                                 key={id}
@@ -287,9 +289,12 @@ const AdminDashboard = () => {
                         />
                     )}
 
+                    {activeComponent === "ordersHistory" && (
+                        <OrdersHistory token={token} />
+                    )}
+
                     {editingAccount && (
                         <EditAccountForm
-                            token={token}
                             account={editingAccount}
                             onSave={handleUpdateAccount}
                             onCancel={() => setEditingAccount(null)}

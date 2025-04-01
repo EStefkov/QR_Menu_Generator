@@ -121,6 +121,50 @@ const translations = {
   "order_details": "Детайли на поръчката",
   "order_empty": "Няма намерени поръчки",
   
+  // Admin dashboard
+  "admin.ordersHistory": "История на поръчките",
+  
+  // Orders
+  "orders.allStatuses": "Всички статуси",
+  "orders.statusPending": "Чакаща",
+  "orders.statusPreparing": "В подготовка",
+  "orders.statusReady": "Готова",
+  "orders.statusDelivered": "Доставена",
+  "orders.statusCancelled": "Отказана",
+  "orders.noOrdersFound": "Няма намерени поръчки",
+  "orders.id": "ID",
+  "orders.date": "Дата",
+  "orders.restaurant": "Ресторант",
+  "orders.restaurantId": "ID на ресторант",
+  "orders.status": "Статус",
+  "orders.total": "Общо",
+  "orders.orderDetails": "Детайли на поръчка",
+  "orders.orderInfo": "Информация за поръчката",
+  "orders.items": "Продукти",
+  "orders.noItems": "Няма продукти в тази поръчка",
+  "orders.product": "Продукт",
+  "orders.quantity": "Количество",
+  "orders.price": "Цена",
+  "orders.subtotal": "Междинна сума",
+  "orders.updateStatus": "Промяна на статус",
+  
+  // Common
+  "common.error": "Грешка",
+  "common.unknown": "Неизвестно",
+  "common.sortOldestFirst": "Най-стари първо",
+  "common.sortNewestFirst": "Най-нови първо",
+  
+  // Pagination
+  "pagination.showing": "Показване на",
+  "pagination.results": "резултата",
+  "pagination.previous": "Назад",
+  "pagination.next": "Напред",
+  
+  // Errors
+  "errors.failedToLoadOrders": "Неуспешно зареждане на поръчките. Моля, опитайте отново.",
+  "errors.failedToLoadOrderDetails": "Неуспешно зареждане на детайлите за поръчката. Моля, опитайте отново.",
+  "errors.failedToUpdateOrderStatus": "Неуспешна промяна на статуса на поръчката. Моля, опитайте отново.",
+  
   // Demo page
   "demo_title": "Демо на език и тема",
   "demo_description": "Тази страница демонстрира възможностите за превключване на език и тема.",

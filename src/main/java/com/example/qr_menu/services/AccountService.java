@@ -82,17 +82,48 @@ public class AccountService {
      * Логин, който проверява потребител/парола и връща JWT токен, ако е валиден.
      */
     public String login(LoginDTO loginDTO) {
-        Optional<Account> accountOpt = accountRepository.findByAccountNameOrMailAddress(
-                loginDTO.getAccountName(), loginDTO.getMailAddress());
+        try {
+            System.out.println("Attempting login for: " + loginDTO.getAccountName() + " or " + loginDTO.getMailAddress());
+            
+            Optional<Account> accountOpt = accountRepository.findByAccountNameOrMailAddress(
+                    loginDTO.getAccountName(), loginDTO.getMailAddress());
 
-        if (accountOpt.isPresent()) {
-            Account account = accountOpt.get();
-            if (passwordEncoder.matches(loginDTO.getPassword(), account.getPassword())) {
-                // Ако паролата съвпада, генерираме JWT токен на базата на целия Account
-                return jwtTokenUtil.generateToken(account);
+            if (accountOpt.isEmpty()) {
+                System.out.println("Account not found");
+                throw new IllegalArgumentException("Invalid username or password");
             }
+
+            Account account = accountOpt.get();
+            System.out.println("Found account: ID=" + account.getId() + ", Name=" + account.getAccountName());
+            
+            if (passwordEncoder.matches(loginDTO.getPassword(), account.getPassword())) {
+                // Log account details before generating the token
+                System.out.println("Password match for account: " + account.getId());
+                System.out.println("Account type: " + account.getAccountType());
+                System.out.println("Account first name: " + account.getFirstName());
+                
+                try {
+                    // Generate JWT token
+                    String token = jwtTokenUtil.generateToken(account);
+                    System.out.println("Token generated successfully with length: " + token.length());
+                    return token;
+                } catch (Exception e) {
+                    System.out.println("Error generating token: " + e.getMessage());
+                    e.printStackTrace();
+                    throw new RuntimeException("Error generating JWT token: " + e.getMessage(), e);
+                }
+            } else {
+                System.out.println("Password does not match");
+                throw new IllegalArgumentException("Invalid username or password");
+            }
+        } catch (Exception e) {
+            if (!(e instanceof IllegalArgumentException)) {
+                System.out.println("Unexpected error during login: " + e.getMessage());
+                e.printStackTrace();
+                throw new RuntimeException("Login failed due to an unexpected error", e);
+            }
+            throw e;
         }
-        throw new IllegalArgumentException("Invalid username or password");
     }
 
     /**

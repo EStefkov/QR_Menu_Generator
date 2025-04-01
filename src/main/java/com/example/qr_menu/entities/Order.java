@@ -28,7 +28,7 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status", nullable = false)
-    private OrderStatus orderStatus;
+    private OrderStatus orderStatus = OrderStatus.PENDING;
 
     @Column(name = "total_price", nullable = false)
     private Double totalPrice;
@@ -47,6 +47,11 @@ public class Order {
     private Set<OrderProduct> orderProducts;
 
     public enum OrderStatus {
+        PENDING,
+        PREPARING,
+        READY,
+        DELIVERED,
+        CANCELLED,
         FINISHED,
         ACCEPTED
     }

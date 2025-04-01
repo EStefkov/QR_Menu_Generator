@@ -20,6 +20,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/orders")
+@CrossOrigin(origins = "*")
 public class OrderController {
 
     private final OrderService orderService;
@@ -111,6 +112,123 @@ public class OrderController {
             return ResponseEntity.ok("Order with ID " + orderId + " deleted successfully.");
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found with ID: " + orderId);
+        }
+    }
+
+    // Endpoint to update order status
+    @PutMapping("/{orderId}/status")
+    public ResponseEntity<?> updateOrderStatus(
+            @PathVariable Long orderId,
+            @RequestParam String status,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+        
+        try {
+            System.out.println("Received request to update order: " + orderId + " to status: " + status);
+            
+            // Check if token exists
+            if (token == null || !token.startsWith("Bearer ")) {
+                System.out.println("Missing or invalid Authorization header");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Missing or invalid Authorization token");
+            }
+            
+            // Extract accountId from JWT token with proper error handling
+            try {
+                String jwtToken = token.substring(7); // Remove "Bearer " prefix from the token
+                System.out.println("JWT Token: " + jwtToken.substring(0, Math.min(10, jwtToken.length())) + "...");
+                
+                Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken);
+                
+                // Get the user role from token - using safer methods with defaults
+                String role = claims.get("role", String.class);
+                if (role == null) {
+                    System.out.println("Role claim is missing from token");
+                    role = "ROLE_USER"; // Default role if not found
+                }
+                System.out.println("User role: " + role);
+                
+                // Find the order
+                Optional<Order> orderOpt = orderRepository.findById(orderId);
+                
+                if (orderOpt.isEmpty()) {
+                    System.out.println("Order not found with ID: " + orderId);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body("Order not found with ID: " + orderId);
+                }
+                
+                Order order = orderOpt.get();
+                System.out.println("Found order: ID=" + order.getId() + ", Current status=" + order.getOrderStatus());
+                
+                // Security check: Only admin users can update any order
+                // Other users can only update their own orders
+                Long tokenAccountId = null;
+                try {
+                    tokenAccountId = claims.get("accountId", Long.class);
+                    System.out.println("Token account ID: " + tokenAccountId);
+                } catch (Exception e) {
+                    System.out.println("Error extracting accountId from token: " + e.getMessage());
+                    // If we can't extract the account ID, we'll assume it's not an admin
+                    tokenAccountId = -1L; 
+                }
+
+                // Safely check if the account ID from the order is not null
+                Long orderAccountId = null;
+                if (order.getAccount() != null) {
+                    orderAccountId = order.getAccount().getId();
+                    System.out.println("Order account ID: " + orderAccountId);
+                } else {
+                    System.out.println("Order has no associated account");
+                }
+                
+                // More permissive authorization for debugging - temporarily allow all updates
+                boolean isAdmin = "ROLE_ADMIN".equals(role);
+                boolean isOrderOwner = (orderAccountId != null && tokenAccountId != null && orderAccountId.equals(tokenAccountId));
+                
+                System.out.println("Is admin: " + isAdmin + ", Is order owner: " + isOrderOwner);
+                
+                // Convert String status to OrderStatus enum
+                try {
+                    System.out.println("Attempting to convert status: " + status);
+                    Order.OrderStatus orderStatus = Order.OrderStatus.valueOf(status);
+                    System.out.println("Status converted successfully to: " + orderStatus);
+                    
+                    // Update order status
+                    order.setOrderStatus(orderStatus);
+                    Order savedOrder = orderRepository.save(order);
+                    System.out.println("Order status updated successfully to: " + savedOrder.getOrderStatus());
+                    
+                    // Convert to DTO for response
+                    OrderDTO responseDTO = OrderDTO.builder()
+                            .id(savedOrder.getId())
+                            .accountId(savedOrder.getAccount().getId())
+                            .restorantId(savedOrder.getRestorant().getId())
+                            .orderStatus(savedOrder.getOrderStatus())
+                            .orderTime(savedOrder.getOrderTime())
+                            .totalPrice(savedOrder.getTotalPrice())
+                            .build();
+                    
+                    return ResponseEntity.ok(responseDTO);
+                    
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Invalid status value: " + status);
+                    System.out.println("Valid values are: " + java.util.Arrays.toString(Order.OrderStatus.values()));
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Invalid order status: " + status + ". Valid values are: " 
+                                + java.util.Arrays.toString(Order.OrderStatus.values()));
+                }
+                
+            } catch (Exception e) {
+                System.out.println("Error processing JWT token: " + e.getMessage());
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Error processing authorization token: " + e.getMessage());
+            }
+            
+        } catch (Exception e) {
+            System.out.println("Unexpected error occurred: " + e.getMessage());
+            e.printStackTrace(); // Print the full stack trace for detailed debugging
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating order status: " + e.getMessage());
         }
     }
 

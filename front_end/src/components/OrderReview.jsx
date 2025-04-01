@@ -270,43 +270,43 @@ function OrderReview() {
   }
   
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-900">
       <div className="max-w-7xl mx-auto pt-6 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto lg:max-w-none">
           <button
             type="button"
             onClick={() => navigate('/cart')}
-            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-500 mb-6"
+            className="inline-flex items-center text-sm font-medium text-blue-400 hover:text-blue-300 mb-6"
           >
             <HiOutlineChevronLeft className="mr-1 h-5 w-5" aria-hidden="true" />
             Back to cart
           </button>
           
-          <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">Order Review</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Order Review</h1>
         
           <div className="mt-12 lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-start">
             <div className="lg:col-span-7">
               <form id="orderForm" onSubmit={handleSubmitOrder}>
-                <div className="bg-white shadow overflow-hidden sm:rounded-lg mb-10">
+                <div className="bg-gray-800 shadow overflow-hidden sm:rounded-lg mb-10">
                   <div className="px-4 py-5 sm:px-6">
-                    <h2 className="text-lg font-medium text-gray-900">Customer Information</h2>
-                    <p className="mt-1 max-w-2xl text-sm text-gray-500">
+                    <h2 className="text-lg font-medium text-white">Customer Information</h2>
+                    <p className="mt-1 max-w-2xl text-sm text-gray-400">
                       Your information will be automatically included with your order.
                     </p>
                   </div>
-                  <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+                  <div className="border-t border-gray-700 px-4 py-5 sm:p-6">
                     <div className="grid grid-cols-6 gap-6">
                       <div className="col-span-6 sm:col-span-3">
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="name" className="block text-sm font-medium text-gray-300">
                           Full name
                         </label>
-                        <div className="mt-1 block w-full py-2 px-3 bg-gray-100 rounded-md text-gray-700 text-sm">
+                        <div className="mt-1 block w-full py-2 px-3 bg-gray-700 rounded-md text-gray-200 text-sm">
                           {userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : 'Not provided'}
                         </div>
                       </div>
 
                       <div className="col-span-6 sm:col-span-3">
-                        <label htmlFor="tableNumber" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="tableNumber" className="block text-sm font-medium text-gray-300">
                           Table number
                         </label>
                         <input
@@ -315,13 +315,13 @@ function OrderReview() {
                           id="tableNumber"
                           value={customerInfo.tableNumber}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          className="mt-1 block w-full border border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                           placeholder="Enter your table number"
                         />
                       </div>
 
                       <div className="col-span-6">
-                        <label htmlFor="specialRequests" className="block text-sm font-medium text-gray-700">
+                        <label htmlFor="specialRequests" className="block text-sm font-medium text-gray-300">
                           Special requests (optional)
                         </label>
                         <textarea
@@ -330,7 +330,7 @@ function OrderReview() {
                           rows="3"
                           value={customerInfo.specialRequests}
                           onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          className="mt-1 block w-full border border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                           placeholder="Any special requests for your order?"
                         />
                       </div>
@@ -339,7 +339,7 @@ function OrderReview() {
                 </div>
 
                 {error && (
-                  <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                  <div className="mt-4 bg-red-900 border border-red-700 text-red-100 px-4 py-3 rounded">
                     {error}
                   </div>
                 )}
@@ -348,7 +348,7 @@ function OrderReview() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-blue-600 border border-transparent rounded-md shadow-sm py-3 px-4 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 focus:ring-blue-500"
+                    className="w-full bg-blue-600 border border-transparent rounded-md shadow-sm py-3 px-4 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500"
                   >
                     {isSubmitting ? 'Processing...' : 'Place order'}
                   </button>
@@ -357,27 +357,27 @@ function OrderReview() {
             </div>
 
             <div className="mt-10 lg:mt-0 lg:col-span-5">
-              <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+              <div className="bg-gray-800 shadow overflow-hidden sm:rounded-lg">
                 <div className="px-4 py-5 sm:px-6">
-                  <h2 className="text-lg font-medium text-gray-900">Order Summary</h2>
+                  <h2 className="text-lg font-medium text-white">Order Summary</h2>
                 </div>
-                <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
-                  <dl className="divide-y divide-gray-200">
+                <div className="border-t border-gray-700 px-4 py-5 sm:p-6">
+                  <dl className="divide-y divide-gray-700">
                     {cartItems.map((item) => (
                       <div key={item.productId || item.id} className="py-4 flex items-center justify-between">
-                        <dt className="text-sm text-gray-600 flex items-center">
-                          <span className="font-medium text-gray-900 mr-2">{item.quantity} ×</span>
+                        <dt className="text-sm text-gray-400 flex items-center">
+                          <span className="font-medium text-gray-300 mr-2">{item.quantity} ×</span>
                           {item.name}
                         </dt>
-                        <dd className="text-sm font-medium text-gray-900">
+                        <dd className="text-sm font-medium text-gray-300">
                           ${(((item.productPrice || item.price) || 0) * (item.quantity || 1)).toFixed(2)}
                         </dd>
                       </div>
                     ))}
                     
                     <div className="py-4 flex items-center justify-between">
-                      <dt className="text-base font-medium text-gray-900">Subtotal</dt>
-                      <dd className="text-base font-medium text-gray-900">${(cartTotal || 0).toFixed(2)}</dd>
+                      <dt className="text-base font-medium text-white">Subtotal</dt>
+                      <dd className="text-base font-medium text-white">${(cartTotal || 0).toFixed(2)}</dd>
                     </div>
                   </dl>
                   
@@ -386,7 +386,7 @@ function OrderReview() {
                       type="submit"
                       form="orderForm"
                       disabled={isSubmitting}
-                      className="w-full bg-blue-600 border border-transparent rounded-md shadow-sm py-3 px-4 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-50 focus:ring-blue-500"
+                      className="w-full bg-blue-600 border border-transparent rounded-md shadow-sm py-3 px-4 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-blue-500"
                     >
                       {isSubmitting ? 'Processing...' : 'Place order'}
                     </button>

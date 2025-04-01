@@ -121,6 +121,50 @@ const translations = {
   "order_details": "Order Details",
   "order_empty": "No orders found",
   
+  // Admin dashboard
+  "admin.ordersHistory": "Orders History",
+  
+  // Orders
+  "orders.allStatuses": "All Statuses",
+  "orders.statusPending": "Pending",
+  "orders.statusPreparing": "Preparing",
+  "orders.statusReady": "Ready",
+  "orders.statusDelivered": "Delivered",
+  "orders.statusCancelled": "Cancelled",
+  "orders.noOrdersFound": "No orders found",
+  "orders.id": "ID",
+  "orders.date": "Date",
+  "orders.restaurant": "Restaurant",
+  "orders.restaurantId": "Restaurant ID",
+  "orders.status": "Status",
+  "orders.total": "Total",
+  "orders.orderDetails": "Order Details",
+  "orders.orderInfo": "Order Information",
+  "orders.items": "Items",
+  "orders.noItems": "No items in this order",
+  "orders.product": "Product",
+  "orders.quantity": "Quantity",
+  "orders.price": "Price",
+  "orders.subtotal": "Subtotal",
+  "orders.updateStatus": "Update Status",
+  
+  // Common
+  "common.error": "Error",
+  "common.unknown": "Unknown",
+  "common.sortOldestFirst": "Oldest first",
+  "common.sortNewestFirst": "Newest first",
+  
+  // Pagination
+  "pagination.showing": "Showing",
+  "pagination.results": "results",
+  "pagination.previous": "Previous",
+  "pagination.next": "Next",
+  
+  // Errors
+  "errors.failedToLoadOrders": "Failed to load orders. Please try again.",
+  "errors.failedToLoadOrderDetails": "Failed to load order details. Please try again.",
+  "errors.failedToUpdateOrderStatus": "Failed to update order status. Please try again.",
+  
   // Demo page
   "demo_title": "Language & Theme Demo",
   "demo_description": "This page demonstrates the language and theme switching capabilities.",

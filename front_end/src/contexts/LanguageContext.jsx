@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import i18n from 'i18next';
 
 // Import languages - we'll create these files next
 import enTranslations from '../translations/en';
@@ -37,10 +38,13 @@ export const LanguageProvider = ({ children }) => {
 
   const [language, setLanguage] = useState(getInitialLanguage);
 
-  // Update localStorage when language changes
+  // Update localStorage and i18n when language changes
   useEffect(() => {
     localStorage.setItem('language', language);
     document.documentElement.lang = language;
+    
+    // Change i18next language
+    i18n.changeLanguage(language);
   }, [language]);
 
   // Change language
@@ -50,13 +54,10 @@ export const LanguageProvider = ({ children }) => {
     }
   };
 
-  // Get translation for a key
+  // The t function is now provided by useTranslation from react-i18next
+  // We keep this for backward compatibility with existing code
   const t = (key) => {
-    if (!translations[language] || !translations[language][key]) {
-      // Fallback to English or return the key itself if not found
-      return translations[languages.EN]?.[key] || key;
-    }
-    return translations[language][key];
+    return i18n.t(key);
   };
 
   return (

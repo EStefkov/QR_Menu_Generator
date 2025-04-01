@@ -559,3 +559,25 @@ export async function getCategoryDetails(categoryId) {
     throw error;
   }
 }
+
+/**
+ * Извлича всички поръчки в системата (paginated) за администратор.
+ * @param {string} token - JWT токен за автентикация.
+ * @param {number} page - Номер на страницата (започва от 0).
+ * @param {number} size - Брой записи на страница.
+ * @param {string} sortBy - Поле, по което да се сортира (по подразбиране: orderTime).
+ * @param {string} direction - Посока на сортиране (asc или desc).
+ * @returns {Promise<any>} Обект с данни за поръчки { content: [], totalElements: ..., ... }.
+ */
+export const fetchAllOrdersApi = async (token, page = 0, size = 10, sortBy = 'orderTime', direction = 'desc') => {
+    const response = await fetch(
+        `${API_BASE_URL}/api/orders?page=${page}&size=${size}&sortBy=${sortBy}&direction=${direction}`,
+        {
+            headers: { Authorization: `Bearer ${token}` },
+        }
+    );
+    if (!response.ok) {
+        throw new Error("Failed to fetch orders");
+    }
+    return response.json();
+};

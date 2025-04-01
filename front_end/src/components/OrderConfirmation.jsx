@@ -190,40 +190,40 @@ function OrderConfirmation() {
   });
   
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-900">
       <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
-          <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-            <div className="bg-green-50 px-4 py-5 sm:px-6">
+          <div className="bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+            <div className="bg-green-900 px-4 py-5 sm:px-6">
               <div className="flex items-center">
                 <HiOutlineCheckCircle className="h-8 w-8 text-green-400" aria-hidden="true" />
-                <h2 className="ml-3 text-2xl font-bold text-green-800">
+                <h2 className="ml-3 text-2xl font-bold text-green-200">
                   Order Confirmed!
                 </h2>
               </div>
-              <p className="mt-2 max-w-2xl text-sm text-green-700">
+              <p className="mt-2 max-w-2xl text-sm text-green-300">
                 Thank you for your order. Your order has been received and is being processed.
               </p>
             </div>
             
-            <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <div className="border-t border-gray-700 px-4 py-5 sm:px-6">
               <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                 <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500">Order number</dt>
-                  <dd className="mt-1 text-sm text-gray-900">#{order.id}</dd>
+                  <dt className="text-sm font-medium text-gray-400">Order number</dt>
+                  <dd className="mt-1 text-sm text-gray-200">#{order.id}</dd>
                 </div>
                 <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500">Date placed</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{formattedDate}</dd>
+                  <dt className="text-sm font-medium text-gray-400">Date placed</dt>
+                  <dd className="mt-1 text-sm text-gray-200">{formattedDate}</dd>
                 </div>
                 <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500">Total amount</dt>
-                  <dd className="mt-1 text-sm font-semibold text-gray-900">${(parseFloat(order.totalAmount)).toFixed(2)}</dd>
+                  <dt className="text-sm font-medium text-gray-400">Total amount</dt>
+                  <dd className="mt-1 text-sm font-semibold text-gray-200">${(parseFloat(order.totalAmount)).toFixed(2)}</dd>
                 </div>
                 <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500">Status</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <dt className="text-sm font-medium text-gray-400">Status</dt>
+                  <dd className="mt-1 text-sm text-gray-200">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-200">
                       {order.status || 'Pending'}
                     </span>
                   </dd>
@@ -231,8 +231,8 @@ function OrderConfirmation() {
                 
                 {order.customerInfo && (
                   <div className="sm:col-span-2">
-                    <dt className="text-sm font-medium text-gray-500">Customer information</dt>
-                    <dd className="mt-1 text-sm text-gray-900">
+                    <dt className="text-sm font-medium text-gray-400">Customer information</dt>
+                    <dd className="mt-1 text-sm text-gray-200">
                       <address className="not-italic">
                         {order.customerInfo.name}<br />
                         {order.customerInfo.email}<br />
@@ -249,19 +249,19 @@ function OrderConfirmation() {
                 
                 {order.customerInfo?.specialRequests && (
                   <div className="sm:col-span-2">
-                    <dt className="text-sm font-medium text-gray-500">Special requests</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{order.customerInfo.specialRequests}</dd>
+                    <dt className="text-sm font-medium text-gray-400">Special requests</dt>
+                    <dd className="mt-1 text-sm text-gray-200">{order.customerInfo.specialRequests}</dd>
                   </div>
                 )}
               </dl>
             </div>
             
-            <div className="border-t border-gray-200">
-              <div className="bg-gray-50 px-4 py-5 sm:px-6">
-                <h3 className="text-lg font-medium text-gray-900">Order Items</h3>
+            <div className="border-t border-gray-700">
+              <div className="bg-gray-700 px-4 py-5 sm:px-6">
+                <h3 className="text-lg font-medium text-gray-200">Order Items</h3>
               </div>
               <div className="px-4 py-5 sm:px-6">
-                <ul className="divide-y divide-gray-200">
+                <ul className="divide-y divide-gray-700">
                   {order.items.map((item, index) => (
                     <li key={index} className="py-4 flex justify-between items-center">
                       <div className="flex items-center">
@@ -277,21 +277,21 @@ function OrderConfirmation() {
                           />
                         )}
                         <div>
-                          <span className="font-medium text-gray-900 mr-2">{item.quantity} ×</span>
-                          <span className="text-sm font-medium text-gray-900">{item.name}</span>
-                          <p className="text-sm text-gray-500">${parseFloat(item.price).toFixed(2)} each</p>
+                          <span className="font-medium text-gray-200 mr-2">{item.quantity} ×</span>
+                          <span className="text-sm font-medium text-gray-200">{item.name}</span>
+                          <p className="text-sm text-gray-400">${parseFloat(item.price).toFixed(2)} each</p>
                         </div>
                       </div>
-                      <p className="text-sm font-medium text-gray-900">${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
+                      <p className="text-sm font-medium text-gray-200">${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
                     </li>
                   ))}
                 </ul>
                 
                 <div className="mt-8">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="text-lg font-medium text-gray-900 text-center mb-4">Order QR Code</h3>
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <h3 className="text-lg font-medium text-gray-200 text-center mb-4">Order QR Code</h3>
                     <div className="flex justify-center">
-                      <div className="bg-white p-4 rounded-lg border border-gray-200">
+                      <div className="bg-white p-4 rounded-lg border border-gray-600">
                         {qrCode ? (
                           <img src={qrCode} alt="Order QR code" className="w-44 h-44" />
                         ) : (
@@ -301,7 +301,7 @@ function OrderConfirmation() {
                         )}
                       </div>
                     </div>
-                    <p className="mt-4 text-center text-sm text-gray-500">
+                    <p className="mt-4 text-center text-sm text-gray-400">
                       Show this QR code to the restaurant staff when collecting your order.
                     </p>
                   </div>
@@ -310,7 +310,7 @@ function OrderConfirmation() {
                 <div className="mt-8 flex justify-center">
                   <Link
                     to="/"
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-800"
                   >
                     Return to Menu
                   </Link>

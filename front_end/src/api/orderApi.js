@@ -53,9 +53,11 @@ export const orderApi = {
   
   updateOrderStatus: async (orderId, status) => {
     try {
+      // Use the regular endpoint now that we fixed the JWT issues
       const response = await axiosInstance.put(`/${orderId}/status`, null, {
         params: { status }
       });
+      console.log("Status update response:", response.data);
       return response.data;
     } catch (error) {
       console.error('Error updating order status:', error);
