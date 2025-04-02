@@ -23,7 +23,7 @@ import {
   import OrderHistory from "./components/OrderHistory.jsx";
   import OrderDetail from './components/OrderDetail.jsx';
   import ProtectedRoute from './components/ProtectedRoute';
-  import Demo from './pages/Demo';
+  import ProfilePage from './pages/Profile/ProfilePage';
   
   const Layout = ({ children }) => {
     const location = useLocation();
@@ -149,13 +149,17 @@ import {
             } 
           />
           
-          {/* Demo page for language/theme switching */}
+          {/* Profile page */}
           <Route
-            path="/demo"
+            path="/profile"
             element={
-              <Layout>
-                <Demo />
-              </Layout>
+              isAuthenticated ? (
+                <Layout>
+                  <ProfilePage />
+                </Layout>
+              ) : (
+                <Navigate to="/login" />
+              )
             }
           />
         </Routes>

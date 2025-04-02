@@ -103,6 +103,7 @@ export function AuthProvider({ children }) {
               lastName: localStorage.getItem("lastName"),
               profilePicture: localStorage.getItem("profilePicture"),
               accountType: localStorage.getItem("accountType"),
+              mailAddress: localStorage.getItem("mailAddress"),
             });
             console.log("Auth initialized with valid token");
           } else {
@@ -151,13 +152,32 @@ export function AuthProvider({ children }) {
           lastName: localStorage.getItem("lastName"),
           profilePicture: localStorage.getItem("profilePicture"),
           accountType: localStorage.getItem("accountType"),
+          mailAddress: localStorage.getItem("mailAddress"),
         });
       }
     };
     
-    // Check every 5 seconds
+    // Listen for storage event to detect changes from other tabs
+    const handleStorageChange = () => {
+      checkStoredAuth();
+    };
+    
+    // Listen for custom events
+    const handleUserDataUpdated = () => {
+      checkStoredAuth();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('userDataUpdated', handleUserDataUpdated);
+    
+    // Check every 5 seconds as a fallback
     const interval = setInterval(checkStoredAuth, 5000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('userDataUpdated', handleUserDataUpdated);
+      clearInterval(interval);
+    };
   }, [userData.token, userData.id]);
 
   // Login function: save data to localStorage and update state
@@ -171,6 +191,8 @@ export function AuthProvider({ children }) {
     localStorage.setItem("lastName", payload.lastName);
     localStorage.setItem("profilePicture", payload.profilePicture);
     localStorage.setItem("accountType", payload.accountType);
+    localStorage.setItem("mailAddress", payload.mailAddress);
+    localStorage.setItem("userId", payload.id);
 
     // Update state
     setUserData({
@@ -180,6 +202,7 @@ export function AuthProvider({ children }) {
       lastName: payload.lastName,
       profilePicture: payload.profilePicture,
       accountType: payload.accountType,
+      mailAddress: payload.mailAddress,
     });
     
     console.log("Login complete, user data set");
@@ -196,6 +219,8 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("lastName");
     localStorage.removeItem("profilePicture");
     localStorage.removeItem("accountType");
+    localStorage.removeItem("mailAddress");
+    localStorage.removeItem("userId");
 
     // Clear state
     setUserData({});
@@ -218,6 +243,9 @@ export function AuthProvider({ children }) {
 
     // Update state
     setUserData(updatedData);
+    
+    // Trigger event so other components can update
+    window.dispatchEvent(new Event("userDataUpdated"));
     
     console.log("User data update complete");
   };

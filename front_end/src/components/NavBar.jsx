@@ -147,6 +147,16 @@ const NavBar = () => {
                         </div>
                         <div className="py-1">
                           <Link
+                            to="/profile"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                            onClick={() => setIsProfileOpen(false)}
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span>{t('profile.myProfile')}</span>
+                          </Link>
+                          <Link
                             to="/favorites"
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
                           >
@@ -265,12 +275,20 @@ const NavBar = () => {
               </>
             )}
             {userData?.firstName ? (
-              <button
-                className="w-full text-left py-2 text-red-600 hover:text-red-700 transition-colors font-medium"
-                onClick={handleLogout}
-              >
-                {t('nav_logout')}
-              </button>
+              <>
+                <Link
+                  to="/profile"
+                  className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+                >
+                  {t('profile.myProfile')}
+                </Link>
+                <button
+                  className="w-full text-left py-2 text-red-600 hover:text-red-700 transition-colors font-medium"
+                  onClick={handleLogout}
+                >
+                  {t('nav_logout')}
+                </button>
+              </>
             ) : (
               <div className="space-y-2 pt-2">
                 <Link 
