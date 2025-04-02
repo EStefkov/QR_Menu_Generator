@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom"; // за да навигираме до MenuPage
-import {fetchCategoriesByMenuIdApi} from "../api/adminDashboard";
+import {fetchCategoriesByMenuIdApi, updateRestaurantApi} from "../api/adminDashboard";
+import { HiX, HiCheckCircle, HiExclamationCircle } from "react-icons/hi";
 
 const RestaurantsTable = ({
   restaurants,
@@ -20,6 +21,10 @@ const RestaurantsTable = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editRestaurant, setEditRestaurant] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
 
   // Filter restaurants based on search term
   const filteredRestaurants = useMemo(() => {
@@ -67,6 +72,77 @@ const RestaurantsTable = ({
   const goToMenuPage = (menuId) => {
     if (!menuId) return;
     navigate(`/menu/${menuId}`); // /menu/123
+  };
+
+  // Функции за работа с модалния прозорец за редактиране
+  const handleEditClick = (restaurant) => {
+    setEditRestaurant({
+      ...restaurant,
+      restorantName: restaurant.restorantName || '',
+      address: restaurant.address || '',
+      phoneNumber: restaurant.phoneNumber || '',
+      accountId: restaurant.accountId || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowEditModal(false);
+    setEditRestaurant(null);
+    setMessage({ type: '', text: '' });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditRestaurant(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveRestaurant = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      // Вземаме само необходимите полета за обновяване - без accountId
+      const restaurantToUpdate = {
+        restorantName: editRestaurant.restorantName,
+        address: editRestaurant.address,
+        phoneNumber: editRestaurant.phoneNumber
+        // accountId вече не се изпраща за обновяване
+      };
+
+      await updateRestaurantApi(token, editRestaurant.id, restaurantToUpdate);
+
+      // Ако съществува onEdit функцията, я викаме с обновените данни
+      if (onEdit) {
+        onEdit({
+          ...editRestaurant,
+          ...restaurantToUpdate
+        });
+      }
+
+      setMessage({
+        type: 'success',
+        text: 'Ресторантът е обновен успешно'
+      });
+
+      setTimeout(() => {
+        handleCloseModal();
+        // Опресняваме списъка
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error('Error updating restaurant:', error);
+      setMessage({
+        type: 'error',
+        text: error.message || 'Грешка при обновяване на ресторанта'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -133,7 +209,7 @@ const RestaurantsTable = ({
                   <div className="flex flex-wrap gap-2 mb-4">
                     <button
                       className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
-                      onClick={() => onEdit(restaurant)}
+                      onClick={() => handleEditClick(restaurant)}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -272,6 +348,148 @@ const RestaurantsTable = ({
           </button>
         </div>
       </div>
+
+      {/* Edit Restaurant Modal */}
+      {showEditModal && editRestaurant && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                Редактиране на ресторант
+              </h3>
+              <button 
+                onClick={handleCloseModal}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <HiX className="w-6 h-6" />
+              </button>
+            </div>
+
+            {message.text && (
+              <div className={`p-4 mb-6 rounded-lg flex items-center ${
+                message.type === 'success' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 
+                'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+              }`}>
+                {message.type === 'success' ? 
+                <HiCheckCircle className="w-5 h-5 mr-2" /> : 
+                <HiExclamationCircle className="w-5 h-5 mr-2" />
+                }
+                {message.text}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveRestaurant} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Restaurant ID */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    ID Ресторант
+                  </label>
+                  <input 
+                    type="text" 
+                    value={editRestaurant.id}
+                    disabled
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white transition cursor-not-allowed"
+                  />
+                </div>
+
+                {/* Restaurant Name */}
+                <div className="md:col-span-2">
+                  <label 
+                    htmlFor="restorantName" 
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >
+                    Име на ресторанта
+                  </label>
+                  <input 
+                    type="text" 
+                    id="restorantName" 
+                    name="restorantName" 
+                    value={editRestaurant.restorantName}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    required
+                  />
+                </div>
+
+                {/* Address */}
+                <div className="md:col-span-2">
+                  <label 
+                    htmlFor="address" 
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >
+                    Адрес
+                  </label>
+                  <input 
+                    type="text" 
+                    id="address" 
+                    name="address" 
+                    value={editRestaurant.address}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  />
+                </div>
+
+                {/* Phone Number */}
+                <div>
+                  <label 
+                    htmlFor="phoneNumber" 
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >
+                    Телефон
+                  </label>
+                  <input 
+                    type="text" 
+                    id="phoneNumber" 
+                    name="phoneNumber" 
+                    value={editRestaurant.phoneNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                    required
+                  />
+                </div>
+
+                {/* Owner ID */}
+                <div>
+                  <label 
+                    htmlFor="accountId" 
+                    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                  >
+                    ID на собственика
+                  </label>
+                  <input 
+                    type="text" 
+                    id="accountId" 
+                    name="accountId" 
+                    value={editRestaurant.accountId || 'Няма собственик'}
+                    disabled
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white transition cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg font-medium transition-colors"
+                >
+                  Отказ
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors ${
+                    loading ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {loading ? 'Запазване...' : 'Запази промените'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
