@@ -108,9 +108,9 @@ function OrderConfirmation() {
   
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="bg-gray-900 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="flex justify-center">
-          <div className="animate-pulse h-8 w-32 bg-gray-200 rounded"></div>
+          <div className="animate-pulse h-8 w-32 bg-gray-700 rounded"></div>
         </div>
       </div>
     );
@@ -118,17 +118,17 @@ function OrderConfirmation() {
   
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="rounded-md bg-red-50 p-4">
+      <div className="bg-gray-900 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="rounded-md bg-red-900 p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <svg className="h-5 w-5 text-red-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
-              <div className="mt-2 text-sm text-red-700">
+              <h3 className="text-sm font-medium text-red-200">Error</h3>
+              <div className="mt-2 text-sm text-red-100">
                 <p>{error}</p>
               </div>
             </div>
@@ -140,36 +140,36 @@ function OrderConfirmation() {
   
   if (!order) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          <div className="bg-green-50 px-4 py-5 sm:px-6">
+      <div className="bg-gray-900 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+          <div className="bg-green-900 px-4 py-5 sm:px-6">
             <div className="flex items-center">
               <HiOutlineCheckCircle className="h-8 w-8 text-green-400" aria-hidden="true" />
-              <h2 className="ml-3 text-2xl font-bold text-green-800">
+              <h2 className="ml-3 text-2xl font-bold text-green-200">
                 Order Confirmed!
               </h2>
             </div>
-            <p className="mt-2 max-w-2xl text-sm text-green-700">
+            <p className="mt-2 max-w-2xl text-sm text-green-300">
               Thank you for your order. Your order has been received and is being processed.
             </p>
           </div>
           
-          <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
+          <div className="border-t border-gray-700 px-4 py-5 sm:px-6">
             <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
               <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Order number</dt>
-                <dd className="mt-1 text-sm text-gray-900">#{orderId}</dd>
+                <dt className="text-sm font-medium text-gray-400">Order number</dt>
+                <dd className="mt-1 text-sm text-gray-200">#{orderId}</dd>
               </div>
               <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-500">Date placed</dt>
-                <dd className="mt-1 text-sm text-gray-900">{new Date().toLocaleString()}</dd>
+                <dt className="text-sm font-medium text-gray-400">Date placed</dt>
+                <dd className="mt-1 text-sm text-gray-200">{new Date().toLocaleString()}</dd>
               </div>
             </dl>
             
             <div className="mt-8 flex justify-center">
               <Link
                 to="/"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-800"
               >
                 Return to Menu
               </Link>

@@ -76,12 +76,6 @@ const NavBar = () => {
             >
               {t('nav_home')}
             </Link>
-            <Link 
-              to="/demo" 
-              className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-            >
-              {t('nav_demo')}
-            </Link>
             {userData?.accountType === "ROLE_ADMIN" && (
               <Link 
                 to="/admin" 
@@ -230,12 +224,6 @@ const NavBar = () => {
               className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
             >
               {t('nav_home')}
-            </Link>
-            <Link 
-              to="/demo" 
-              className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-            >
-              {t('nav_demo')}
             </Link>
             {userData?.accountType === "ROLE_ADMIN" && (
               <Link 

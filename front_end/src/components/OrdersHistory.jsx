@@ -14,8 +14,6 @@ const OrdersHistory = ({ token }) => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [orderDetails, setOrderDetails] = useState(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
-    const [editingOrderStatus, setEditingOrderStatus] = useState(null);
-    const [updatingStatus, setUpdatingStatus] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [orderToDelete, setOrderToDelete] = useState(null);
     const [showClearAllModal, setShowClearAllModal] = useState(false);
@@ -105,51 +103,6 @@ const OrdersHistory = ({ token }) => {
             console.error('Error updating order status:', err);
             setError(t('errors.failedToUpdateOrderStatus'));
         }
-    };
-
-    // For clicking on status in the table
-    const handleStatusClick = (order, event) => {
-        event.stopPropagation(); // Prevent triggering the row click
-        setEditingOrderStatus(order.id);
-    };
-
-    // For handling status change in the dropdown in the table
-    const handleStatusUpdateInList = async (orderId, newStatus, event) => {
-        if (event) {
-            event.stopPropagation(); // Prevent triggering the row click
-        }
-        
-        setUpdatingStatus(true);
-        try {
-            await orderApi.updateOrderStatus(orderId, newStatus);
-            
-            // Update the order in the list
-            setOrders(prev => prev.map(order => 
-                order.id === orderId 
-                    ? { ...order, orderStatus: newStatus } 
-                    : order
-            ));
-            
-            // If this was the selected order, update its details too
-            if (selectedOrder && selectedOrder.id === orderId) {
-                setOrderDetails(prev => ({
-                    ...prev,
-                    orderStatus: newStatus
-                }));
-            }
-            
-            setEditingOrderStatus(null);
-        } catch (err) {
-            console.error('Error updating order status:', err);
-            setError(t('errors.failedToUpdateOrderStatus'));
-        } finally {
-            setUpdatingStatus(false);
-        }
-    };
-
-    const handleCancelStatusEdit = (event) => {
-        event.stopPropagation(); // Prevent triggering the row click
-        setEditingOrderStatus(null);
     };
 
     const handleDeleteClick = (order, event) => {
@@ -489,43 +442,12 @@ const OrdersHistory = ({ token }) => {
                                                     {order.restorantId || t('common.unknown')}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    {editingOrderStatus === order.id ? (
-                                                        <div className="flex items-center space-x-2">
-                                                            <select 
-                                                                defaultValue={order.orderStatus}
-                                                                onChange={(e) => handleStatusUpdateInList(order.id, e.target.value)}
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                className="text-xs rounded border border-gray-600 bg-gray-700 text-white py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                            >
-                                                                <option value="PENDING">{t('orders.statusPENDING')}</option>
-                                                                <option value="PREPARING">{t('orders.statusPREPARING')}</option>
-                                                                <option value="READY">{t('orders.statusREADY')}</option>
-                                                                <option value="DELIVERED">{t('orders.statusDELIVERED')}</option>
-                                                                <option value="CANCELLED">{t('orders.statusCANCELLED')}</option>
-                                                            </select>
-                                                            <button 
-                                                                onClick={handleCancelStatusEdit}
-                                                                className="text-gray-400 hover:text-gray-200"
-                                                            >
-                                                                <svg className="h-4 w-4" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path d="M6 18L18 6M6 6l12 12"></path>
-                                                                </svg>
-                                                            </button>
-                                                        </div>
-                                                    ) : (
-                                                        <button 
-                                                            onClick={(e) => handleStatusClick(order, e)}
-                                                            className={`px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.orderStatus)} hover:opacity-80 transition-opacity`}
-                                                        >
-                                                            {getStatusIcon(order.orderStatus)}
-                                                            <span className="ml-1">
-                                                                {order.orderStatus.replace('_', ' ')}
-                                                            </span>
-                                                            <svg className="ml-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                                                            </svg>
-                                                        </button>
-                                                    )}
+                                                    <span className={`px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.orderStatus)}`}>
+                                                        {getStatusIcon(order.orderStatus)}
+                                                        <span className="ml-1">
+                                                            {order.orderStatus.replace('_', ' ')}
+                                                        </span>
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
                                                     {order.totalPrice ? `${order.totalPrice.toFixed(2)} лв.` : '-'}
