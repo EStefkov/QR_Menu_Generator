@@ -32,6 +32,14 @@ public class JwtTokenUtil {
     }
 
     /**
+     * Връща имейл адреса от JWT токена (записан като subject).
+     * Това е синоним на extractUsername, но с по-ясно име за използване в контекста.
+     */
+    public String getMailAddressFromToken(String token) {
+        return extractUsername(token);
+    }
+
+    /**
      * Връща конкретен claim (поле) от токена, ако е валиден.
      */
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {

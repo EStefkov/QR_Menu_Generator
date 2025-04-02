@@ -58,11 +58,12 @@ export const profileApi = {
   changePassword: async (passwordData) => {
     try {
       const accountId = localStorage.getItem('userId');
-      const response = await axiosInstance.put(`/accounts/changePassword/${accountId}`, passwordData);
+      const response = await axiosInstance.post(`/accounts/${accountId}/change-password`, passwordData);
       return response.data;
     } catch (error) {
       console.error('Error changing password:', error);
-      throw new Error(error.response?.data?.message || 'Failed to change password');
+      const errorMessage = error.response?.data?.error || 'Failed to change password';
+      throw new Error(errorMessage);
     }
   },
   

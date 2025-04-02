@@ -169,9 +169,10 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
       
     } catch (error) {
       console.error('Error changing password:', error);
+      // Show the exact error message from the backend if available
       setMessage({ 
         type: 'error', 
-        text: t('profile.passwordChangeError') 
+        text: error.message || t('profile.passwordChangeError') 
       });
     } finally {
       setLoading(false);

@@ -1,6 +1,7 @@
 package com.example.qr_menu.services;
 
 import com.example.qr_menu.dto.AccountDTO;
+import com.example.qr_menu.dto.ChangePasswordDTO;
 import com.example.qr_menu.dto.LoginDTO;
 import com.example.qr_menu.dto.RestaurantDTO;
 import com.example.qr_menu.entities.Account;
@@ -124,6 +125,61 @@ public class AccountService {
             }
             throw e;
         }
+    }
+
+    /**
+     * Метод за смяна на паролата на потребител.
+     * Проверява дали текущата парола е вярна и обновява с новата парола.
+     * 
+     * @param accountId ID на потребителя
+     * @param passwordDTO DTO с текуща и нова парола
+     * @param loggedInUserEmail Email на логнатия потребител (за проверка на правата)
+     * @return true ако паролата е сменена успешно
+     * @throws IllegalArgumentException ако текущата парола е грешна или потребителят няма права
+     */
+    @Transactional
+    public boolean changePassword(Long accountId, ChangePasswordDTO passwordDTO, String loggedInUserEmail) {
+        // 1. Намираме акаунта, чиято парола се сменя
+        Account accountToUpdate = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with id: " + accountId));
+
+        // 2. Намираме текущо логнатия потребител по имейл
+        Optional<Account> loggedInUserOpt = accountRepository.findByAccountNameOrMailAddress(null, loggedInUserEmail);
+        if (loggedInUserOpt.isEmpty()) {
+            throw new ResourceNotFoundException("Logged-in user not found.");
+        }
+
+        Account loggedInUser = loggedInUserOpt.get();
+
+        // 3. Проверяваме дали логнатият потребител има право да променя паролата
+        boolean isAdmin = loggedInUser.getAccountType() == Account.AccountType.ROLE_ADMIN;
+        boolean isSameUser = loggedInUser.getId().equals(accountToUpdate.getId());
+
+        if (!isAdmin && !isSameUser) {
+            throw new SecurityException("You are not allowed to change this user's password.");
+        }
+
+        // 4. Проверяваме дали текущата парола е вярна
+        if (!passwordEncoder.matches(passwordDTO.getCurrentPassword(), accountToUpdate.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect.");
+        }
+
+        // 5. Проверяваме дали новата парола и потвърждението съвпадат
+        if (!passwordDTO.getNewPassword().equals(passwordDTO.getConfirmPassword())) {
+            throw new IllegalArgumentException("New password and confirmation do not match.");
+        }
+
+        // 6. Проверка за минимална дължина на паролата (напр. 6 символа)
+        if (passwordDTO.getNewPassword().length() < 6) {
+            throw new IllegalArgumentException("New password must be at least 6 characters long.");
+        }
+
+        // 7. Кодираме и запазваме новата парола
+        accountToUpdate.setPassword(passwordEncoder.encode(passwordDTO.getNewPassword()));
+        accountToUpdate.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+        accountRepository.save(accountToUpdate);
+
+        return true;
     }
 
     /**
