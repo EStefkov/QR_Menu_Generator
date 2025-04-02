@@ -1,56 +1,99 @@
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HiUser, HiMail, HiPhone, HiCalendar, HiShoppingCart, HiHeart, HiClock } from 'react-icons/hi';
+import { HiUser, HiMail, HiPhone, HiCalendar, HiShoppingCart, HiHeart, HiClock, HiExclamationCircle, HiInformationCircle, HiRefresh } from 'react-icons/hi';
 
-const UserProfileContent = ({ profileData, loading, error }) => {
+const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
   const { t } = useLanguage();
 
   if (loading) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <div className="animate-pulse text-blue-500 dark:text-blue-400">
-          <HiClock className="w-12 h-12 animate-spin" />
-          <p className="mt-2">{t('loading')}</p>
-        </div>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <div className="text-red-500 dark:text-red-400 text-center">
-          <p className="text-lg font-semibold">{t('errors.general')}</p>
-          <p className="mt-2">{error}</p>
+      <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-5 rounded-lg flex flex-col items-start">
+        <div className="flex items-start mb-4">
+          <HiExclamationCircle className="w-6 h-6 mr-3 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-bold text-lg mb-1">{t('errors.loadFailed') || 'Failed to load profile data'}</h3>
+            <p>{error}</p>
+            <p className="mt-3 text-sm">{t('errors.tryAgainLater') || 'Please try again later or contact support if the problem persists.'}</p>
+          </div>
         </div>
+        
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="flex items-center self-center mt-4 bg-red-100 hover:bg-red-200 dark:bg-red-800/30 dark:hover:bg-red-700/30 text-red-800 dark:text-red-300 font-medium py-2 px-4 rounded-lg transition"
+          >
+            <HiRefresh className="w-5 h-5 mr-2" />
+            {t('common.retry') || 'Retry'}
+          </button>
+        )}
       </div>
     );
   }
 
   if (!profileData) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <div className="text-gray-500 dark:text-gray-400 text-center">
-          <p className="text-lg">{t('profile.noProfileData')}</p>
+      <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-5 rounded-lg flex flex-col items-center">
+        <div className="flex items-center mb-4">
+          <HiInformationCircle className="w-6 h-6 mr-3 flex-shrink-0" />
+          <p>{t('profile.noProfileData') || 'No profile data available'}</p>
         </div>
+        
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="flex items-center mt-4 bg-blue-100 hover:bg-blue-200 dark:bg-blue-800/30 dark:hover:bg-blue-700/30 text-blue-800 dark:text-blue-300 font-medium py-2 px-4 rounded-lg transition"
+          >
+            <HiRefresh className="w-5 h-5 mr-2" />
+            {t('common.refresh') || 'Refresh'}
+          </button>
+        )}
       </div>
     );
   }
 
   // Format date
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('bg-BG', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    if (!dateString) return t('profile.notAvailable') || 'Not available';
+    
+    try {
+      return new Date(dateString).toLocaleDateString('bg-BG', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (e) {
+      console.error('Date formatting error:', e);
+      return t('profile.notAvailable') || 'Not available';
+    }
+  };
+  
+  // Get the email address from the correct field
+  const getEmail = () => {
+    if (profileData && profileData.mailAddress) {
+      return profileData.mailAddress;
+    }
+    
+    const storedEmail = localStorage.getItem('mailAddress');
+    if (storedEmail) {
+      return storedEmail;
+    }
+    
+    return t('profile.notProvided') || 'Not provided';
   };
 
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
-          {t('profile.userProfile')}
+          {t('profile.userProfile') || 'User Profile'}
         </h2>
         
         {/* User Info Cards */}
@@ -60,9 +103,9 @@ const UserProfileContent = ({ profileData, loading, error }) => {
               <HiUser className="w-8 h-8 text-blue-600 dark:text-blue-300" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.name')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.name') || 'Name'}</p>
               <p className="text-lg font-semibold text-gray-800 dark:text-white">
-                {profileData.firstName} {profileData.lastName}
+                {profileData.firstName || ''} {profileData.lastName || ''}
               </p>
             </div>
           </div>
@@ -72,9 +115,9 @@ const UserProfileContent = ({ profileData, loading, error }) => {
               <HiMail className="w-8 h-8 text-green-600 dark:text-green-300" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.email')}</p>
-              <p className="text-lg font-semibold text-gray-800 dark:text-white">
-                {profileData.email}
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.email') || 'Email'}</p>
+              <p className="text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[180px]">
+                {getEmail()}
               </p>
             </div>
           </div>
@@ -84,9 +127,9 @@ const UserProfileContent = ({ profileData, loading, error }) => {
               <HiPhone className="w-8 h-8 text-purple-600 dark:text-purple-300" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.phone')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.phone') || 'Phone'}</p>
               <p className="text-lg font-semibold text-gray-800 dark:text-white">
-                {profileData.phone || t('profile.notProvided')}
+                {profileData.phone || t('profile.notProvided') || 'Not provided'}
               </p>
             </div>
           </div>
@@ -96,7 +139,7 @@ const UserProfileContent = ({ profileData, loading, error }) => {
               <HiCalendar className="w-8 h-8 text-amber-600 dark:text-amber-300" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.memberSince')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.memberSince') || 'Member Since'}</p>
               <p className="text-lg font-semibold text-gray-800 dark:text-white">
                 {formatDate(profileData.createdAt)}
               </p>
@@ -107,7 +150,7 @@ const UserProfileContent = ({ profileData, loading, error }) => {
         {/* Activity Summary */}
         <div className="bg-white dark:bg-gray-700 shadow rounded-xl p-6 mb-8">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-            {t('profile.activitySummary')}
+            {t('profile.activitySummary') || 'Activity Summary'}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -116,8 +159,8 @@ const UserProfileContent = ({ profileData, loading, error }) => {
                 <HiShoppingCart className="w-8 h-8 text-indigo-600 dark:text-indigo-300" />
               </div>
               <div>
-                <p className="text-xl font-bold text-gray-800 dark:text-white">{profileData.orderCount}</p>
-                <p className="text-gray-500 dark:text-gray-400">{t('profile.totalOrders')}</p>
+                <p className="text-xl font-bold text-gray-800 dark:text-white">{profileData.orderCount || 0}</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('profile.totalOrders') || 'Total Orders'}</p>
               </div>
             </div>
             
@@ -126,8 +169,8 @@ const UserProfileContent = ({ profileData, loading, error }) => {
                 <HiHeart className="w-8 h-8 text-pink-600 dark:text-pink-300" />
               </div>
               <div>
-                <p className="text-xl font-bold text-gray-800 dark:text-white">{profileData.favoriteProducts}</p>
-                <p className="text-gray-500 dark:text-gray-400">{t('profile.favoriteProducts')}</p>
+                <p className="text-xl font-bold text-gray-800 dark:text-white">{profileData.favoriteProducts || 0}</p>
+                <p className="text-gray-500 dark:text-gray-400">{t('profile.favoriteProducts') || 'Favorite Products'}</p>
               </div>
             </div>
           </div>
@@ -136,13 +179,13 @@ const UserProfileContent = ({ profileData, loading, error }) => {
         {/* Placeholder for Future Features */}
         <div className="bg-white dark:bg-gray-700 shadow rounded-xl p-6">
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-            {t('profile.comingSoon')}
+            {t('profile.comingSoon') || 'Coming Soon'}
           </h3>
           
           <div className="text-center py-8">
             <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-8 inline-block">
               <HiClock className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto" />
-              <p className="mt-4 text-gray-600 dark:text-gray-300">{t('profile.moreFeaturesSoon')}</p>
+              <p className="mt-4 text-gray-600 dark:text-gray-300">{t('profile.moreFeaturesSoon') || 'More features coming soon!'}</p>
             </div>
           </div>
         </div>

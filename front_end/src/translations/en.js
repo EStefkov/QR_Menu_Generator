@@ -162,6 +162,8 @@ const translations = {
   "common.sortOldestFirst": "Oldest first",
   "common.sortNewestFirst": "Newest first",
   "loading": "Loading...",
+  "common.retry": "Retry",
+  "common.refresh": "Refresh",
   
   // Pagination
   "pagination.showing": "Showing",
@@ -174,6 +176,10 @@ const translations = {
   "errors.failedToLoadOrderDetails": "Failed to load order details. Please try again.",
   "errors.failedToUpdateOrderStatus": "Failed to update order status. Please try again.",
   "errors.general": "An error occurred. Please try again.",
+  "errors.loadFailed": "Failed to load data",
+  "errors.loadingFailed": "Loading Failed",
+  "errors.tryAgainLater": "Please try again later or contact support if the problem persists.",
+  "errors.sessionExpired": "Your session has expired. Please log in again.",
   
   // Profile
   "profile.myProfile": "My Profile",
@@ -224,6 +230,36 @@ const translations = {
   "revenue": "Revenue",
   "restaurant": "Restaurant",
   "product": "Product",
+  
+  // Admin Dashboard
+  "admin.dashboard": "Admin Dashboard",
+  "admin.totalRevenue": "Total Revenue",
+  "admin.totalOrders": "Total Orders",
+  "admin.restaurants": "Restaurants",
+  "admin.allTimeRevenue": "All-time revenue across all restaurants",
+  "admin.ordersProcessed": "Orders processed across all restaurants",
+  "admin.activeRestaurants": "Active restaurants in your portfolio",
+  "admin.restaurantPerformance": "Restaurant Performance",
+  "admin.restaurantName": "Restaurant",
+  "admin.revenue": "Revenue",
+  "admin.avgOrder": "Avg. Order",
+  "admin.orderStatusDistribution": "Order Status Distribution",
+  "admin.popularProducts": "Most Popular Products",
+  "admin.restaurant": "Restaurant",
+  "admin.product": "Product",
+  "admin.orderCount": "Orders",
+  "admin.recentOrders": "Recent Orders",
+  "admin.orderId": "Order ID",
+  "admin.customer": "Customer",
+  "admin.amount": "Amount",
+  "admin.status": "Status",
+  "admin.date": "Date",
+  "admin.timePeriodStats": "Time Period Statistics",
+  "admin.today": "Today",
+  "admin.thisWeek": "This Week",
+  "admin.thisMonth": "This Month",
+  "admin.orders": "Orders",
+  "admin.noDataAvailable": "No statistics available yet. Start adding restaurants and products to see your dashboard.",
   
   // Demo page
   "demo_title": "Language & Theme Demo",

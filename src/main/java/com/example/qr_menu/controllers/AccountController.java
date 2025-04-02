@@ -187,6 +187,39 @@ public class AccountController {
     }
 
     /**
+     * Get current authenticated user details
+     * @param authorizationHeader JWT token
+     * @return current user's AccountDTO
+     */
+    @GetMapping("/current")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authorizationHeader) {
+        try {
+            // Extract JWT token
+            String token = authorizationHeader.replace("Bearer ", "");
+            
+            // Validate token
+            if (!jwtTokenUtil.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+            }
+            
+            // Get email from token
+            String email = jwtTokenUtil.extractUsername(token);
+            
+            // Get account details
+            AccountDTO accountDTO = accountService.getAccountDtoByEmail(email);
+            
+            if (accountDTO == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
+            }
+            
+            return ResponseEntity.ok(accountDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed: " + e.getMessage());
+        }
+    }
+
+    /**
      * Endpoint за смяна на парола
      */
     @PostMapping("/{id}/change-password")

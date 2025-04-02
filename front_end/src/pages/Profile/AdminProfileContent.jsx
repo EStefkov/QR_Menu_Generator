@@ -1,289 +1,416 @@
 import React from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HiTrendingUp, HiCash, HiShoppingCart, HiChartBar, HiViewGrid, HiClock } from 'react-icons/hi';
+import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh } from 'react-icons/hi';
 
-const AdminProfileContent = ({ adminStats, loading, error }) => {
+const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const { t } = useLanguage();
-
+  
   if (loading) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <div className="animate-pulse text-blue-500 dark:text-blue-400">
-          <HiClock className="w-12 h-12 animate-spin" />
-          <p className="mt-2">{t('loading')}</p>
-        </div>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
-
+  
   if (error) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <div className="text-red-500 dark:text-red-400 text-center">
-          <p className="text-lg font-semibold">{t('errors.general')}</p>
-          <p className="mt-2">{error}</p>
+      <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-5 rounded-lg flex flex-col items-start">
+        <div className="flex items-start mb-4">
+          <HiExclamationCircle className="w-6 h-6 mr-3 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-bold text-lg mb-1">{t('errors.loadFailed') || 'Failed to load data'}</h3>
+            <p>{error}</p>
+            <p className="mt-3 text-sm">{t('errors.tryAgainLater') || 'Please try again later or contact support if the problem persists.'}</p>
+          </div>
         </div>
+        
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="flex items-center self-center mt-4 bg-red-100 hover:bg-red-200 dark:bg-red-800/30 dark:hover:bg-red-700/30 text-red-800 dark:text-red-300 font-medium py-2 px-4 rounded-lg transition"
+          >
+            <HiRefresh className="w-5 h-5 mr-2" />
+            {t('common.retry') || 'Retry'}
+          </button>
+        )}
       </div>
     );
   }
-
+  
   if (!adminStats) {
     return (
-      <div className="h-96 flex items-center justify-center">
-        <div className="text-gray-500 dark:text-gray-400 text-center">
-          <p className="text-lg">{t('profile.noStatsAvailable')}</p>
+      <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-5 rounded-lg flex flex-col items-center">
+        <div className="flex items-center mb-4">
+          <HiExclamationCircle className="w-6 h-6 mr-3 flex-shrink-0" />
+          <p>{t('admin.noDataAvailable') || 'No statistics available yet. Start adding restaurants and products to see your dashboard.'}</p>
         </div>
+        
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="flex items-center mt-4 bg-blue-100 hover:bg-blue-200 dark:bg-blue-800/30 dark:hover:bg-blue-700/30 text-blue-800 dark:text-blue-300 font-medium py-2 px-4 rounded-lg transition"
+          >
+            <HiRefresh className="w-5 h-5 mr-2" />
+            {t('common.refresh') || 'Refresh'}
+          </button>
+        )}
       </div>
     );
   }
-
-  const { restaurantStats, popularProducts, orderStatusCounts, timeStats, recentOrders } = adminStats;
-
-  // Format currency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'BGN' })
-      .format(amount)
-      .replace('лв', 'лв.');
+  
+  // Function to format currency values
+  const formatCurrency = (value) => {
+    if (value == null) return '0.00 лв.';
+    return new Intl.NumberFormat('bg-BG', { 
+      style: 'currency', 
+      currency: 'BGN',
+      minimumFractionDigits: 2
+    }).format(value);
   };
-
-  // Format date
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('bg-BG', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  
+  // Format orders and order values as needed from real data
+  const getTotalOrders = () => {
+    if (adminStats.orderStatusCounts) {
+      return Object.values(adminStats.orderStatusCounts).reduce((a, b) => a + b, 0);
+    }
+    return adminStats.totalOrders || 0;
   };
-
+  
+  const getTotalRevenue = () => {
+    return adminStats.totalRevenue || 0;
+  };
+  
+  const getRestaurantCount = () => {
+    return adminStats.restaurantStats ? adminStats.restaurantStats.length : 0;
+  };
+  
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
-          {t('profile.adminDashboard')}
-        </h2>
-        
-        {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-xl p-4 shadow-lg">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-green-100 text-sm">{t('profile.todayOrders')}</p>
-                <h3 className="text-3xl font-bold mt-1">{timeStats.today.orders}</h3>
-                <p className="text-lg opacity-90">{formatCurrency(timeStats.today.revenue)}</p>
-              </div>
-              <HiShoppingCart className="w-10 h-10 opacity-80" />
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+        {t('admin.dashboard') || 'Admin Dashboard'}
+      </h2>
+      
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Total Revenue Card */}
+        <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-xl shadow p-6 transition hover:shadow-lg">
+          <div className="flex items-center mb-4">
+            <div className="bg-green-500 dark:bg-green-600 p-3 rounded-lg">
+              <HiCurrencyDollar className="h-6 w-6 text-white" />
             </div>
+            <h3 className="ml-3 text-lg font-semibold text-gray-800 dark:text-white">
+              {t('admin.totalRevenue') || 'Total Revenue'}
+            </h3>
           </div>
-          
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl p-4 shadow-lg">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-blue-100 text-sm">{t('profile.weekOrders')}</p>
-                <h3 className="text-3xl font-bold mt-1">{timeStats.thisWeek.orders}</h3>
-                <p className="text-lg opacity-90">{formatCurrency(timeStats.thisWeek.revenue)}</p>
-              </div>
-              <HiTrendingUp className="w-10 h-10 opacity-80" />
+          <p className="text-3xl font-bold text-gray-800 dark:text-white">
+            {formatCurrency(getTotalRevenue())}
+          </p>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            {t('admin.allTimeRevenue') || 'All-time revenue across all restaurants'}
+          </p>
+        </div>
+        
+        {/* Total Orders Card */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-800/30 rounded-xl shadow p-6 transition hover:shadow-lg">
+          <div className="flex items-center mb-4">
+            <div className="bg-blue-500 dark:bg-blue-600 p-3 rounded-lg">
+              <HiShoppingCart className="h-6 w-6 text-white" />
             </div>
+            <h3 className="ml-3 text-lg font-semibold text-gray-800 dark:text-white">
+              {t('admin.totalOrders') || 'Total Orders'}
+            </h3>
           </div>
-          
-          <div className="bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-xl p-4 shadow-lg">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-purple-100 text-sm">{t('profile.monthOrders')}</p>
-                <h3 className="text-3xl font-bold mt-1">{timeStats.thisMonth.orders}</h3>
-                <p className="text-lg opacity-90">{formatCurrency(timeStats.thisMonth.revenue)}</p>
-              </div>
-              <HiCash className="w-10 h-10 opacity-80" />
+          <p className="text-3xl font-bold text-gray-800 dark:text-white">
+            {getTotalOrders()}
+          </p>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            {t('admin.ordersProcessed') || 'Orders processed across all restaurants'}
+          </p>
+        </div>
+        
+        {/* Restaurants Card */}
+        <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-800/30 rounded-xl shadow p-6 transition hover:shadow-lg">
+          <div className="flex items-center mb-4">
+            <div className="bg-purple-500 dark:bg-purple-600 p-3 rounded-lg">
+              <HiCollection className="h-6 w-6 text-white" />
             </div>
-          </div>
-        </div>
-        
-        {/* Order Status Summary */}
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-5 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
-              <HiChartBar className="w-6 h-6 mr-2 text-indigo-500 dark:text-indigo-400" />
-              {t('profile.orderStatusSummary')}
+            <h3 className="ml-3 text-lg font-semibold text-gray-800 dark:text-white">
+              {t('admin.restaurants') || 'Restaurants'}
             </h3>
           </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-            {Object.entries(orderStatusCounts).map(([status, count]) => (
-              <div key={status} className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow">
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t(`orders.status.${status.toLowerCase()}`)}</p>
-                <p className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{count}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Popular Products */}
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-5 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
-              <HiViewGrid className="w-6 h-6 mr-2 text-indigo-500 dark:text-indigo-400" />
-              {t('profile.popularProducts')}
-            </h3>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-              <thead className="bg-gray-100 dark:bg-gray-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('product')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('restaurant')}
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('orders.count')}
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('revenue')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {popularProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      {product.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {product.restaurantName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                      {product.orderCount}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-green-600 dark:text-green-400">
-                      {formatCurrency(product.revenue)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        
-        {/* Restaurant Stats */}
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
-              <HiChartBar className="w-6 h-6 mr-2 text-indigo-500 dark:text-indigo-400" />
-              {t('profile.restaurantPerformance')}
-            </h3>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-              <thead className="bg-gray-100 dark:bg-gray-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('restaurant')}
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('orders.count')}
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('revenue')}
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('profile.averageOrder')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {restaurantStats.map((restaurant) => (
-                  <tr key={restaurant.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      {restaurant.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                      {restaurant.totalOrders}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-green-600 dark:text-green-400">
-                      {formatCurrency(restaurant.totalRevenue)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                      {formatCurrency(restaurant.averageOrderValue)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        
-        {/* Recent Orders */}
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-5 mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white flex items-center">
-              <HiClock className="w-6 h-6 mr-2 text-indigo-500 dark:text-indigo-400" />
-              {t('profile.recentOrders')}
-            </h3>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-              <thead className="bg-gray-100 dark:bg-gray-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('orders.id')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('restaurant')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('orders.customer')}
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('orders.amount')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('orders.status')}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    {t('orders.date')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      #{order.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {order.restaurantName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {order.customerName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-green-600 dark:text-green-400">
-                      {formatCurrency(order.totalAmount)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                        ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 
-                          order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 
-                          order.status === 'CANCELLED' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 
-                          'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}`}>
-                        {t(`orders.status.${order.status.toLowerCase()}`)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(order.orderDate)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <p className="text-3xl font-bold text-gray-800 dark:text-white">
+            {getRestaurantCount()}
+          </p>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            {t('admin.activeRestaurants') || 'Active restaurants in your portfolio'}
+          </p>
         </div>
       </div>
+      
+      {/* Restaurant Performance */}
+      {adminStats.restaurantStats && adminStats.restaurantStats.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+            {t('admin.restaurantPerformance') || 'Restaurant Performance'}
+          </h3>
+          <div className="bg-white dark:bg-gray-750 rounded-xl shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.restaurantName') || 'Restaurant'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.totalOrders') || 'Orders'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.revenue') || 'Revenue'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.avgOrder') || 'Avg. Order'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {adminStats.restaurantStats.map((restaurant, index) => (
+                    <tr key={restaurant.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{restaurant.name || restaurant.restorantName}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{restaurant.totalOrders || 0}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(restaurant.totalRevenue || 0)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(restaurant.averageOrderValue || 0)}</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Order Status Distribution */}
+      {adminStats.orderStatusCounts && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+            {t('admin.orderStatusDistribution') || 'Order Status Distribution'}
+          </h3>
+          <div className="bg-white dark:bg-gray-750 rounded-xl shadow p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {Object.entries(adminStats.orderStatusCounts).map(([status, count]) => (
+                <div key={status} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{status}</p>
+                  <p className="mt-2 text-2xl font-bold text-gray-800 dark:text-white">{count}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Most Popular Products */}
+      {adminStats.popularProducts && adminStats.popularProducts.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+            {t('admin.popularProducts') || 'Most Popular Products'}
+          </h3>
+          <div className="bg-white dark:bg-gray-750 rounded-xl shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.product') || 'Product'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.restaurant') || 'Restaurant'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.orderCount') || 'Orders'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.revenue') || 'Revenue'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {adminStats.popularProducts.map((product, index) => (
+                    <tr key={product.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{product.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{product.restaurantName}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{product.orderCount}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(product.revenue)}</div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Recent Orders */}
+      {adminStats.recentOrders && adminStats.recentOrders.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+            {t('admin.recentOrders') || 'Recent Orders'}
+          </h3>
+          <div className="bg-white dark:bg-gray-750 rounded-xl shadow overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.orderId') || 'Order ID'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.restaurant') || 'Restaurant'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.customer') || 'Customer'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.amount') || 'Amount'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.status') || 'Status'}
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.date') || 'Date'}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {adminStats.recentOrders.map((order, index) => (
+                    <tr key={order.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">#{order.id}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{order.restaurantName}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{order.customerName}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                          ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 
+                          order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' : 
+                          order.status === 'CANCELLED' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : 
+                          order.status === 'PREPARING' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' : 
+                          'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'}`}
+                        >
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(order.orderDate).toLocaleString()}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Time-based Statistics */}
+      {adminStats.timeStats && (
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+            {t('admin.timePeriodStats') || 'Time Period Statistics'}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {/* Today */}
+            <div className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-900/30 dark:to-amber-800/30 rounded-xl shadow p-6 transition hover:shadow-lg">
+              <div className="flex items-center mb-4">
+                <div className="bg-orange-500 dark:bg-orange-600 p-3 rounded-lg">
+                  <HiClock className="h-6 w-6 text-white" />
+                </div>
+                <h4 className="ml-3 text-lg font-semibold text-gray-800 dark:text-white">
+                  {t('admin.today') || 'Today'}
+                </h4>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.orders') || 'Orders'}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">{adminStats.timeStats.today?.orders || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.revenue') || 'Revenue'}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">{formatCurrency(adminStats.timeStats.today?.revenue || 0)}</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* This Week */}
+            <div className="bg-gradient-to-br from-teal-50 to-emerald-100 dark:from-teal-900/30 dark:to-emerald-800/30 rounded-xl shadow p-6 transition hover:shadow-lg">
+              <div className="flex items-center mb-4">
+                <div className="bg-teal-500 dark:bg-teal-600 p-3 rounded-lg">
+                  <HiClock className="h-6 w-6 text-white" />
+                </div>
+                <h4 className="ml-3 text-lg font-semibold text-gray-800 dark:text-white">
+                  {t('admin.thisWeek') || 'This Week'}
+                </h4>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.orders') || 'Orders'}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">{adminStats.timeStats.thisWeek?.orders || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.revenue') || 'Revenue'}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">{formatCurrency(adminStats.timeStats.thisWeek?.revenue || 0)}</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* This Month */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-800/30 rounded-xl shadow p-6 transition hover:shadow-lg">
+              <div className="flex items-center mb-4">
+                <div className="bg-blue-500 dark:bg-blue-600 p-3 rounded-lg">
+                  <HiClock className="h-6 w-6 text-white" />
+                </div>
+                <h4 className="ml-3 text-lg font-semibold text-gray-800 dark:text-white">
+                  {t('admin.thisMonth') || 'This Month'}
+                </h4>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.orders') || 'Orders'}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">{adminStats.timeStats.thisMonth?.orders || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.revenue') || 'Revenue'}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">{formatCurrency(adminStats.timeStats.thisMonth?.revenue || 0)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

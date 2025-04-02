@@ -162,6 +162,8 @@ const translations = {
   "common.sortOldestFirst": "Най-стари първо",
   "common.sortNewestFirst": "Най-нови първо",
   "loading": "Зареждане...",
+  "common.retry": "Опитай отново",
+  "common.refresh": "Обнови",
   
   // Pagination
   "pagination.showing": "Показване на",
@@ -174,6 +176,10 @@ const translations = {
   "errors.failedToLoadOrderDetails": "Неуспешно зареждане на детайлите за поръчката. Моля, опитайте отново.",
   "errors.failedToUpdateOrderStatus": "Неуспешна промяна на статуса на поръчката. Моля, опитайте отново.",
   "errors.general": "Възникна грешка. Моля, опитайте отново.",
+  "errors.loadFailed": "Грешка при зареждане на данни",
+  "errors.loadingFailed": "Зареждането не беше успешно",
+  "errors.tryAgainLater": "Моля, опитайте по-късно или се свържете с поддръжката, ако проблемът продължава.",
+  "errors.sessionExpired": "Сесията Ви изтече. Моля, влезте отново.",
   
   // Profile
   "profile.myProfile": "Моят профил",
@@ -224,6 +230,36 @@ const translations = {
   "revenue": "Приходи",
   "restaurant": "Ресторант",
   "product": "Продукт",
+  
+  // Admin Dashboard
+  "admin.dashboard": "Административен панел",
+  "admin.totalRevenue": "Общи приходи",
+  "admin.totalOrders": "Общо поръчки",
+  "admin.restaurants": "Ресторанти",
+  "admin.allTimeRevenue": "Всички приходи от всички ресторанти",
+  "admin.ordersProcessed": "Обработени поръчки от всички ресторанти",
+  "admin.activeRestaurants": "Активни ресторанти в портфолиото ви",
+  "admin.restaurantPerformance": "Представяне на ресторантите",
+  "admin.restaurantName": "Ресторант",
+  "admin.revenue": "Приходи",
+  "admin.avgOrder": "Средна поръчка",
+  "admin.orderStatusDistribution": "Разпределение на статусите",
+  "admin.popularProducts": "Най-популярни продукти",
+  "admin.restaurant": "Ресторант",
+  "admin.product": "Продукт",
+  "admin.orderCount": "Поръчки",
+  "admin.recentOrders": "Последни поръчки",
+  "admin.orderId": "№ поръчка",
+  "admin.customer": "Клиент",
+  "admin.amount": "Сума",
+  "admin.status": "Статус",
+  "admin.date": "Дата",
+  "admin.timePeriodStats": "Статистика за периоди",
+  "admin.today": "Днес",
+  "admin.thisWeek": "Тази седмица",
+  "admin.thisMonth": "Този месец",
+  "admin.orders": "Поръчки",
+  "admin.noDataAvailable": "Няма налична статистика. Започнете да добавяте ресторанти и продукти, за да видите табло.",
   
   // Demo page
   "demo_title": "Демо на език и тема",
