@@ -121,25 +121,6 @@ const ProfilePage = () => {
     }
   };
   
-  // Admin header that shows only for admins
-  const renderAdminHeader = () => {
-    if (isAdmin) {
-      return (
-        <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl mb-6 flex items-center">
-          <HiShieldCheck className="w-6 h-6 text-purple-600 dark:text-purple-400 mr-3" />
-          <div>
-            <h3 className="font-bold text-purple-800 dark:text-purple-300">
-              {t('profile.adminHeader') || 'Administrator Dashboard'}
-            </h3>
-            <p className="text-sm text-purple-600 dark:text-purple-400">
-              {t('profile.adminDescription') || 'View statistics and manage your restaurants'}
-            </p>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
   
   // Get the user's email with fallbacks
   const getUserEmail = () => {
@@ -252,7 +233,7 @@ const ProfilePage = () => {
           {/* Main Content */}
           <div className="w-full md:w-3/4 lg:w-4/5">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-              {renderAdminHeader()}
+              
               {getTabContent()}
             </div>
           </div>
