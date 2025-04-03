@@ -305,6 +305,14 @@ const translations = {
   "restaurants.address": "Адрес",
   "restaurants.phone": "Телефон",
   "restaurants.restaurantMenus": "Менюта на ресторанта",
+  "restaurants.description": "Описание",
+  "restaurants.email": "Имейл",
+  "restaurants.website": "Уебсайт",
+  "restaurants.openingHours": "Работно време",
+  "restaurants.location": "Местоположение",
+  "restaurants.openInMaps": "Отвори в Google Maps",
+  "restaurants.cuisineType": "Тип кухня",
+  "restaurants.status": "Статус",
   
   // Menus
   "menus.availableMenus": "Налични менюта",

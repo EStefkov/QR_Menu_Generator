@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { restaurantApi } from '../../api/restaurantApi';
-import { HiArrowLeft, HiExclamationCircle, HiEye, HiPencil, HiTrash, HiRefresh, HiPlusCircle, HiX } from 'react-icons/hi';
+import { HiArrowLeft, HiExclamationCircle, HiEye, HiPencil, HiTrash, HiRefresh, HiPlusCircle, HiX, HiLocationMarker } from 'react-icons/hi';
 
 const CreateMenuForm = ({ restaurantId, onSuccess, onCancel }) => {
   const { t } = useLanguage();
@@ -138,6 +138,19 @@ const RestaurantMenus = () => {
     fetchRestaurantData();
   }, [restaurantId]);
   
+  // Helper function to get value from multiple possible field names
+  const getFieldValue = (obj, fieldNames, defaultValue = '-') => {
+    if (!obj) return defaultValue;
+    
+    for (const field of fieldNames) {
+      if (obj[field] !== undefined && obj[field] !== null && obj[field] !== '') {
+        return obj[field];
+      }
+    }
+    
+    return defaultValue;
+  };
+  
   const fetchRestaurantData = async () => {
     setLoading(true);
     setError(null);
@@ -149,8 +162,9 @@ const RestaurantMenus = () => {
         restaurantApi.getRestaurantMenus(restaurantId)
       ]);
       
+      console.log('Restaurant data received:', restaurantData);
       setRestaurant(restaurantData);
-      setMenus(menusData);
+      setMenus(menusData || []);
     } catch (err) {
       console.error('Error fetching restaurant data:', err);
       setError(err.message || 'Failed to load restaurant data');
@@ -254,7 +268,7 @@ const RestaurantMenus = () => {
             <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-            {restaurant?.name || t('restaurants.restaurantMenus') || 'Restaurant Menus'}
+            {restaurant ? getFieldValue(restaurant, ['name', 'restorantName', 'restaurantName']) : t('restaurants.restaurantMenus') || 'Restaurant Menus'}
           </h1>
         </div>
         
@@ -278,36 +292,162 @@ const RestaurantMenus = () => {
       )}
       
       {restaurant && !showCreateForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
             {t('restaurants.details') || 'Restaurant Details'}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+          
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                 {t('restaurants.name') || 'Name'}
               </p>
-              <p className="text-base text-gray-900 dark:text-white font-medium">
-                {restaurant.name || '-'}
+              <p className="text-lg text-gray-900 dark:text-white font-medium">
+                {getFieldValue(restaurant, ['name', 'restorantName', 'restaurantName'])}
               </p>
+              {getFieldValue(restaurant, ['id', 'restorantId', 'restaurantId'], null) && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  ID: {getFieldValue(restaurant, ['id', 'restorantId', 'restaurantId'])}
+                </p>
+              )}
             </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                 {t('restaurants.address') || 'Address'}
               </p>
-              <p className="text-base text-gray-900 dark:text-white">
-                {restaurant.address || '-'}
+              <p className="text-lg text-gray-900 dark:text-white">
+                {getFieldValue(restaurant, ['address', 'restorantAddress', 'restaurantAddress', 'location'])}
               </p>
             </div>
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                 {t('restaurants.phone') || 'Phone'}
               </p>
-              <p className="text-base text-gray-900 dark:text-white">
-                {restaurant.phone || '-'}
+              <p className="text-lg text-gray-900 dark:text-white">
+                {getFieldValue(restaurant, ['phone', 'restorantPhone', 'restaurantPhone', 'phoneNumber', 'tel', 'telephone'])}
               </p>
             </div>
           </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            {getFieldValue(restaurant, ['cuisineType', 'restorantType', 'restaurantType', 'type', 'category'], null) && (
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  {t('restaurants.cuisineType') || 'Cuisine Type'}
+                </p>
+                <p className="text-lg text-gray-900 dark:text-white">
+                  {getFieldValue(restaurant, ['cuisineType', 'restorantType', 'restaurantType', 'type', 'category'])}
+                </p>
+              </div>
+            )}
+            
+            {getFieldValue(restaurant, ['status', 'restorantStatus', 'restaurantStatus', 'active'], null) && (
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  {t('restaurants.status') || 'Status'}
+                </p>
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full mr-2 ${
+                    (restaurant.status === 'ACTIVE' || restaurant.restorantStatus === 'ACTIVE' || 
+                     restaurant.restaurantStatus === 'ACTIVE' || restaurant.active === true) 
+                      ? 'bg-green-500' 
+                      : (restaurant.status === 'INACTIVE' || restaurant.restorantStatus === 'INACTIVE' || 
+                         restaurant.restaurantStatus === 'INACTIVE' || restaurant.active === false)
+                        ? 'bg-red-500'
+                        : 'bg-yellow-500'
+                  }`}></div>
+                  <p className="text-lg text-gray-900 dark:text-white">
+                    {getFieldValue(restaurant, ['status', 'restorantStatus', 'restaurantStatus']) || 
+                     (restaurant.active === true ? 'ACTIVE' : restaurant.active === false ? 'INACTIVE' : '-')}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {getFieldValue(restaurant, ['description', 'restorantDescription', 'restaurantDescription', 'about'], null) && (
+            <div className="mt-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                {t('restaurants.description') || 'Description'}
+              </p>
+              <p className="text-gray-900 dark:text-white">
+                {getFieldValue(restaurant, ['description', 'restorantDescription', 'restaurantDescription', 'about'])}
+              </p>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+            {getFieldValue(restaurant, ['email', 'restorantEmail', 'restaurantEmail', 'contactEmail'], null) && (
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  {t('restaurants.email') || 'Email'}
+                </p>
+                <p className="text-gray-900 dark:text-white break-words">
+                  {getFieldValue(restaurant, ['email', 'restorantEmail', 'restaurantEmail', 'contactEmail'])}
+                </p>
+              </div>
+            )}
+            
+            {getFieldValue(restaurant, ['website', 'restorantWebsite', 'restaurantWebsite', 'url', 'site'], null) && (
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  {t('restaurants.website') || 'Website'}
+                </p>
+                <a 
+                  href={getFieldValue(restaurant, ['website', 'restorantWebsite', 'restaurantWebsite', 'url', 'site']).startsWith('http') 
+                    ? getFieldValue(restaurant, ['website', 'restorantWebsite', 'restaurantWebsite', 'url', 'site'])
+                    : `https://${getFieldValue(restaurant, ['website', 'restorantWebsite', 'restaurantWebsite', 'url', 'site'])}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 hover:underline break-words"
+                >
+                  {getFieldValue(restaurant, ['website', 'restorantWebsite', 'restaurantWebsite', 'url', 'site'])}
+                </a>
+              </div>
+            )}
+            
+            {getFieldValue(restaurant, ['openingHours', 'restorantOpeningHours', 'restaurantOpeningHours', 'workingHours', 'hours'], null) && (
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  {t('restaurants.openingHours') || 'Opening Hours'}
+                </p>
+                <p className="text-gray-900 dark:text-white">
+                  {getFieldValue(restaurant, ['openingHours', 'restorantOpeningHours', 'restaurantOpeningHours', 'workingHours', 'hours'])}
+                </p>
+              </div>
+            )}
+          </div>
+          
+          {/* Map location if coordinates are available */}
+          {(getFieldValue(restaurant, ['latitude', 'lat'], null) && getFieldValue(restaurant, ['longitude', 'lng'], null)) || 
+           getFieldValue(restaurant, ['location'], null) ? (
+            <div className="mt-6">
+              <h3 className="text-md font-semibold text-gray-800 dark:text-white mb-3 flex items-center">
+                <HiLocationMarker className="w-5 h-5 mr-2 text-red-500" />
+                {t('restaurants.location') || 'Location'}
+              </h3>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden h-64 relative">
+                {/* You can replace this with an actual map component like Google Maps or Leaflet */}
+                <div className="absolute inset-0 bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                  <a 
+                    href={`https://maps.google.com/?q=${
+                      getFieldValue(restaurant, ['latitude', 'lat']) || 
+                      (restaurant.location && (restaurant.location.lat || restaurant.location.latitude))
+                    },${
+                      getFieldValue(restaurant, ['longitude', 'lng']) || 
+                      (restaurant.location && (restaurant.location.lng || restaurant.location.longitude))
+                    }`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+                  >
+                    {t('restaurants.openInMaps') || 'Open in Google Maps'}
+                  </a>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
       

@@ -305,6 +305,14 @@ const translations = {
   "restaurants.address": "Address",
   "restaurants.phone": "Phone",
   "restaurants.restaurantMenus": "Restaurant Menus",
+  "restaurants.description": "Description",
+  "restaurants.email": "Email",
+  "restaurants.website": "Website",
+  "restaurants.openingHours": "Opening Hours",
+  "restaurants.location": "Location",
+  "restaurants.openInMaps": "Open in Google Maps",
+  "restaurants.cuisineType": "Cuisine Type",
+  "restaurants.status": "Status",
   
   // Menus
   "menus.availableMenus": "Available Menus",
