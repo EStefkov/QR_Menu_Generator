@@ -192,6 +192,7 @@ const translations = {
   "errors.failedToCreateMenu": "Failed to create menu",
   "errors.failedToDeleteMenu": "Failed to delete menu",
   "errors.failedToUpdateMenu": "Failed to update menu",
+  "errors.failedToDeleteProduct": "Failed to delete product. Please try again.",
   
   // Profile
   "profile.myProfile": "My Profile",
@@ -339,6 +340,74 @@ const translations = {
   
   // Validation
   "validation.nameRequired": "Menu name is required",
+  
+  // Restaurant menus
+  "restaurants.details": "Restaurant Details",
+  "restaurants.name": "Name", 
+  "restaurants.address": "Address",
+  "restaurants.phone": "Phone",
+  "restaurants.email": "Email",
+  "restaurants.website": "Website",
+  "restaurants.openingHours": "Opening Hours",
+  "restaurants.cuisineType": "Cuisine Type",
+  "restaurants.status": "Status",
+  "restaurants.description": "Description",
+  "restaurants.location": "Location",
+  "restaurants.openInMaps": "Open in Google Maps",
+  "restaurants.restaurantMenus": "Restaurant Menus",
+
+  // Menus management
+  "menus.availableMenus": "Available Menus",
+  "menus.createNewMenu": "Create New Menu",
+  "menus.name": "Menu Name",
+  "menus.namePlaceholder": "Enter menu name",
+  "menus.createNew": "Create New Menu",
+  "menus.confirmDelete": "Are you sure you want to delete this menu?",
+  "menus.createSuccess": "Menu created successfully!",
+  "menus.noMenus": "No menus found",
+  "menus.createMenuPrompt": "This restaurant doesn't have any menus yet. Create your first menu to get started.",
+  "menus.createMenu": "Create Menu",
+  "menus.created": "Created",
+  "menus.editMenu": "Edit Menu",
+  "menus.details": "Menu Details",
+  "menus.saveSuccess": "Menu updated successfully!",
+
+  // Categories management
+  "categories.title": "Categories",
+  "categories.manage": "Categories & Products",
+  "categories.namePlaceholder": "New category name",
+  "categories.noCategories": "No categories yet",
+  "categories.confirmDelete": "Are you sure you want to delete this category?",
+  
+  // Products management
+  "products.title": "Products",
+  "products.name": "Product Name",
+  "products.namePlaceholder": "Enter product name",
+  "products.price": "Price",
+  "products.pricePlaceholder": "Enter price",
+  "products.description": "Description",
+  "products.descriptionPlaceholder": "Enter product description",
+  "products.image": "Product Image",
+  "products.addNew": "Add New Product",
+  "products.createSuccess": "Product created successfully!",
+  "products.noProducts": "No products in this category",
+  "products.selectCategory": "Select a category to manage products",
+  "products.addFirst": "Add your first product",
+  "products.selectRestaurant": "Select Restaurant",
+  "products.selectMenu": "Select Menu",
+  "products.selectCategory": "Select Category",
+  "products.allergens": "Allergens (optional)",
+  "products.noAllergensAvailable": "No allergens available or failed to load.",
+  "products.uploadImage": "Upload Image",
+  "products.validImageFormats": "Please select a valid image format (JPG, PNG, JPEG)",
+  "products.fillRequiredFields": "Please fill in all required fields.",
+  "products.create": "Create Product",
+  "products.confirmDelete": "Are you sure you want to delete this product?",
+  "products.deleteSuccess": "Product deleted successfully!",
+  
+  // Validation
+  "validation.nameRequired": "Menu name is required",
+  "validation.requiredFields": "Name and price are required",
 };
 
 export default translations; 

@@ -14,6 +14,7 @@ import {
   import WaiterDashboard from "./pages/WaiterDashboard.jsx";
   import Home from "./pages/Home.jsx";
   import MenuPage from "./pages/AdminMenuPage.jsx";
+  import EditMenuPage from "./pages/Menu/EditMenuPage.jsx";
   import Favorites from "./pages/Favorites.jsx";
   import { AuthContext } from "./contexts/AuthContext.jsx";
   import { CartProvider } from './contexts/CartContext';
@@ -243,6 +244,18 @@ import {
             }
           />
           
+          {/* Menu edit page with categories and products management */}
+          <Route
+            path="/admin/menu/:menuId/edit"
+            element={
+              <ProtectedRoute role="ROLE_ADMIN">
+                <Layout>
+                  <EditMenuPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
           {/* Profile page */}
           <Route
             path="/profile"
@@ -250,6 +263,18 @@ import {
               <ProtectedRoute>
                 <Layout>
                   <ProfilePage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Edit Menu Page */}
+          <Route
+            path="/admin/restaurants/:restaurantId/menus/edit"
+            element={
+              <ProtectedRoute role="ROLE_ADMIN">
+                <Layout>
+                  <EditMenuPage />
                 </Layout>
               </ProtectedRoute>
             }

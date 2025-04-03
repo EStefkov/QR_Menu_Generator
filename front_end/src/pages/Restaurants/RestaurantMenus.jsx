@@ -171,7 +171,14 @@ const RestaurantMenus = () => {
   };
   
   const handleEditMenu = (menuId) => {
-    navigate(`/admin/restaurants/${restaurantId}/menus/${menuId}/edit`);
+    // Navigate to a combined edit page with menu details, categories and products management
+    navigate(`/admin/menu/${menuId}/edit`, { 
+      state: { 
+        restaurantId,
+        restaurantName: getFieldValue(restaurant, ['name', 'restorantName', 'restaurantName']),
+        backUrl: `/restaurants/${restaurantId}/menus`
+      } 
+    });
   };
   
   const handleDeleteMenu = async (menuId) => {

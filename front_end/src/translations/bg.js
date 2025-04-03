@@ -192,6 +192,7 @@ const translations = {
   "errors.failedToCreateMenu": "Неуспешно създаване на меню",
   "errors.failedToDeleteMenu": "Неуспешно изтриване на меню",
   "errors.failedToUpdateMenu": "Неуспешно обновяване на меню",
+  "errors.failedToDeleteProduct": "Неуспешно изтриване на продукт. Моля, опитайте отново.",
   
   // Profile
   "profile.myProfile": "Моят профил",
@@ -316,13 +317,21 @@ const translations = {
   
   // Menus
   "menus.availableMenus": "Налични менюта",
-  "menus.createNew": "Създаване на ново меню",
+  "menus.createNew": "Създай ново меню",
   "menus.createNewMenu": "Създаване на ново меню",
   "menus.name": "Име на меню",
   "menus.namePlaceholder": "Въведете име на меню",
   "menus.description": "Описание",
   "menus.descriptionPlaceholder": "Въведете описание на меню",
   "menus.confirmDelete": "Сигурни ли сте, че искате да изтриете това меню?",
+  "menus.createSuccess": "Менюто е създадено успешно!",
+  "menus.noMenus": "Няма намерени менюта",
+  "menus.createMenuPrompt": "Този ресторант все още няма менюта. Създайте първото си меню, за да започнете.",
+  "menus.createMenu": "Създай меню",
+  "menus.created": "Създадено",
+  "menus.editMenu": "Редактиране на меню",
+  "menus.details": "Детайли на менюто",
+  "menus.saveSuccess": "Менюто е обновено успешно!",
   
   // Restaurant Menus Management
   "admin.categories": "Категории",
@@ -337,8 +346,42 @@ const translations = {
   "admin.orderCount": "Поръчки",
   "admin.actions": "Действия",
   
+  // Categories management
+  "categories.title": "Категории",
+  "categories.manage": "Категории и продукти",
+  "categories.namePlaceholder": "Име на нова категория",
+  "categories.noCategories": "Все още няма категории",
+  "categories.confirmDelete": "Сигурни ли сте, че искате да изтриете тази категория?",
+  
+  // Products management
+  "products.title": "Продукти",
+  "products.name": "Име на продукт",
+  "products.namePlaceholder": "Въведете име на продукт",
+  "products.price": "Цена",
+  "products.pricePlaceholder": "Въведете цена",
+  "products.description": "Описание",
+  "products.descriptionPlaceholder": "Въведете описание на продукта",
+  "products.image": "Снимка на продукта",
+  "products.addNew": "Добави нов продукт",
+  "products.createSuccess": "Продуктът е създаден успешно!",
+  "products.noProducts": "Няма продукти в тази категория",
+  "products.selectCategory": "Изберете категория, за да управлявате продуктите",
+  "products.addFirst": "Добавете първия си продукт",
+  "products.selectRestaurant": "Избери ресторант",
+  "products.selectMenu": "Избери меню",
+  "products.selectCategory": "Избери категория",
+  "products.allergens": "Алергени (по желание)",
+  "products.noAllergensAvailable": "Няма заредени алергени или възникна грешка.",
+  "products.uploadImage": "Качи снимка",
+  "products.validImageFormats": "Моля, изберете валиден формат на изображение (JPG, PNG, JPEG)",
+  "products.fillRequiredFields": "Моля, попълнете всички задължителни полета.",
+  "products.create": "Създай продукт",
+  "products.confirmDelete": "Сигурни ли сте, че искате да изтриете този продукт?",
+  "products.deleteSuccess": "Продуктът е изтрит успешно!",
+  
   // Validation
   "validation.nameRequired": "Името на менюто е задължително",
+  "validation.requiredFields": "Името и цената са задължителни",
 };
 
 export default translations; 
