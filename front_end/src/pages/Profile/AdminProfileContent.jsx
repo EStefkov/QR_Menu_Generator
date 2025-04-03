@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh, HiChevronLeft, HiChevronRight, HiX } from 'react-icons/hi';
+import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh, HiChevronLeft, HiChevronRight, HiMenu, HiEye } from 'react-icons/hi';
 import { orderApi } from '../../api/orderApi';
+import { useNavigate } from 'react-router-dom';
 
 const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   
   // Pagination states
   const [restaurantPage, setRestaurantPage] = useState(1);
@@ -17,17 +19,24 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const [orderDetails, setOrderDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState(null);
-  
-  // Pagination functions
-  const getPaginatedData = (data, page, perPage) => {
-    if (!data || !Array.isArray(data)) return [];
-    const startIndex = (page - 1) * perPage;
-    return data.slice(startIndex, startIndex + perPage);
+
+  // Navigation to menu
+  const handleViewMenu = (menuId) => {
+    if (menuId) {
+      navigate(`/menu/${menuId}`);
+    }
   };
   
-  const getTotalPages = (data, perPage) => {
-    if (!data || !Array.isArray(data)) return 0;
-    return Math.ceil(data.length / perPage);
+  // Function to handle clicking on a restaurant row
+  const handleRestaurantClick = (restaurant) => {
+    const restaurantId = restaurant.id || restaurant.restorantId;
+    if (!restaurantId) {
+      console.error('Restaurant ID is missing');
+      return;
+    }
+    
+    // Navigate to the restaurant's menus page
+    navigate(`/admin/restaurants/${restaurantId}/menus`);
   };
   
   // Function to handle clicking on an order row
@@ -54,6 +63,18 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
     setOrderDetails(null);
   };
 
+  // Pagination functions
+  const getPaginatedData = (data, page, perPage) => {
+    if (!data || !Array.isArray(data)) return [];
+    const startIndex = (page - 1) * perPage;
+    return data.slice(startIndex, startIndex + perPage);
+  };
+  
+  const getTotalPages = (data, perPage) => {
+    if (!data || !Array.isArray(data)) return 0;
+    return Math.ceil(data.length / perPage);
+  };
+  
   // Function to update order status
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
@@ -362,6 +383,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
             {t('admin.restaurantPerformance') || 'Restaurant Performance'}
           </h3>
+          
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -379,13 +401,22 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('admin.avgOrder') || 'Avg. Order'}
                     </th>
+                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.actions') || 'Actions'}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                   {getPaginatedData(adminStats.restaurantStats, restaurantPage, itemsPerPage).map((restaurant, index) => (
-                    <tr key={restaurant.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <tr 
+                      key={restaurant.id || index} 
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">{restaurant.name || restaurant.restorantName}</div>
+                        {restaurant.id && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">ID: {restaurant.id}</div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-white">{restaurant.totalOrders || 0}</div>
@@ -395,6 +426,15 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(restaurant.averageOrderValue || 0)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => handleRestaurantClick(restaurant)}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
+                        >
+                          <HiMenu className="mr-1 h-4 w-4" />
+                          {t('admin.viewMenus') || 'View Menus'}
+                        </button>
                       </td>
                     </tr>
                   ))}

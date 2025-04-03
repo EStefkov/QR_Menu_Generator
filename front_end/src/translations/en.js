@@ -164,6 +164,14 @@ const translations = {
   "loading": "Loading...",
   "common.retry": "Retry",
   "common.refresh": "Refresh",
+  "common.view": "View",
+  "common.edit": "Edit",
+  "common.delete": "Delete",
+  "common.cancel": "Cancel",
+  "common.save": "Save",
+  "common.saving": "Saving...",
+  "common.of": "of",
+  "common.to": "to",
   
   // Pagination
   "pagination.showing": "Showing",
@@ -180,6 +188,10 @@ const translations = {
   "errors.loadingFailed": "Loading Failed",
   "errors.tryAgainLater": "Please try again later or contact support if the problem persists.",
   "errors.sessionExpired": "Your session has expired. Please log in again.",
+  "errors.failedToLoadMenus": "Failed to load restaurant menus",
+  "errors.failedToCreateMenu": "Failed to create menu",
+  "errors.failedToDeleteMenu": "Failed to delete menu",
+  "errors.failedToUpdateMenu": "Failed to update menu",
   
   // Profile
   "profile.myProfile": "My Profile",
@@ -286,6 +298,39 @@ const translations = {
   "common.loadingData": "Loading data...",
   "common.noData": "No data available",
   "common.dataError": "Error loading data",
+  
+  // Restaurants
+  "restaurants.details": "Restaurant Details",
+  "restaurants.name": "Name",
+  "restaurants.address": "Address",
+  "restaurants.phone": "Phone",
+  "restaurants.restaurantMenus": "Restaurant Menus",
+  
+  // Menus
+  "menus.availableMenus": "Available Menus",
+  "menus.createNew": "Create New Menu",
+  "menus.createNewMenu": "Create New Menu",
+  "menus.name": "Menu Name",
+  "menus.namePlaceholder": "Enter menu name",
+  "menus.description": "Description",
+  "menus.descriptionPlaceholder": "Enter menu description",
+  "menus.confirmDelete": "Are you sure you want to delete this menu?",
+  
+  // Restaurant Menus Management
+  "admin.categories": "Categories",
+  "admin.products": "Products",
+  "admin.lastUpdated": "Last updated",
+  "admin.noDescription": "No description available",
+  "admin.noMenusFound": "No menus found for this restaurant",
+  "admin.clickCreateNew": "Click the \"Create New Menu\" button to add a menu.",
+  "admin.viewMenus": "View Menus",
+  "admin.restaurantMenus": "Restaurant Menus",
+  "admin.createNewMenu": "Create a new menu",
+  "admin.orderCount": "Orders",
+  "admin.actions": "Actions",
+  
+  // Validation
+  "validation.nameRequired": "Menu name is required",
 };
 
 export default translations; 

@@ -164,6 +164,14 @@ const translations = {
   "loading": "Зареждане...",
   "common.retry": "Опитайте отново",
   "common.refresh": "Обновяване",
+  "common.view": "Преглед",
+  "common.edit": "Редактиране",
+  "common.delete": "Изтриване",
+  "common.cancel": "Отказ",
+  "common.save": "Запази",
+  "common.saving": "Запазване...",
+  "common.of": "от",
+  "common.to": "до",
   
   // Pagination
   "pagination.showing": "Показване на",
@@ -180,6 +188,10 @@ const translations = {
   "errors.loadingFailed": "Зареждането не беше успешно",
   "errors.tryAgainLater": "Моля, опитайте по-късно или се свържете с поддръжката, ако проблемът продължава.",
   "errors.sessionExpired": "Сесията Ви изтече. Моля, влезте отново.",
+  "errors.failedToLoadMenus": "Неуспешно зареждане на менютата на ресторанта",
+  "errors.failedToCreateMenu": "Неуспешно създаване на меню",
+  "errors.failedToDeleteMenu": "Неуспешно изтриване на меню",
+  "errors.failedToUpdateMenu": "Неуспешно обновяване на меню",
   
   // Profile
   "profile.myProfile": "Моят профил",
@@ -286,6 +298,39 @@ const translations = {
   "common.loadingData": "Зареждане на данни...",
   "common.noData": "Няма налични данни",
   "common.dataError": "Грешка при зареждане на данни",
+  
+  // Restaurants
+  "restaurants.details": "Детайли за ресторанта",
+  "restaurants.name": "Име",
+  "restaurants.address": "Адрес",
+  "restaurants.phone": "Телефон",
+  "restaurants.restaurantMenus": "Менюта на ресторанта",
+  
+  // Menus
+  "menus.availableMenus": "Налични менюта",
+  "menus.createNew": "Създаване на ново меню",
+  "menus.createNewMenu": "Създаване на ново меню",
+  "menus.name": "Име на меню",
+  "menus.namePlaceholder": "Въведете име на меню",
+  "menus.description": "Описание",
+  "menus.descriptionPlaceholder": "Въведете описание на меню",
+  "menus.confirmDelete": "Сигурни ли сте, че искате да изтриете това меню?",
+  
+  // Restaurant Menus Management
+  "admin.categories": "Категории",
+  "admin.products": "Продукти",
+  "admin.lastUpdated": "Последна актуализация",
+  "admin.noDescription": "Няма налично описание",
+  "admin.noMenusFound": "Няма намерени менюта за този ресторант",
+  "admin.clickCreateNew": "Кликнете върху бутона \"Създаване на ново меню\", за да добавите меню.",
+  "admin.viewMenus": "Преглед на менюта",
+  "admin.restaurantMenus": "Менюта на ресторанта",
+  "admin.createNewMenu": "Създаване на ново меню",
+  "admin.orderCount": "Поръчки",
+  "admin.actions": "Действия",
+  
+  // Validation
+  "validation.nameRequired": "Името на менюто е задължително",
 };
 
 export default translations; 

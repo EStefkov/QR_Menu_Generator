@@ -25,6 +25,7 @@ import {
   import OrderDetail from './components/OrderDetail.jsx';
   import ProtectedRoute from './components/ProtectedRoute';
   import ProfilePage from './pages/Profile/ProfilePage';
+  import RestaurantMenus from './pages/Restaurants/RestaurantMenus';
   import { getStoredToken } from './api/account';
   
   const Layout = ({ children }) => {
@@ -216,6 +217,18 @@ import {
                 <OrderDetail />
               </ProtectedRoute>
             } 
+          />
+          
+          {/* Restaurant menus routes */}
+          <Route
+            path="/admin/restaurants/:restaurantId/menus"
+            element={
+              <ProtectedRoute role="ROLE_ADMIN">
+                <Layout>
+                  <RestaurantMenus />
+                </Layout>
+              </ProtectedRoute>
+            }
           />
           
           {/* Profile page */}
