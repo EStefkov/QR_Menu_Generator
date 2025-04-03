@@ -11,8 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/menus")
@@ -45,13 +47,39 @@ public class MenuController {
 
     @PostMapping
     public ResponseEntity<Map<String, String>> createMenu(@RequestBody MenuDTO menuDTO) {
-        menuService.createMenu(menuDTO);
-
-        // ✅ Връщаме JSON вместо plain текст
-        Map<String, String> response = Map.of("message", "Menu created successfully");
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+        try {
+            System.out.println("Received request to create menu: " + menuDTO);
+            
+            // Validate required fields
+            if (menuDTO.getCategory() == null || menuDTO.getCategory().isBlank()) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Menu category is required"));
+            }
+            
+            if (menuDTO.getRestaurantId() == null) {
+                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Restaurant ID is required"));
+            }
+            
+            menuService.createMenu(menuDTO);
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Menu created successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Failed to create menu: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
+    // Test endpoint for debugging
+    @PostMapping("/test")
+    public ResponseEntity<Map<String, String>> testCreateMenu(@RequestBody MenuDTO menuDTO) {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Test endpoint reached successfully");
+        response.put("receivedData", menuDTO.toString());
+        return ResponseEntity.ok(response);
+    }
 
     @GetMapping("/restaurant/{restorantId}")
     public ResponseEntity<List<MenuDTO>> getMenusByRestaurantId(@PathVariable Long restorantId) {
@@ -111,5 +139,16 @@ public class MenuController {
             @RequestBody String newName) {
         MenuDTO updatedMenu = menuService.updateMenuName(id, newName);
         return ResponseEntity.ok(updatedMenu);
+    }
+
+    @PostMapping("/{id}/default-product-image")
+    public ResponseEntity<MenuDTO> uploadDefaultProductImage(@PathVariable("id") Long menuId,
+                                                          @RequestParam("file") MultipartFile file) {
+        try {
+            MenuDTO updatedMenu = menuService.uploadDefaultProductImage(menuId, file);
+            return ResponseEntity.ok(updatedMenu);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload default product image: " + e.getMessage(), e);
+        }
     }
 }

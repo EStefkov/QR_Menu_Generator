@@ -22,4 +22,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     // If needed, fetch accounts with restaurants for non-paginated cases
     @Query("SELECT a FROM Account a JOIN FETCH a.restorants")
     List<Account> findAllWithRestaurants();
+
+    Optional<Account> findByMailAddress(String mailAddress);
+
+    boolean existsByMailAddress(String mailAddress);
 }

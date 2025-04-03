@@ -14,9 +14,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Autowired
@@ -25,42 +28,59 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf().disable()
-                .cors().and()
-                .authorizeHttpRequests()
-                // Publicly accessible endpoints
-                .requestMatchers("/api/accounts/register", "/api/accounts/login").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/products/menu/**").permitAll() // Allow GET requests for menus
-                .requestMatchers(HttpMethod.GET, "/api/menus/restaurant/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/menus/{id}/qrcode").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll()
-                .requestMatchers(HttpMethod.GET,"/api/categories/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll() // Allow access to uploaded files
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow OPTIONS requests
-                .requestMatchers(HttpMethod.POST, "/api/accounts/uploadProfilePicture/**").permitAll()
-                 .requestMatchers(HttpMethod.GET,"/api/products/category/**").permitAll()
-                // Restricted endpoints for ADMIN role
-                .requestMatchers(HttpMethod.PUT, "/api/restaurants/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/api/restaurants/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "api/restaurants/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/restaurants/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/menus/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/menus/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/menus/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/orders/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH, "/api/orders/**").hasRole("ADMIN")
+                .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
+                .authorizeHttpRequests(auth -> auth
+                        // Public endpoints (no authentication required)
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/accounts/register", "/api/accounts/login", "/api/accounts/validate").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        
+                        // Static resources - make sure to include all possible paths
+                        .requestMatchers("/uploads/**", "/uploads/profilePictures/**", "/uploads/profilePictures/*/**").permitAll()
+                        .requestMatchers("/uploads/menuImages/**", "/uploads/menuImages/*/**").permitAll()
+                        .requestMatchers("/uploads/defaultProductImages/**", "/uploads/defaultProductImages/*/**").permitAll()
+                        .requestMatchers("/uploads/default_product.png").permitAll()
+                        // Allow access to all menu uploads directories 
+                        .requestMatchers("/uploads/*/**").permitAll()
+                        
+                        // Public API endpoints
+                        .requestMatchers(HttpMethod.GET, "/api/products/menu/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/menus/restaurant/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/menus/{id}/qrcode").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/menus/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/menus/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/menus/{id}/default-product-image").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.POST, "/api/menus").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/qrcode/generate").permitAll()
 
-                // All other endpoints require authentication
-                .anyRequest().authenticated()
-                .and()
+                        
+                        // Account management endpoints
+                        .requestMatchers("/api/accounts/validate").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/accounts/{id}").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.POST, "/api/accounts/uploadProfilePicture/**").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.PUT, "/api/accounts/update/**").hasAnyRole("ADMIN", "USER")
 
-                // Stateless session management
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+                        // Favorites endpoints - allow all authenticated users
+                        .requestMatchers("/api/favorites/**").authenticated()
 
-        // Add JWT filter
-        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+                        // Cart endpoints - allow all authenticated users
+                        .requestMatchers("/api/cart/**").authenticated()
+                        
+                        // Order endpoints - allow all authenticated users
+                        .requestMatchers("/api/orders/**").authenticated()
+
+                        // Restaurant management endpoints - let the @PreAuthorize annotations handle these
+                        .requestMatchers("/api/restaurants/**").authenticated()
+                        
+                        // Require authentication for all other requests
+                        .anyRequest().authenticated()
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -2,15 +2,16 @@ package com.example.qr_menu.entities;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Date;
+import java.util.Set;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"orderProducts"})
+@EqualsAndHashCode(exclude = {"orderProducts"})
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,10 +28,10 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "order_status", nullable = false)
-    private OrderStatus orderStatus;
+    private OrderStatus orderStatus = OrderStatus.PENDING;
 
     @Column(name = "total_price", nullable = false)
-    private Long totalPrice;
+    private Double totalPrice;
 
     @ManyToOne
     @JoinColumn(name = "account_id", nullable = false)
@@ -42,9 +43,15 @@ public class Order {
     @JsonBackReference
     private Restorant restorant;
 
-
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<OrderProduct> orderProducts;
 
     public enum OrderStatus {
+        PENDING,
+        PREPARING,
+        READY,
+        DELIVERED,
+        CANCELLED,
         FINISHED,
         ACCEPTED
     }

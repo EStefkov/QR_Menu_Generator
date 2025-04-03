@@ -9,25 +9,30 @@ function getFullImageUrl(productImage) {
   if (!productImage) {
     return "";
   }
+  // If the image URL already starts with http or https, return it as is
+  if (productImage.startsWith('http://') || productImage.startsWith('https://')) {
+    return productImage;
+  }
+  // Otherwise, prepend the API base URL
   return API_BASE_URL + productImage;
 }
 
 // Примерен мап за алерген -> иконка (път до PNG/SVG файлове в public/allergens/)
 const allergenIconMap = {
-  Gluten: "/allergens/Gluten.png",
-  Crustaceans: "/allergens/Crustaceans.png",
-  Eggs: "/allergens/Egg.png",
-  Fish: "/allergens/Fish.png",
-  Peanuts: "/allergens/Peanut.png",
-  Soybeans: "/allergens/Soya.png",
-  Milk: "/allergens/Milk.png",
-  Nuts: "/allergens/Nuts.png",
-  Celery: "/allergens/Celery.png",
-  Mustard: "/allergens/Mustard.png",
-  Sesame: "/allergens/Sesame.png",
+  "Gluten": "/allergens/Gluten.png",
+  "Crustaceans": "/allergens/Crustaceans.png",
+  "Eggs": "/allergens/Egg.png",
+  "Fish": "/allergens/Fish.png",
+  "Peanuts": "/allergens/Peanut.png",
+  "Soybeans": "/allergens/Soya.png",
+  "Milk": "/allergens/Milk.png",
+  "Nuts": "/allergens/Nuts.png",
+  "Celery": "/allergens/Celery.png",
+  "Mustard": "/allergens/Mustard.png",
+  "Sesame": "/allergens/Sesame.png",
   "Sulphur dioxide and sulphites": "/allergens/Sulphites.png",
-  Lupin: "/allergens/Lupin.png",
-  Molluscs: "/allergens/Molluscs.png",
+  "Lupin": "/allergens/Lupin.png",
+  "Molluscs": "/allergens/Molluscs.png"
 };
 
 const DetailsModal = ({ product, onClose }) => {
@@ -60,7 +65,11 @@ const DetailsModal = ({ product, onClose }) => {
               <img
                 src={imageUrl}
                 alt={product.productName}
-                className="object-cover h-full"
+                className="object-contain w-full h-full"
+                onError={(e) => {
+                  e.target.onerror = null; // Prevent infinite loop
+                  e.target.src = ""; // Clear the src to show the fallback
+                }}
               />
             ) : (
               <span className="text-gray-700 dark:text-gray-100 font-semibold">
@@ -88,27 +97,22 @@ const DetailsModal = ({ product, onClose }) => {
               </h4>
               <div className="flex flex-wrap gap-2">
                 {allergens.map((allergen) => {
-                  // Ако името е allergen.allergenName:
-                  const allergenName = allergen.allergenName || allergen.name;
+                  // Handle both string and object formats
+                  const allergenName = typeof allergen === 'string' ? allergen : (allergen.allergenName || allergen.name);
                   const iconPath = allergenIconMap[allergenName];
                   return (
                     <div
-                      key={allergen.id || allergenName}
+                      key={typeof allergen === 'string' ? allergen : (allergen.id || allergenName)}
                       className="flex items-center space-x-2 border border-gray-200 dark:border-gray-700 rounded p-2"
                     >
                       {iconPath ? (
                         <img
                           src={iconPath}
                           alt={allergenName}
-                          className="h-6 w-6 object-contain"
+                          className="w-6 h-6"
                         />
-                      ) : (
-                        // fallback ако няма иконка
-                        <span className="text-sm text-red-500">
-                          [No icon]
-                        </span>
-                      )}
-                      <span className="text-sm text-gray-700 dark:text-gray-200">
+                      ) : null}
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
                         {allergenName}
                       </span>
                     </div>

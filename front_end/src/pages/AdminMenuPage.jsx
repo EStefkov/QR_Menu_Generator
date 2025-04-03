@@ -6,13 +6,15 @@ import {
   fetchProductsByCategoryIdApi,
   updateProductApi,
   deleteProductApi,
-  uploadMenuImageApi
+  uploadMenuImageApi,
+  getFullImageUrl
 } from "../api/adminDashboard";
 
 import CategorySection from "../components/CategorySection";
 import DetailsModal from "../components/DetailsModal";
 import EditProductModal from "../components/EditProductModal";
 import MenuBanner from "../components/MenuBanner";
+import { toast } from "react-hot-toast";
 
 const AdminMenuPage = () => {
   const { menuId } = useParams();
@@ -22,6 +24,7 @@ const AdminMenuPage = () => {
   const [menuData, setMenuData] = useState({
     name: "Меню",
     menuImage: null,
+    defaultProductImage: null,
     id: null,
     error: null,
     textColor: 'text-white'
@@ -66,6 +69,7 @@ const AdminMenuPage = () => {
       const updatedMenuData = {
         name: data.category || "Меню",
         menuImage: data.menuImage || null,
+        defaultProductImage: data.defaultProductImage || null,
         id: data.id,
         error: null,
         textColor: data.textColor || 'text-white'
@@ -104,11 +108,52 @@ const AdminMenuPage = () => {
     }
   };
 
+  const handleDefaultProductImageUpload = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      console.log('Uploading default product image for menu:', menuId);
+      console.log('Using token:', token);
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/menus/${menuId}/default-product-image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Upload failed with status:', response.status);
+        console.error('Error response:', errorText);
+        throw new Error('Failed to upload default product image');
+      }
+
+      const updatedMenu = await response.json();
+      setMenuData(prev => ({
+        ...prev,
+        defaultProductImage: updatedMenu.defaultProductImage
+      }));
+      
+      toast.success('Default product image updated successfully');
+      
+      // Reload menu data to get the updated image
+      await loadMenuData();
+    } catch (error) {
+      console.error('Error uploading default product image:', error);
+      toast.error('Failed to upload default product image');
+      throw error;
+    }
+  };
+
   const loadCategories = async () => {
     try {
       const data = await fetchCategoriesByMenuIdApi(token, menuId);
       setCategories(data);
     } catch (error) {
+      console.error('Error loading categories:', error);
       alert("Грешка при зареждане на категориите");
     }
   };
@@ -122,15 +167,36 @@ const AdminMenuPage = () => {
     if (!categoryProducts[catId]) {
       try {
         const products = await fetchProductsByCategoryIdApi(token, catId);
-        setCategoryProducts((prev) => ({ ...prev, [catId]: products }));
+        const formattedProducts = products.map(product => ({
+          ...product,
+          productImage: product.productImage ? getFullImageUrl(product.productImage) : null,
+          productName: product.productName || '',
+          productPrice: product.productPrice || 0,
+          productInfo: product.productInfo || '',
+          allergens: product.allergens || [],
+          categoryId: product.categoryId,
+          id: product.id
+        }));
+        setCategoryProducts((prev) => ({ ...prev, [catId]: formattedProducts }));
       } catch (error) {
+        console.error('Error loading products:', error);
         alert("Грешка при зареждане на продуктите");
       }
     }
   };
 
   const handleSelectProduct = (product) => {
-    setSelectedProduct(product);
+    const formattedProduct = {
+      ...product,
+      productImage: product.productImage ? getFullImageUrl(product.productImage) : null,
+      productName: product.productName || '',
+      productPrice: product.productPrice || 0,
+      productInfo: product.productInfo || '',
+      allergens: product.allergens || [],
+      categoryId: product.categoryId,
+      id: product.id
+    };
+    setSelectedProduct(formattedProduct);
   };
   const handleCloseModal = () => {
     setSelectedProduct(null);
@@ -170,6 +236,7 @@ const AdminMenuPage = () => {
         setCategoryProducts((prev) => ({ ...prev, [catId]: newProducts }));
       }
     } catch (error) {
+      console.error('Error updating product:', error);
       alert("Неуспешен ъпдейт на продукт!");
     }
   };
@@ -183,6 +250,7 @@ const AdminMenuPage = () => {
       alert("Продуктът беше изтрит успешно!");
       setEditingProduct(null);
     } catch (error) {
+      console.error('Error deleting product:', error);
       alert("Грешка при изтриване на продукта.");
     }
   };
@@ -193,6 +261,8 @@ const AdminMenuPage = () => {
         bannerImage={menuData.menuImage} 
         menuName={menuData.name}
         onBannerUpload={handleBannerUpload}
+        onDefaultProductImageUpload={handleDefaultProductImageUpload}
+        defaultProductImage={menuData.defaultProductImage}
         isAdmin={accountType === "ROLE_ADMIN"}
         menuId={menuId}
         initialTextColor={menuData.textColor}

@@ -1,6 +1,10 @@
 package com.example.qr_menu.controllers;
 
 import com.example.qr_menu.dto.ProductDTO;
+import com.example.qr_menu.entities.Menu;
+import com.example.qr_menu.entities.Product;
+import com.example.qr_menu.exceptions.ResourceNotFoundException;
+import com.example.qr_menu.repositories.CategoryRepository;
 import com.example.qr_menu.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +25,9 @@ public class ProductController {
 
     @Autowired
     private ProductService productService;
+    
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     // Продукти според меню
     @GetMapping("/menu/{menuId}")
@@ -61,13 +68,24 @@ public class ProductController {
         dto.setCategoryId(categoryId);
         dto.setAllergenIds(allergenIds);
 
-        // Ако има качен файл, записваме го в папка "uploads/"
-        if (productImage != null && !productImage.isEmpty()) {
+        // Проверява дали е подаден файл
+        if (productImage == null || productImage.isEmpty()) {
+            // Сетва дефолтна снимка на продукта
+            Menu menu = categoryRepository.findById(dto.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found"))
+                    .getMenu();
+                    
+            // Get the menu's default product image or create a standard path
+            String defaultImage = menu.getDefaultProductImage();
+            if (defaultImage != null && !defaultImage.isBlank()) {
+                dto.setProductImage(defaultImage);
+            } else {
+                dto.setProductImage("http://localhost:8080/uploads/" + menu.getId() + "/default_product.png");
+            }
+        } else {
+            // Ако има качен файл, записваме го в папка "uploads/"
             String savedPath = saveImage(productImage);
             dto.setProductImage(savedPath);
-        } else {
-            // Няма подаден файл -> дефолтна снимка
-            dto.setProductImage("default_product.png");
         }
 
         ProductDTO createdProduct = productService.createProduct(dto);
@@ -145,5 +163,19 @@ public class ProductController {
     public ResponseEntity<List<ProductDTO>> getProductsByCategoryId(@PathVariable Long categoryId) {
         List<ProductDTO> products = productService.getProductsByCategoryId(categoryId);
         return ResponseEntity.ok(products);
+    }
+
+    // Get single product by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
+        Product product = productService.getProductById(id);
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setId(product.getId());
+        productDTO.setProductName(product.getProductName());
+        productDTO.setProductPrice(product.getProductPrice());
+        productDTO.setProductInfo(product.getProductInfo());
+        productDTO.setProductImage(product.getProductImage());
+        productDTO.setCategoryId(product.getCategory().getId());
+        return ResponseEntity.ok(productDTO);
     }
 }

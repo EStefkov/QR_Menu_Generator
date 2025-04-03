@@ -10,15 +10,19 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.function.Function;
 
 @Component
 public class JwtTokenUtil {
 
-    // Генерираме ключа автоматично.
-    // Алтернативно, можете да го сетнете отвън (напр. чрез application.properties), за да е постоянен.
-    private final SecretKey SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+    // Hard-coded secret for development - never do this in production!
+    private static final String SECRET_STRING = "MySuperSecretKeyForJWTGenerationThatIsAtLeast32BytesLongAndMoreForGoodMeasureToMakeSureItWorks";
+    
+    private SecretKey getSecretKey() {
+        return Keys.hmacShaKeyFor(SECRET_STRING.getBytes(StandardCharsets.UTF_8));
+    }
 
     /**
      * Връща полето "subject" от JWT, в което сме записали email-а на потребителя.
@@ -27,6 +31,13 @@ public class JwtTokenUtil {
         return extractClaim(token, Claims::getSubject);
     }
 
+    /**
+     * Връща имейл адреса от JWT токена (записан като subject).
+     * Това е синоним на extractUsername, но с по-ясно име за използване в контекста.
+     */
+    public String getMailAddressFromToken(String token) {
+        return extractUsername(token);
+    }
 
     /**
      * Връща конкретен claim (поле) от токена, ако е валиден.
@@ -42,16 +53,20 @@ public class JwtTokenUtil {
     public Claims getAllClaimsFromToken(String token) {
         try {
             return Jwts.parserBuilder()
-                    .setSigningKey(SECRET_KEY)
+                    .setSigningKey(getSecretKey())
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException e) {
+            System.out.println("Token has expired: " + e.getMessage());
             throw new IllegalArgumentException("Token has expired", e);
         } catch (MalformedJwtException e) {
+            System.out.println("Invalid JWT token: " + e.getMessage());
             throw new IllegalArgumentException("Invalid JWT token", e);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Error parsing JWT token", e);
+            System.out.println("Error parsing JWT token: " + e.getMessage());
+            e.printStackTrace();
+            throw new IllegalArgumentException("Error parsing JWT token: " + e.getMessage(), e);
         }
     }
 
@@ -59,8 +74,13 @@ public class JwtTokenUtil {
      * Проверява дали токенът вече е изтекъл (по поле "expiration").
      */
     public Boolean isTokenExpired(String token) {
-        Date expirationDate = extractClaim(token, Claims::getExpiration);
-        return expirationDate.before(new Date());
+        try {
+            Date expirationDate = extractClaim(token, Claims::getExpiration);
+            return expirationDate.before(new Date());
+        } catch (Exception e) {
+            System.out.println("Error checking token expiration: " + e.getMessage());
+            return true; // Consider expired if we can't check
+        }
     }
 
     /**
@@ -70,17 +90,26 @@ public class JwtTokenUtil {
      * - 10 часа валидност
      */
     public String generateToken(Account account) {
-        return Jwts.builder()
-                .setSubject(account.getMailAddress()) // Email as the subject
-                .claim("accountType", account.getAccountType().toString())
-                .claim("accountId", account.getId())
-                .claim("firstName", account.getFirstName())
-                .claim("lastName", account.getLastName())
-                .claim("profilePicture", account.getProfilePicture())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 10)) // 10 hours
-                .signWith(SECRET_KEY)
-                .compact();
+        try {
+            System.out.println("Generating token for account: " + account.getId());
+            
+            return Jwts.builder()
+                    .setSubject(account.getMailAddress()) // Email as the subject
+                    .claim("accountType", account.getAccountType().toString())
+                    .claim("accountId", account.getId())
+                    .claim("role", account.getAccountType().toString()) // Add role claim for consistency
+                    .claim("firstName", account.getFirstName())
+                    .claim("lastName", account.getLastName())
+                    .claim("profilePicture", account.getProfilePicture())
+                    .setIssuedAt(new Date())
+                    .setExpiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 10)) // 10 hours
+                    .signWith(getSecretKey())
+                    .compact();
+        } catch (Exception e) {
+            System.out.println("Error generating token: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to generate JWT token: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -97,6 +126,7 @@ public class JwtTokenUtil {
             return !isTokenExpired(token);
         } catch (Exception e) {
             // При изключение (изтекъл, зле формиран токен) -> невалиден
+            System.out.println("Token validation failed: " + e.getMessage());
             return false;
         }
     }
@@ -107,7 +137,12 @@ public class JwtTokenUtil {
      * и токенът не е изтекъл.
      */
     public Boolean validateToken(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username) && !isTokenExpired(token));
+        try {
+            final String extractedUsername = extractUsername(token);
+            return (extractedUsername.equals(username) && !isTokenExpired(token));
+        } catch (Exception e) {
+            System.out.println("Token validation failed for user " + username + ": " + e.getMessage());
+            return false;
+        }
     }
 }

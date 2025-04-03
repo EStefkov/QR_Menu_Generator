@@ -15,73 +15,70 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-    @RequestMapping("/api/restaurants")
-    public class RestaurantController {
+@RequestMapping("/api/restaurants")
+public class RestaurantController {
 
-        private final RestaurantService restaurantService;
-        private final JwtTokenUtil jwtTokenUtil;
+    private final RestaurantService restaurantService;
+    private final JwtTokenUtil jwtTokenUtil;
 
-        @Autowired
-        public RestaurantController(RestaurantService restaurantService, JwtTokenUtil jwtTokenUtil) {
-            this.restaurantService = restaurantService;
-            this.jwtTokenUtil = jwtTokenUtil;
-        }
+    @Autowired
+    public RestaurantController(RestaurantService restaurantService, JwtTokenUtil jwtTokenUtil) {
+        this.restaurantService = restaurantService;
+        this.jwtTokenUtil = jwtTokenUtil;
+    }
 
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> createRestaurant(
+            @RequestBody RestaurantDTO restaurantDTO,
+            @RequestHeader("Authorization") String token) {
+        String email = jwtTokenUtil.extractUsername(token.substring(7));
+        restaurantService.createRestaurant(restaurantDTO, email);
+        Map<String, String> response = Map.of("message", "Restaurant created successfully");
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> updateRestaurant(@PathVariable Long id, @RequestBody RestaurantDTO restaurantDTO) {
+        restaurantService.updateRestaurant(id, restaurantDTO);
+        return new ResponseEntity<>("Restaurant updated successfully", HttpStatus.OK);
+    }
 
-        @PostMapping
-        public ResponseEntity<Map<String, String>> createRestaurant(
-                @RequestBody RestaurantDTO restaurantDTO,
-                @RequestHeader("Authorization") String token) {
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public ResponseEntity<RestaurantDTO> getRestaurantById(@PathVariable Long id) {
+        RestaurantDTO restaurantDTO = restaurantService.getRestaurantById(id);
+        return ResponseEntity.ok(restaurantDTO);
+    }
 
-            // Extract email from the token (remove "Bearer " prefix)
-            String email = jwtTokenUtil.extractUsername(token.substring(7));
+    @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteRestaurant(@PathVariable Long id) {
+        restaurantService.deleteRestaurant(id);
+        return new ResponseEntity<>("Restaurant deleted successfully", HttpStatus.OK);
+    }
 
-            // Pass email to the service
-            restaurantService.createRestaurant(restaurantDTO, email);
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public ResponseEntity<List<RestaurantDTO>> getAllRestaurants() {
+        List<RestaurantDTO> restaurants = restaurantService.getAllRestaurants();
+        return new ResponseEntity<>(restaurants, HttpStatus.OK);
+    }
 
-            // ✅ Връщаме JSON вместо текст
-            Map<String, String> response = Map.of("message", "Restaurant created successfully");
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-        }
-
-
-        @PutMapping("/{id}")
-        public ResponseEntity<String> updateRestaurant(@PathVariable Long id, @RequestBody RestaurantDTO restaurantDTO) {
-            restaurantService.updateRestaurant(id, restaurantDTO);
-            return new ResponseEntity<>("Restaurant updated successfully", HttpStatus.OK);
-        }
-
-        @GetMapping("/{id}")
-        public ResponseEntity<RestaurantDTO> getRestaurantById(@PathVariable Long id) {
-            RestaurantDTO restaurantDTO = restaurantService.getRestaurantById(id);
-            return ResponseEntity.ok(restaurantDTO);
-        }
-        @PreAuthorize("hasRole('ADMIN')")
-        @DeleteMapping("/delete/{id}")
-        public ResponseEntity<String> deleteRestaurant(@PathVariable Long id) {
-            restaurantService.deleteRestaurant(id);
-            return new ResponseEntity<>("Restaurant deleted successfully", HttpStatus.OK);
-        }
-
-        @GetMapping
-        public ResponseEntity<List<RestaurantDTO>> getAllRestaurants() {
-            List<RestaurantDTO> restaurants = restaurantService.getAllRestaurants();
-            return new ResponseEntity<>(restaurants, HttpStatus.OK);
-        }
-
-        @GetMapping("/paged")
-        public ResponseEntity<Page<RestaurantDTO>> getPagedRestaurants(
-                @RequestParam(defaultValue = "0") int page,
-                @RequestParam(defaultValue = "5") int size) {
-            Page<RestaurantDTO> restaurants = restaurantService.getPagedRestaurants(page, size);
-            return ResponseEntity.ok(restaurants);
-        }
+    @GetMapping("/paged")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public ResponseEntity<Page<RestaurantDTO>> getPagedRestaurants(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        Page<RestaurantDTO> restaurants = restaurantService.getPagedRestaurants(page, size);
+        return ResponseEntity.ok(restaurants);
+    }
 
     @GetMapping("/{restaurantId}/menus")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<List<MenuDTO>> getMenusByRestaurant(@PathVariable Long restaurantId) {
         List<MenuDTO> menus = restaurantService.getMenusByRestaurant(restaurantId);
         return ResponseEntity.ok(menus);
     }
-
-    }
+}

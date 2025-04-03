@@ -10,7 +10,7 @@ public class MenuMapper {
         return MenuDTO.builder()
                 .id(menu.getId())
                 .category(menu.getCategory())
-                .restorantId(menu.getRestorant() != null ? menu.getRestorant().getId() : null)
+                .restaurantId(menu.getRestorant() != null ? menu.getRestorant().getId() : null)
                 .createdAt(menu.getCreatedAt())
                 .updatedAt(menu.getUpdatedAt())
                 .menuUrl(menu.getMenuUrl())

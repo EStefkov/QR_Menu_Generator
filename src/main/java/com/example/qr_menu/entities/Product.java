@@ -1,10 +1,7 @@
 package com.example.qr_menu.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,7 +9,10 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"menu", "category", "favorites", "allergens"})
+@EqualsAndHashCode(exclude = {"menu", "category", "favorites", "allergens"})
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -38,16 +38,16 @@ public class Product {
     private String productImage;
 
     // Many Products can belong to one Menu
-    @ManyToOne
-    @JoinColumn(name = "menu_id", nullable = false) // Foreign key column in Products table
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "menu_id")
     private Menu menu;
 
-    @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @Builder.Default
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "product_allergen",
             joinColumns = @JoinColumn(name = "product_id"),
@@ -55,4 +55,18 @@ public class Product {
     )
     private List<Allergen> allergens = new ArrayList<>();
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Favorite> favorites = new HashSet<>();
+
+    // Add helper methods for favorites
+    public void addFavorite(Account account) {
+        Favorite favorite = new Favorite();
+        favorite.setProduct(this);
+        favorite.setAccount(account);
+        favorites.add(favorite);
+    }
+
+    public void removeFavorite(Account account) {
+        favorites.removeIf(favorite -> favorite.getAccount().equals(account));
+    }
 }

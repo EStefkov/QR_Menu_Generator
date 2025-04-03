@@ -1,9 +1,11 @@
 import { useContext } from "react";
 import { Link } from "react-router-dom";
-import { AuthContext } from "../AuthContext";
+import { AuthContext } from "../contexts/AuthContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 const Home = () => {
   const { userData } = useContext(AuthContext);
+  const { t } = useLanguage();
   const isAuthenticated = !!userData.token;
 
   return (
@@ -15,11 +17,11 @@ const Home = () => {
             <main className="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
               <div className="sm:text-center lg:text-left">
                 <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
-                  <span className="block">Create Beautiful</span>
-                  <span className="block text-blue-600 dark:text-blue-400">Digital Menus</span>
+                  <span className="block">{t('home_hero_title_1')}</span>
+                  <span className="text-blue-600 dark:text-blue-400">{t('home_hero_title_2')}</span>
                 </h1>
                 <p className="mt-3 text-base text-gray-500 dark:text-gray-400 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                  Transform your restaurant's menu into an interactive digital experience. Generate QR codes, manage your menu items, and provide a seamless ordering experience for your customers.
+                  {t('home_hero_description')}
                 </p>
                 <div className="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
                   {!isAuthenticated ? (
@@ -29,7 +31,7 @@ const Home = () => {
                           to="/register"
                           className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10 transition-colors"
                         >
-                          Get Started
+                          {t('home_get_started')}
                         </Link>
                       </div>
                       <div className="mt-3 sm:mt-0 sm:ml-3">
@@ -37,7 +39,7 @@ const Home = () => {
                           to="/login"
                           className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 md:py-4 md:text-lg md:px-10 transition-colors"
                         >
-                          Sign In
+                          {t('home_sign_in')}
                         </Link>
                       </div>
                     </>
@@ -47,7 +49,7 @@ const Home = () => {
                         to={userData.accountType === "ROLE_ADMIN" ? "/admin" : "/user"}
                         className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10 transition-colors"
                       >
-                        Go to Dashboard
+                        {t('home_go_to_dashboard')}
                       </Link>
                     </div>
                   )}
@@ -63,13 +65,13 @@ const Home = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:text-center">
             <h2 className="text-base text-blue-600 dark:text-blue-400 font-semibold tracking-wide uppercase">
-              Features
+              {t('home_features_title')}
             </h2>
             <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-              Everything you need to manage your menu
+              {t('home_features_subtitle')}
             </p>
             <p className="mt-4 max-w-2xl text-xl text-gray-500 dark:text-gray-400 lg:mx-auto">
-              Our platform provides all the tools you need to create and manage your digital menu efficiently.
+              {t('home_features_description')}
             </p>
           </div>
 
@@ -95,10 +97,10 @@ const Home = () => {
                 </div>
                 <div className="ml-16">
                   <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                    Digital Menu Creation
+                    {t('home_feature_1_title')}
                   </h3>
                   <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
-                    Create beautiful, interactive menus with easy-to-use tools and templates.
+                    {t('home_feature_1_description')}
                   </p>
                 </div>
               </div>
@@ -123,10 +125,10 @@ const Home = () => {
                 </div>
                 <div className="ml-16">
                   <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                    QR Code Generation
+                    {t('home_feature_2_title')}
                   </h3>
                   <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
-                    Generate unique QR codes for each menu, making it easy for customers to access your menu.
+                    {t('home_feature_2_description')}
                   </p>
                 </div>
               </div>
@@ -151,10 +153,10 @@ const Home = () => {
                 </div>
                 <div className="ml-16">
                   <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                    Real-time Updates
+                    {t('home_feature_3_title')}
                   </h3>
                   <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
-                    Update your menu items, prices, and availability in real-time.
+                    {t('home_feature_3_description')}
                   </p>
                 </div>
               </div>
@@ -179,10 +181,10 @@ const Home = () => {
                 </div>
                 <div className="ml-16">
                   <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                    Analytics Dashboard
+                    {t('home_feature_4_title')}
                   </h3>
                   <p className="mt-2 text-base text-gray-500 dark:text-gray-400">
-                    Track menu views, popular items, and customer engagement with detailed analytics.
+                    {t('home_feature_4_description')}
                   </p>
                 </div>
               </div>
@@ -195,8 +197,8 @@ const Home = () => {
       <div className="bg-blue-600 dark:bg-blue-700">
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
           <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            <span className="block">Ready to get started?</span>
-            <span className="block text-blue-200">Create your digital menu today.</span>
+            <span className="block">{t('home_cta_title_1')}</span>
+            <span className="block text-blue-200">{t('home_cta_title_2')}</span>
           </h2>
           <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
             <div className="inline-flex rounded-md shadow">
@@ -204,7 +206,7 @@ const Home = () => {
                 to="/register"
                 className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 transition-colors"
               >
-                Get started
+                {t('home_get_started')}
               </Link>
             </div>
           </div>

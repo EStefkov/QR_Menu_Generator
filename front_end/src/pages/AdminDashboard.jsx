@@ -1,5 +1,5 @@
 import { useEffect, useState,useContext } from "react";
-import { AuthContext } from "../AuthContext"; 
+import { AuthContext } from "../contexts/AuthContext"; 
 import AccountsTable from "../components/AccountsTable";
 import RestaurantsTable from "../components/RestaurantsTable.jsx";
 import CreateMenuForm from "../components/CreateMenuForm.jsx";
@@ -8,6 +8,8 @@ import EditRestaurantForm from "../components/EditRestaurantForm.jsx";
 import CreateCategoryForm from "../components/CreateCategoryForm";
 import CreateProductForm from "../components/CreateProductForm.jsx";
 import CreateRestaurantForm from "../components/CreateRestaurantForm";
+import OrdersHistory from "../components/OrdersHistory.jsx";
+import { restaurantApi } from "../api/restaurantApi";
 
 import {
     fetchAccountsApi,
@@ -34,7 +36,7 @@ const AdminDashboard = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const [newMenu, setNewMenu] = useState({ category: "", restorantId: "" });
+    const [newMenu, setNewMenu] = useState({ category: "", restaurantId: "" });
 
     const { userData } = useContext(AuthContext);
     const token = userData?.token;
@@ -147,6 +149,21 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleCreateMenu = async (menuData) => {
+        try {
+            await restaurantApi.createMenu(menuData.restaurantId, menuData);
+            
+            await fetchMenusByRestaurantId(menuData.restaurantId);
+            
+            setNewMenu({ category: "", restaurantId: "" });
+            
+            alert("Менюто беше създадено успешно!");
+        } catch (error) {
+            console.error("Error creating menu:", error);
+            alert("Неуспешно създаване на меню: " + error.message);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
             <div className="flex flex-col md:flex-row">
@@ -161,7 +178,8 @@ const AdminDashboard = () => {
                             { id: "createRestaurant", name: "Създай Ресторант"},
                             { id: "createMenu", name: "Създай Меню" },
                             { id: "createCategory", name: "Създай Категория" },
-                            { id: "createProduct", name: "Създай Продукт" }
+                            { id: "createProduct", name: "Създай Продукт" },
+                            { id: "ordersHistory", name: "История на Поръчките" }
                         ].map(({ id, name }) => (
                             <button
                                 key={id}
@@ -232,14 +250,7 @@ const AdminDashboard = () => {
                             newMenu={newMenu}
                             setNewMenu={setNewMenu}
                             restaurants={restaurants}
-                            onCreate={async () => {
-                                try {
-                                    await createMenuApi(token, newMenu);
-                                    alert("Менюто е създадено успешно!");
-                                } catch (error) {
-                                    alert("Неуспешно създаване на меню!");
-                                }
-                            }}
+                            onCreate={handleCreateMenu}
                         />
                     )}
 
@@ -281,9 +292,12 @@ const AdminDashboard = () => {
                         />
                     )}
 
+                    {activeComponent === "ordersHistory" && (
+                        <OrdersHistory token={token} />
+                    )}
+
                     {editingAccount && (
                         <EditAccountForm
-                            token={token}
                             account={editingAccount}
                             onSave={handleUpdateAccount}
                             onCancel={() => setEditingAccount(null)}

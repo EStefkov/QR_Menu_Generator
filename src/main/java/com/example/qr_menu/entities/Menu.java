@@ -1,16 +1,16 @@
 package com.example.qr_menu.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Date;
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"restorant", "products", "categories"})
+@EqualsAndHashCode(exclude = {"restorant", "products", "categories"})
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -56,11 +56,16 @@ public class Menu {
     )
     private String textColor;
 
+    @Column(
+            name = "default_product_image",
+            columnDefinition = "VARCHAR(255)"
+    )
+    private String defaultProductImage;
+
     // One Menu can have many Products
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Product> products;
 
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Category> categories;
-
 }

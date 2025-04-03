@@ -12,6 +12,7 @@ import com.example.qr_menu.repositories.CategoryRepository;
 import com.example.qr_menu.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,21 +31,28 @@ public class ProductService {
 
     /**
      * Създава продукт. Ако productImage не е зададено,
-     * поставяме "default_product.png".
+     * използваме default image от менюто.
      * Ако не подадеш allergenIds, няма да има алергени (не е задължително).
      */
     public ProductDTO createProduct(ProductDTO productDTO) {
-        // Ако няма снимка, задаваме "default_product.png"
-        if (productDTO.getProductImage() == null || productDTO.getProductImage().isBlank()) {
-            productDTO.setProductImage("default_product.png");
-        }
-
         // Намираме категорията
         Category category = categoryRepository.findById(productDTO.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         // Менюто идва от категорията
         Menu menu = category.getMenu();
+
+        // Ако няма снимка, използваме default product image от менюто
+        if (productDTO.getProductImage() == null || productDTO.getProductImage().isBlank()) {
+            String defaultProductImage = menu.getDefaultProductImage();
+            if (defaultProductImage != null && !defaultProductImage.isBlank()) {
+                // Use the menu's default product image if available
+                productDTO.setProductImage(defaultProductImage);
+            } else {
+                // If no default image is set in the menu, use a standard path format
+                productDTO.setProductImage("http://localhost:8080/uploads/" + menu.getId() + "/default_product.png");
+            }
+        }
 
         // Създаваме Product
         Product product = Product.builder()
@@ -133,9 +141,17 @@ public class ProductService {
 
         // Ако productImage != null => можем да променим снимката
         if (productDTO.getProductImage() != null) {
-            // Ако е празен стринг, задаваме default_product.png
+            // Ако е празен стринг, използваме default image от менюто
             if (productDTO.getProductImage().isEmpty()) {
-                product.setProductImage("default_product.png");
+                Menu menu = product.getMenu();
+                String defaultProductImage = menu.getDefaultProductImage();
+                if (defaultProductImage != null && !defaultProductImage.isBlank()) {
+                    // Use the menu's default product image if available
+                    product.setProductImage(defaultProductImage);
+                } else {
+                    // If no default image is set in the menu, use a standard path format
+                    product.setProductImage("http://localhost:8080/uploads/" + menu.getId() + "/default_product.png");
+                }
             } else {
                 product.setProductImage(productDTO.getProductImage());
             }
@@ -162,5 +178,11 @@ public class ProductService {
      */
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public Product getProductById(Long id) {
+        return productRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
     }
 }

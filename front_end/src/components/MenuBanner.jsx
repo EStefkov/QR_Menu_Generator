@@ -2,48 +2,50 @@
 import React, { useState, useEffect } from 'react';
 import { getFullImageUrl } from "../api/adminDashboard";
 
-const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, initialTextColor = 'text-white' }) => {
+const MenuBanner = ({ bannerImage, menuName, onBannerUpload, onDefaultProductImageUpload, isAdmin, menuId, initialTextColor = 'text-white' }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingDefaultProduct, setIsUploadingDefaultProduct] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageUrl, setImageUrl] = useState('');
   const [textColor, setTextColor] = useState(initialTextColor?.replace(/['"]/g, '') || 'text-white');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(menuName?.replace(/['"]/g, ''));
 
-  // Debug log for props
-  useEffect(() => {
-    console.log('MenuBanner props:', { initialTextColor, menuName, menuId });
-  }, [initialTextColor, menuName, menuId]);
-
   useEffect(() => {
     setEditedName(menuName?.replace(/['"]/g, ''));
   }, [menuName]);
 
   useEffect(() => {
-    // Get full URL, which will return default banner if bannerImage is null
-    const fullUrl = getFullImageUrl(bannerImage);
-    setImageUrl(fullUrl);
+    // Only attempt to load image if bannerImage exists
+    if (bannerImage) {
+      const fullUrl = getFullImageUrl(bannerImage);
+      setImageUrl(fullUrl);
 
-    // Preload image
-    const img = new Image();
-    img.onload = () => {
+      // Preload image
+      const img = new Image();
+      img.onload = () => {
+        setImageError(false);
+        setIsLoading(false);
+      };
+      img.onerror = () => {
+        console.error('Failed to load image:', fullUrl);
+        setImageError(true);
+        setIsLoading(false);
+      };
+      setIsLoading(true);
+      img.src = fullUrl;
+    } else {
+      // If no banner image, set default state
+      setImageUrl('');
       setImageError(false);
       setIsLoading(false);
-    };
-    img.onerror = () => {
-      console.error('Failed to load image:', fullUrl);
-      setImageError(true);
-      setIsLoading(false);
-    };
-    setIsLoading(true);
-    img.src = fullUrl;
+    }
   }, [bannerImage]);
 
   // Update textColor when initialTextColor prop changes
   useEffect(() => {
     if (initialTextColor) {
       const cleanColor = initialTextColor.replace(/['"]/g, '');
-      console.log('Updating text color to:', cleanColor);
       setTextColor(cleanColor);
     }
   }, [initialTextColor]);
@@ -66,7 +68,6 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
 
   const handleColorChange = async (event) => {
     const newColor = event.target.value;
-    console.log('Color change requested:', newColor);
     setTextColor(newColor);
     
     try {
@@ -85,7 +86,6 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
       }
       
       const updatedMenu = await response.json();
-      console.log('Color update response:', updatedMenu);
       
     } catch (error) {
       console.error('Failed to save color:', error);
@@ -117,7 +117,6 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
       }
 
       const updatedMenu = await response.json();
-      console.log('Name update response:', updatedMenu);
       setIsEditingName(false);
     } catch (error) {
       console.error('Failed to save menu name:', error);
@@ -135,6 +134,20 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
     }
   };
 
+  const handleDefaultProductImageUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingDefaultProduct(true);
+      await onDefaultProductImageUpload(file);
+    } catch (error) {
+      alert(`Error uploading default product image: ${error.message}`);
+    } finally {
+      setIsUploadingDefaultProduct(false);
+    }
+  };
+
   const colorOptions = [
     { value: 'text-white', label: 'White' },
     { value: 'text-yellow-400', label: 'Gold' },
@@ -143,9 +156,6 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
     { value: 'text-red-400', label: 'Red' },
     { value: 'text-purple-400', label: 'Purple' }
   ];
-
-  // Debug log for current state
-  console.log('Current MenuBanner state:', { textColor, isLoading, imageError });
 
   return (
     <div className="w-full h-[300px] relative overflow-hidden">
@@ -200,49 +210,74 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, isAdmin, menuId, in
               )}
             </div>
           )}
-        </div>
 
-        {/* Admin controls */}
-        {isAdmin && (
-          <div className="absolute bottom-4 right-4 z-20 flex gap-2">
-            <select
-              onChange={handleColorChange}
-              value={textColor}
-              className="px-3 py-2 bg-white text-gray-800 rounded-lg text-sm cursor-pointer hover:bg-gray-50"
-            >
-              {colorOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            
-            <input
-              type="file"
-              id="banner-upload"
-              accept="image/*"
-              className="hidden"
-              onChange={handleBannerUpload}
-              disabled={isLoading}
-            />
-            <label
-              htmlFor="banner-upload"
-              className={`
-                inline-block
-                px-4 py-2
-                bg-blue-500 
-                hover:bg-blue-600 
-                text-white 
-                rounded-lg
-                cursor-pointer
-                transition-all
-                ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
-              `}
-            >
-              {isLoading ? 'Uploading...' : 'Change Banner'}
-            </label>
-          </div>
-        )}
+          {/* Admin controls */}
+          {isAdmin && (
+            <div className="absolute bottom-4 right-4 z-20 flex gap-2">
+              <select
+                onChange={handleColorChange}
+                value={textColor}
+                className="px-3 py-2 bg-white text-gray-800 rounded-lg text-sm cursor-pointer hover:bg-gray-50"
+              >
+                {colorOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              
+              <input
+                type="file"
+                id="banner-upload"
+                accept="image/*"
+                className="hidden"
+                onChange={handleBannerUpload}
+                disabled={isLoading}
+              />
+              <label
+                htmlFor="banner-upload"
+                className={`
+                  inline-block
+                  px-4 py-2
+                  bg-blue-500 
+                  hover:bg-blue-600 
+                  text-white 
+                  rounded-lg
+                  cursor-pointer
+                  transition-all
+                  ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+              >
+                {isLoading ? 'Uploading...' : 'Change Banner'}
+              </label>
+
+              <input
+                type="file"
+                id="default-product-upload"
+                accept="image/*"
+                className="hidden"
+                onChange={handleDefaultProductImageUpload}
+                disabled={isUploadingDefaultProduct}
+              />
+              <label
+                htmlFor="default-product-upload"
+                className={`
+                  inline-block
+                  px-4 py-2
+                  bg-green-500 
+                  hover:bg-green-600 
+                  text-white 
+                  rounded-lg
+                  cursor-pointer
+                  transition-all
+                  ${isUploadingDefaultProduct ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+              >
+                {isUploadingDefaultProduct ? 'Uploading...' : 'Set Default Product Image'}
+              </label>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

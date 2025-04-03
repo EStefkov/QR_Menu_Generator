@@ -2,6 +2,7 @@ package com.example.qr_menu.controllers;
 
 import com.example.qr_menu.dto.AccountDTO;
 import com.example.qr_menu.dto.LoginDTO;
+import com.example.qr_menu.dto.ChangePasswordDTO;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.services.AccountService;
 import com.example.qr_menu.utils.JwtTokenUtil;
@@ -15,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/accounts")
@@ -184,6 +186,73 @@ public class AccountController {
         }
     }
 
+    /**
+     * Get current authenticated user details
+     * @param authorizationHeader JWT token
+     * @return current user's AccountDTO
+     */
+    @GetMapping("/current")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String authorizationHeader) {
+        try {
+            // Extract JWT token
+            String token = authorizationHeader.replace("Bearer ", "");
+            
+            // Validate token
+            if (!jwtTokenUtil.validateToken(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+            }
+            
+            // Get email from token
+            String email = jwtTokenUtil.extractUsername(token);
+            
+            // Get account details
+            AccountDTO accountDTO = accountService.getAccountDtoByEmail(email);
+            
+            if (accountDTO == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
+            }
+            
+            return ResponseEntity.ok(accountDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Endpoint за смяна на парола
+     */
+    @PostMapping("/{id}/change-password")
+    public ResponseEntity<?> changePassword(
+            @PathVariable Long id,
+            @RequestBody ChangePasswordDTO passwordDTO,
+            @RequestHeader("Authorization") String token) {
+        
+        try {
+            // 1. Извличаме имейла на потребителя от JWT токена
+            String jwtToken = token.substring(7); // Премахваме "Bearer " от началото
+            String userEmail = jwtTokenUtil.getMailAddressFromToken(jwtToken);
+            
+            // 2. Извикваме сървиса за смяна на паролата
+            boolean success = accountService.changePassword(id, passwordDTO, userEmail);
+            
+            if (success) {
+                return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("error", "Failed to change password"));
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred: " + e.getMessage()));
+        }
+    }
 
 }
 

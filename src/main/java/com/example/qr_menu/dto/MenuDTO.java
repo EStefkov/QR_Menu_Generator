@@ -9,7 +9,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -17,13 +16,12 @@ import java.util.Date;
 public class MenuDTO {
     private Long id;
     private String category;
-    private Long restorantId; // Foreign key reference
-    @CreatedDate
     private Date createdAt;
-    @LastModifiedDate
     private Date updatedAt;
-    private String menuUrl; // Optional
-    private byte[] qrCodeImage; // Optional
-    private String menuImage;  // This field is important for storing the image path
+    private Long restaurantId;
+    private String menuUrl;
+    private String menuImage;
+    private byte[] qrCodeImage;
+    private String defaultProductImage;
     private String textColor;
 }

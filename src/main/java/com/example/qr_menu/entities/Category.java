@@ -4,7 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"menu", "products"})
+@EqualsAndHashCode(exclude = {"menu", "products"})
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,7 +27,7 @@ public class Category {
     )
     private String categoryImage;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "menu_id", nullable = false)
     private Menu menu;
 

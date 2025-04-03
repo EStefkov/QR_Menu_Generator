@@ -59,6 +59,7 @@ CREATE TABLE orders (
                         CONSTRAINT fk_order_restorant FOREIGN KEY (restorant_id) REFERENCES restorant(id) ON DELETE CASCADE
 );
 
+
 -- Order_Product Join Table
 CREATE TABLE order_product (
                                order_id BIGINT,
