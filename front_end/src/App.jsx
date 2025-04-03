@@ -5,7 +5,7 @@ import {
     Navigate,
     useLocation,
   } from "react-router-dom";
-  import { useContext } from "react";
+  import { useContext, useEffect } from "react";
   import NavBar from "./components/NavBar";
   import Login from "./pages/Login.jsx";
   import RegisterPage from "./pages/Register.jsx";
@@ -17,6 +17,7 @@ import {
   import Favorites from "./pages/Favorites.jsx";
   import { AuthContext } from "./contexts/AuthContext.jsx";
   import { CartProvider } from './contexts/CartContext';
+  import { useLanguage } from './contexts/LanguageContext';
   import Cart from "./components/Cart.jsx";
   import OrderReview from "./components/OrderReview.jsx";
   import OrderConfirmation from "./components/OrderConfirmation.jsx";
@@ -27,8 +28,33 @@ import {
   
   const Layout = ({ children }) => {
     const location = useLocation();
+    const { language, changeLanguage } = useLanguage();
+  
     // Don't show NavBar on login and register pages
     const hideNavBar = location.pathname === "/login" || location.pathname === "/register";
+  
+    // Make sure language is correctly set
+    useEffect(() => {
+      // Get stored language preference
+      const storedLang = localStorage.getItem('language');
+      
+      // Apply language preference
+      if (storedLang && storedLang !== language) {
+        console.log(`Initializing language from localStorage in Layout: ${storedLang}`);
+        changeLanguage(storedLang);
+        
+        // Set HTML lang attribute for accessibility
+        document.documentElement.setAttribute('lang', storedLang);
+      }
+      
+      // Apply stored theme preference
+      const storedTheme = localStorage.getItem('theme');
+      if (storedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }, []);
   
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
@@ -42,6 +68,34 @@ import {
     const { userData } = useContext(AuthContext);
     const isAuthenticated = !!userData.token;
     const accountType = userData.accountType;
+    const { language } = useLanguage();
+  
+    // Set up app-wide effects
+    useEffect(() => {
+      // Update the HTML lang attribute whenever language changes
+      document.documentElement.setAttribute('lang', language);
+      
+      // Set up viewport meta tag for responsive design
+      const viewportMeta = document.querySelector('meta[name="viewport"]');
+      if (!viewportMeta) {
+        const meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
+        document.head.appendChild(meta);
+      }
+      
+      // Ensure correct theme is applied
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const storedTheme = localStorage.getItem('theme');
+      
+      if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+      
+      console.log(`App initialized with language: ${language}`);
+    }, [language]);
   
     return (
       <Router>

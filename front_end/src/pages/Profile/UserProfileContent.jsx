@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { profileApi } from '../../api/profileApi';
-import { HiUser, HiMail, HiPhone, HiCalendar, HiShoppingCart, HiHeart, HiClock, HiExclamationCircle, HiInformationCircle, HiRefresh } from 'react-icons/hi';
+import { HiUser, HiMail, HiPhone, HiCalendar, HiShoppingCart, HiHeart, HiClock, HiExclamationCircle, HiInformationCircle, HiRefresh, HiChevronUp, HiChevronDown } from 'react-icons/hi';
 
 const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
   const { t } = useLanguage();
@@ -9,6 +9,7 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState(null);
+  const [isFeaturesExpanded, setIsFeaturesExpanded] = useState(false);
 
   useEffect(() => {
     // Only fetch data if we have a valid profile
@@ -48,6 +49,10 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
     } finally {
       setStatsLoading(false);
     }
+  };
+
+  const toggleFeatures = () => {
+    setIsFeaturesExpanded(!isFeaturesExpanded);
   };
 
   if (loading) {
@@ -137,65 +142,65 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-4 md:mb-6">
           {t('profile.userProfile') || 'User Profile'}
         </h2>
         
-        {/* User Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-800/30 shadow rounded-xl p-5 flex items-center hover:shadow-md transition">
-            <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg mr-4">
-              <HiUser className="w-8 h-8 text-blue-600 dark:text-blue-300" />
+        {/* User Info Cards - Responsive Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-800/30 shadow rounded-xl p-4 md:p-5 flex items-center hover:shadow-md transition">
+            <div className="bg-blue-100 dark:bg-blue-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4">
+              <HiUser className="w-6 h-6 md:w-8 md:h-8 text-blue-600 dark:text-blue-300" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.name') || 'Name'}</p>
-              <p className="text-lg font-semibold text-gray-800 dark:text-white">
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.name') || 'Name'}</p>
+              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[120px] md:max-w-full">
                 {profileData.firstName || ''} {profileData.lastName || ''}
               </p>
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 shadow rounded-xl p-5 flex items-center hover:shadow-md transition">
-            <div className="bg-green-100 dark:bg-green-900 p-3 rounded-lg mr-4">
-              <HiMail className="w-8 h-8 text-green-600 dark:text-green-300" />
+          <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 shadow rounded-xl p-4 md:p-5 flex items-center hover:shadow-md transition">
+            <div className="bg-green-100 dark:bg-green-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4">
+              <HiMail className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-300" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.email') || 'Email'}</p>
-              <p className="text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[180px]">
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.email') || 'Email'}</p>
+              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[120px] md:max-w-[180px]">
                 {getEmail()}
               </p>
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-800/30 shadow rounded-xl p-5 flex items-center hover:shadow-md transition">
-            <div className="bg-purple-100 dark:bg-purple-900 p-3 rounded-lg mr-4">
-              <HiPhone className="w-8 h-8 text-purple-600 dark:text-purple-300" />
+          <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-800/30 shadow rounded-xl p-4 md:p-5 flex items-center hover:shadow-md transition">
+            <div className="bg-purple-100 dark:bg-purple-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4">
+              <HiPhone className="w-6 h-6 md:w-8 md:h-8 text-purple-600 dark:text-purple-300" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.phone') || 'Phone'}</p>
-              <p className="text-lg font-semibold text-gray-800 dark:text-white">
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.phone') || 'Phone'}</p>
+              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[120px] md:max-w-full">
                 {profileData.phone || t('profile.notProvided') || 'Not provided'}
               </p>
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-800/30 shadow rounded-xl p-5 flex items-center hover:shadow-md transition">
-            <div className="bg-amber-100 dark:bg-amber-900 p-3 rounded-lg mr-4">
-              <HiCalendar className="w-8 h-8 text-amber-600 dark:text-amber-300" />
+          <div className="bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-800/30 shadow rounded-xl p-4 md:p-5 flex items-center hover:shadow-md transition">
+            <div className="bg-amber-100 dark:bg-amber-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4">
+              <HiCalendar className="w-6 h-6 md:w-8 md:h-8 text-amber-600 dark:text-amber-300" />
             </div>
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{t('profile.memberSince') || 'Member Since'}</p>
-              <p className="text-lg font-semibold text-gray-800 dark:text-white">
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.memberSince') || 'Member Since'}</p>
+              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[120px] md:max-w-full">
                 {formatDate(profileData.createdAt)}
               </p>
             </div>
           </div>
         </div>
         
-        {/* Activity Summary */}
-        <div className="bg-white dark:bg-gray-700 shadow rounded-xl p-6 mb-8">
+        {/* Activity Summary - Responsive */}
+        <div className="bg-white dark:bg-gray-700 shadow rounded-xl p-4 md:p-6 mb-6 md:mb-8">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+            <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white">
               {t('profile.activitySummary') || 'Activity Summary'}
             </h3>
             
@@ -204,22 +209,23 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
               onClick={fetchUserStats} 
               className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 flex items-center transition"
               disabled={statsLoading}
+              aria-label={t('common.refresh') || 'Refresh'}
             >
-              <HiRefresh className={`w-5 h-5 mr-1 ${statsLoading ? 'animate-spin' : ''}`} />
-              <span className="text-sm font-medium">{t('common.refresh') || 'Refresh'}</span>
+              <HiRefresh className={`w-5 h-5 ${statsLoading ? 'animate-spin' : ''}`} />
+              <span className="text-sm font-medium ml-1 hidden sm:inline">{t('common.refresh') || 'Refresh'}</span>
             </button>
           </div>
           
           {statsError && (
             <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-3 rounded-lg mb-4 text-sm">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <p className="flex items-center">
-                  <HiExclamationCircle className="w-5 h-5 mr-2" />
-                  {statsError}
+                  <HiExclamationCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm">{statsError}</span>
                 </p>
                 <button 
                   onClick={fetchUserStats} 
-                  className="ml-3 bg-red-100 hover:bg-red-200 dark:bg-red-800/30 dark:hover:bg-red-700/30 text-red-800 dark:text-red-300 px-3 py-1 rounded-lg text-xs font-medium transition flex items-center"
+                  className="ml-0 sm:ml-3 bg-red-100 hover:bg-red-200 dark:bg-red-800/30 dark:hover:bg-red-700/30 text-red-800 dark:text-red-300 px-2 py-1 rounded-lg text-xs font-medium transition flex items-center"
                 >
                   <HiRefresh className="w-3 h-3 mr-1" />
                   {t('common.retry') || 'Retry'}
@@ -230,73 +236,107 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
           
           {/* If no stats loaded yet but no error, show a big refresh button */}
           {!statsError && orderCount === 0 && favoritesCount === 0 && !statsLoading && (
-            <div className="text-center py-6 mb-4">
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
+            <div className="text-center py-4 md:py-6 mb-2 md:mb-4">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-3 md:mb-4">
                 {t('profile.noActivityData') || 'No activity data available yet'}
               </p>
               <button 
                 onClick={fetchUserStats}
-                className="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition"
+                className="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-1.5 px-3 md:py-2 md:px-4 rounded-lg transition text-sm"
               >
-                <HiRefresh className="w-5 h-5 mr-2" />
+                <HiRefresh className="w-4 h-4 md:w-5 md:h-5 mr-1.5 md:mr-2" />
                 {t('common.loadData') || 'Load Data'}
               </button>
             </div>
           )}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
             <div className="flex items-center">
-              <div className="bg-indigo-100 dark:bg-indigo-900 p-3 rounded-full mr-4">
-                <HiShoppingCart className="w-8 h-8 text-indigo-600 dark:text-indigo-300" />
+              <div className="bg-indigo-100 dark:bg-indigo-900 p-2 md:p-3 rounded-full mr-3 md:mr-4 flex-shrink-0">
+                <HiShoppingCart className="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-300" />
               </div>
               <div>
-                <p className="text-xl font-bold text-gray-800 dark:text-white">
+                <p className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">
                   {statsLoading ? (
                     <span className="flex items-center">
-                      <span className="w-6 h-6 border-t-2 border-b-2 border-indigo-500 rounded-full animate-spin mr-2"></span>
-                      {t('loading') || 'Loading...'}
+                      <span className="w-4 h-4 md:w-6 md:h-6 border-t-2 border-b-2 border-indigo-500 rounded-full animate-spin mr-2"></span>
+                      <span className="text-sm md:text-base">{t('loading') || 'Loading...'}</span>
                     </span>
                   ) : (
                     orderCount
                   )}
                 </p>
-                <p className="text-gray-500 dark:text-gray-400">{t('profile.totalOrders') || 'Total Orders'}</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.totalOrders') || 'Total Orders'}</p>
               </div>
             </div>
             
             <div className="flex items-center">
-              <div className="bg-pink-100 dark:bg-pink-900 p-3 rounded-full mr-4">
-                <HiHeart className="w-8 h-8 text-pink-600 dark:text-pink-300" />
+              <div className="bg-pink-100 dark:bg-pink-900 p-2 md:p-3 rounded-full mr-3 md:mr-4 flex-shrink-0">
+                <HiHeart className="w-6 h-6 md:w-8 md:h-8 text-pink-600 dark:text-pink-300" />
               </div>
               <div>
-                <p className="text-xl font-bold text-gray-800 dark:text-white">
+                <p className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">
                   {statsLoading ? (
                     <span className="flex items-center">
-                      <span className="w-6 h-6 border-t-2 border-b-2 border-pink-500 rounded-full animate-spin mr-2"></span>
-                      {t('loading') || 'Loading...'}
+                      <span className="w-4 h-4 md:w-6 md:h-6 border-t-2 border-b-2 border-pink-500 rounded-full animate-spin mr-2"></span>
+                      <span className="text-sm md:text-base">{t('loading') || 'Loading...'}</span>
                     </span>
                   ) : (
                     favoritesCount
                   )}
                 </p>
-                <p className="text-gray-500 dark:text-gray-400">{t('profile.favoriteProducts') || 'Favorite Products'}</p>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.favoriteProducts') || 'Favorite Products'}</p>
               </div>
             </div>
           </div>
         </div>
         
-        {/* Placeholder for Future Features */}
-        <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-700 dark:to-blue-900/20 shadow rounded-xl p-6 hover:shadow-md transition">
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-            {t('profile.comingSoon') || 'Coming Soon'}
-          </h3>
-          
-          <div className="text-center py-8">
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-8 inline-block">
-              <HiClock className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto" />
-              <p className="mt-4 text-gray-600 dark:text-gray-300">{t('profile.moreFeaturesSoon') || 'More features coming soon!'}</p>
+        {/* Placeholder for Future Features - Collapsible on mobile */}
+        <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-700 dark:to-blue-900/20 shadow rounded-xl hover:shadow-md transition">
+          <div className="p-4 md:p-6">
+            <div className="flex justify-between items-center mb-2 md:mb-4">
+              <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white">
+                {t('profile.comingSoon') || 'Coming Soon'}
+              </h3>
+              
+              {/* Mobile Toggle Button */}
+              <button 
+                onClick={toggleFeatures} 
+                className="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                aria-expanded={isFeaturesExpanded}
+                aria-label={isFeaturesExpanded ? t('responsive.collapse') : t('responsive.expand')}
+              >
+                {isFeaturesExpanded ? (
+                  <HiChevronUp className="w-5 h-5" />
+                ) : (
+                  <HiChevronDown className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+            
+            {/* Mobile Collapsible Content */}
+            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isFeaturesExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 md:max-h-none md:opacity-100'}`}>
+              <div className="text-center py-4 md:py-8">
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 md:p-8 inline-block">
+                  <HiClock className="w-12 h-12 md:w-16 md:h-16 text-gray-400 dark:text-gray-500 mx-auto" />
+                  <p className="mt-3 md:mt-4 text-sm md:text-base text-gray-600 dark:text-gray-300">
+                    {t('profile.moreFeaturesSoon') || 'More features coming soon!'}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+        
+        {/* Back to Top - Mobile Only */}
+        <div className="md:hidden flex justify-center mt-8">
+          <button 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+            className="flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition"
+          >
+            <HiChevronUp className="w-5 h-5 mr-1" />
+            {t('responsive.backToTop') || 'Back to top'}
+          </button>
         </div>
       </div>
     </div>

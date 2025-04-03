@@ -17,7 +17,19 @@ const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { cart } = useCart();
-  const { t } = useLanguage();
+  const { t, language, changeLanguage } = useLanguage();
+  
+  // Ensure language is properly initialized
+  useEffect(() => {
+    // Get stored language from localStorage
+    const storedLang = localStorage.getItem('language');
+    
+    // If there's a stored language and it doesn't match current, sync it
+    if (storedLang && storedLang !== language) {
+      console.log(`Synchronizing language from localStorage: ${storedLang}`);
+      changeLanguage(storedLang);
+    }
+  }, []);
   
   // Calculate total items in cart
   const cartItemCount = cart?.reduce((total, item) => total + item.quantity, 0) || 0;
@@ -34,6 +46,7 @@ const NavBar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProfileOpen]);
 
+  // Validate token when component mounts
   useEffect(() => {
     if (userData?.token) {
       validateToken(userData.token)

@@ -198,7 +198,7 @@ const translations = {
   "profile.totalOrders": "Общо поръчки",
   "profile.favoriteProducts": "Любими продукти",
   "profile.comingSoon": "Очаквайте скоро",
-  "profile.moreFeaturesSoon": "Още функционалности очаквайте скоро",
+  "profile.moreFeaturesSoon": "Очаквайте още функционалности скоро!",
   "profile.personalInfo": "Лична информация",
   "profile.changePicture": "Смяна на снимка",
   "profile.pictureRequirements": "JPG, PNG или GIF (макс. 2MB)",
@@ -269,6 +269,21 @@ const translations = {
   "demo_login_section": "Елементи за автентикация",
   "demo_theme_title": "Текуща тема",
   "demo_language_title": "Текущ език",
+  
+  // Responsive design text
+  "responsive.showMore": "Покажи повече",
+  "responsive.showLess": "Покажи по-малко",
+  "responsive.expand": "Разгъни",
+  "responsive.collapse": "Свий",
+  "responsive.menu": "Меню",
+  "responsive.dashboard": "Табло",
+  "responsive.backToTop": "Връщане нагоре",
+  
+  // Stats & data loading
+  "common.loadData": "Зареди данни",
+  "common.loadingData": "Зареждане на данни...",
+  "common.noData": "Няма налични данни",
+  "common.dataError": "Грешка при зареждане на данни",
 };
 
 export default translations; 

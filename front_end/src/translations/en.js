@@ -198,7 +198,7 @@ const translations = {
   "profile.totalOrders": "Total Orders",
   "profile.favoriteProducts": "Favorite Products",
   "profile.comingSoon": "Coming Soon",
-  "profile.moreFeaturesSoon": "More features coming soon",
+  "profile.moreFeaturesSoon": "More features coming soon!",
   "profile.personalInfo": "Personal Information",
   "profile.changePicture": "Change Picture",
   "profile.pictureRequirements": "JPG, PNG, or GIF (max. 2MB)",
@@ -269,6 +269,21 @@ const translations = {
   "demo_login_section": "Authentication Elements",
   "demo_theme_title": "Current Theme",
   "demo_language_title": "Current Language",
+  
+  // Responsive design text
+  "responsive.showMore": "Show more",
+  "responsive.showLess": "Show less",
+  "responsive.expand": "Expand",
+  "responsive.collapse": "Collapse",
+  "responsive.menu": "Menu",
+  "responsive.dashboard": "Dashboard",
+  "responsive.backToTop": "Back to top",
+  
+  // Stats & data loading
+  "common.loadData": "Load Data",
+  "common.loadingData": "Loading data...",
+  "common.noData": "No data available",
+  "common.dataError": "Error loading data",
 };
 
 export default translations; 
