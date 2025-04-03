@@ -135,121 +135,63 @@ export function AuthProvider({ children }) {
   // Initialize auth state from localStorage
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = localStorage.getItem("token");
-      console.log("Initial auth state check - Token exists:", !!storedToken);
+      // Check if we're on profile page
+      const isOnProfilePage = window.location.pathname.includes('/profile');
+      console.log("AuthContext initializing for page:", window.location.pathname);
       
+      // Get stored token
+      const storedToken = localStorage.getItem("token");
+      console.log("Initial auth state check - Token exists:", !!storedToken, "On profile page:", isOnProfilePage);
+      
+      // Опростена логика - на профил страница или където има токен в localStorage, винаги зареждаме от localStorage
       if (storedToken) {
-        const id = localStorage.getItem("id");
-        console.log("User ID from localStorage:", id);
+        // Има токен - зареждаме данните от localStorage
+        const id = localStorage.getItem("id") || localStorage.getItem("userId");
+        setUserData({
+          id: id,
+          token: storedToken,
+          firstName: localStorage.getItem("firstName"),
+          lastName: localStorage.getItem("lastName"),
+          profilePicture: localStorage.getItem("profilePicture"),
+          accountType: localStorage.getItem("accountType"),
+          mailAddress: localStorage.getItem("mailAddress"),
+        });
         
-        // Optional: validate token with backend before using
-        try {
-          const isValid = await validateToken(storedToken);
-          
-          if (isValid) {
-            setUserData({
-              id: id,
-              token: storedToken,
-              firstName: localStorage.getItem("firstName"),
-              lastName: localStorage.getItem("lastName"),
-              profilePicture: localStorage.getItem("profilePicture"),
-              accountType: localStorage.getItem("accountType"),
-              mailAddress: localStorage.getItem("mailAddress"),
-            });
-            console.log("Auth initialized with valid token");
-          } else {
-            console.log("Stored token is invalid, starting with empty auth state");
-            // Clear any remaining data
-            logout();
-          }
-        } catch (error) {
-          console.error("Error during token validation:", error);
-          // Start with empty state on error
-          setUserData({});
+        // На профил страница никога не правим валидация на токена
+        if (!isOnProfilePage) {
+          // За други страници, валидираме токена във фонов режим, без да блокираме UI
+          // Това не засяга текущото зареждане
+          setTimeout(async () => {
+            try {
+              await validateToken(storedToken);
+              console.log("Background token validation successful");
+            } catch (error) {
+              console.warn("Background token validation failed:", error);
+            }
+          }, 2000);
         }
       } else {
+        // Няма токен - празно състояние
         console.log("No token found, starting with empty auth state");
         setUserData({});
       }
       
-      // Mark initialization as complete
+      // Маркираме инициализацията като завършена
       setIsInitialized(true);
     };
     
     initAuth();
   }, []);
 
-  // Check localStorage periodically for changes (e.g., from another tab)
+  // Listen for custom events to update user data
   useEffect(() => {
-    const checkStoredAuth = () => {
-      const currentToken = localStorage.getItem("token");
-      const currentId = localStorage.getItem("id");
-      
-      // If token was removed but we still have it in state, log out
-      if (!currentToken && userData.token) {
-        console.log("Token removed from localStorage, logging out");
-        logout();
-        return;
-      }
-      
-      // Важно: Проверяваме само дали токенът е премахнат, но не и дали е променен
-      // Това позволява обновяване на данни, без да прави логаут при сценарии като обновяване на профила
-      
-      // Проверяваме само за промени в други данни, но НЕ логваме при промяна на токен/id
-      if (currentToken && userData.token) {
-        // Обновяваме само допълнителните данни на потребителя, но не пипаме токена
-        const firstName = localStorage.getItem("firstName");
-        const lastName = localStorage.getItem("lastName");
-        const profilePicture = localStorage.getItem("profilePicture");
-        const accountType = localStorage.getItem("accountType");
-        const mailAddress = localStorage.getItem("mailAddress");
-        
-        if (firstName !== userData.firstName || 
-            lastName !== userData.lastName || 
-            profilePicture !== userData.profilePicture || 
-            accountType !== userData.accountType ||
-            mailAddress !== userData.mailAddress) {
-          
-          console.log("User profile data changed, updating state without affecting authentication");
-          setUserData(prev => ({
-            ...prev,
-            firstName,
-            lastName,
-            profilePicture,
-            accountType,
-            mailAddress
-          }));
-        }
-      }
-    };
-    
-    // Listen for storage event to detect changes from other tabs
-    const handleStorageChange = (event) => {
-      // Игнорираме промени, които могат да бъдат предизвикани от обновяване на профила
-      if (event.key === "firstName" || 
-          event.key === "lastName" || 
-          event.key === "profilePicture" || 
-          event.key === "phone" ||
-          event.key === "mailAddress") {
-        console.log(`Profile data updated (${event.key}), updating state without auth check`);
-        checkStoredAuth();
-        return;
-      }
-      
-      // За други промени изпълняваме пълната проверка
-      if (event.key === "token" || event.key === "id" || event.key === null) {
-        console.log("Critical auth data changed, full auth check needed");
-        checkStoredAuth();
-      }
-    };
-    
     // Listen for custom events
     const handleUserDataUpdated = () => {
       console.log("AuthContext: User data updated event received");
       updateUserUpdatingState(true); // Set updating flag to true
       
       // Simple refresh user data from localStorage without token validation
-      const id = localStorage.getItem("id");
+      const id = localStorage.getItem("id") || localStorage.getItem("userId");
       const token = localStorage.getItem("token");
       
       if (id && token) {
@@ -265,25 +207,19 @@ export function AuthProvider({ children }) {
         });
       }
       
-      // Reset the updating flag after a longer delay to ensure all components have time to update
+      // Reset the updating flag after a delay
       setTimeout(() => {
         updateUserUpdatingState(false);
         console.log("AuthContext: Profile update completed");
-      }, 30000); // Увеличиваем до 30 секунд
+      }, 5000); // Shorter delay to reduce unnecessary flags
     };
     
-    window.addEventListener('storage', handleStorageChange);
     window.addEventListener('userDataUpdated', handleUserDataUpdated);
     
-    // Намаляваме честотата на периодичната проверка за да не натоварваме
-    const interval = setInterval(checkStoredAuth, 15000); // 15 секунди
-    
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('userDataUpdated', handleUserDataUpdated);
-      clearInterval(interval);
     };
-  }, [userData.token, userData.id, userData.firstName, userData.lastName, userData.profilePicture, userData.accountType, userData.mailAddress]);
+  }, []);
 
   // Login function: save data to localStorage and update state
   const login = (token, payload) => {

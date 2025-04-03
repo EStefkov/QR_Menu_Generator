@@ -5,7 +5,7 @@ import {
     Navigate,
     useLocation,
   } from "react-router-dom";
-  import { useContext, useEffect } from "react";
+  import { useContext, useEffect, useState } from "react";
   import NavBar from "./components/NavBar";
   import Login from "./pages/Login.jsx";
   import RegisterPage from "./pages/Register.jsx";
@@ -25,6 +25,7 @@ import {
   import OrderDetail from './components/OrderDetail.jsx';
   import ProtectedRoute from './components/ProtectedRoute';
   import ProfilePage from './pages/Profile/ProfilePage';
+  import { getStoredToken } from './api/account';
   
   const Layout = ({ children }) => {
     const location = useLocation();
@@ -66,9 +67,23 @@ import {
   
   const App = () => {
     const { userData } = useContext(AuthContext);
-    const isAuthenticated = !!userData.token;
-    const accountType = userData.accountType;
+    const [currentPath, setCurrentPath] = useState(window.location.pathname);
+    const isProfilePage = currentPath.includes('/profile');
+    
+    // Improved authentication check that prioritizes localStorage
+    const isAuthenticated = !!userData.token || !!localStorage.getItem('token');
+    const accountType = userData.accountType || localStorage.getItem('accountType');
     const { language } = useLanguage();
+  
+    // Update current path on navigation
+    useEffect(() => {
+      const handleLocationChange = () => {
+        setCurrentPath(window.location.pathname);
+      };
+      
+      window.addEventListener('popstate', handleLocationChange);
+      return () => window.removeEventListener('popstate', handleLocationChange);
+    }, []);
   
     // Set up app-wide effects
     useEffect(() => {
@@ -207,13 +222,11 @@ import {
           <Route
             path="/profile"
             element={
-              isAuthenticated ? (
+              <ProtectedRoute>
                 <Layout>
                   <ProfilePage />
                 </Layout>
-              ) : (
-                <Navigate to="/login" />
-              )
+              </ProtectedRoute>
             }
           />
         </Routes>

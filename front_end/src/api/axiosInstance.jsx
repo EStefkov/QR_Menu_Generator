@@ -45,24 +45,25 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Don't handle auth errors during profile update
-    if (isUserUpdatingProfile()) {
-      console.log('Auth error during profile update - continuing without logout');
-      // Let the specific request handle the error
+    // Skip all auth error handling on profile page to prevent logout
+    if (window.location.pathname.includes('/profile')) {
+      console.log('Error on profile page - completely ignoring auth errors');
+      // Don't do any auth handling on profile page
       return Promise.reject(error);
     }
     
-    // Handle unauthorized or forbidden responses 
+    // Don't handle auth errors during profile update
+    if (isUserUpdatingProfile()) {
+      console.log('Auth error during profile update - continuing without logout');
+      return Promise.reject(error);
+    }
+    
+    // For other pages, we will only LOG the errors but NOT redirect
     if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // Check if we're not on the login page to avoid redirect loops
-      if (!window.location.pathname.includes('/login')) {
-        console.log('Auth error detected - redirecting to login');
-        // Clear auth data
-        localStorage.removeItem('token');
-        localStorage.removeItem('id');
-        // Redirect to login page
-        window.location.href = '/login';
-      }
+      console.log('Auth error detected, but not redirecting automatically');
+      
+      // Don't clear auth data or redirect automatically
+      // Let the components handle this themselves
     }
     
     return Promise.reject(error);

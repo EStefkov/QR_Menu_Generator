@@ -41,61 +41,129 @@ axiosInstance.interceptors.response.use(
   }
 );
 
+// Helper to get cached profile data from localStorage
+const getCachedProfileData = () => {
+  const firstName = localStorage.getItem('firstName');
+  const lastName = localStorage.getItem('lastName');
+  const accountId = localStorage.getItem('userId') || localStorage.getItem('id');
+  const accountType = localStorage.getItem('accountType');
+  const mailAddress = localStorage.getItem('mailAddress');
+  const profilePicture = localStorage.getItem('profilePicture');
+  const phone = localStorage.getItem('phone');
+  
+  if (firstName && lastName && accountId) {
+    return {
+      id: accountId,
+      firstName,
+      lastName,
+      accountType,
+      mailAddress,
+      profilePicture,
+      phone
+    };
+  }
+  
+  return null;
+};
+
 export const profileApi = {
   // Get user profile information
   getUserProfile: async () => {
     try {
       console.log('Fetching user profile data...');
       const token = localStorage.getItem('token');
+      const isOnProfilePage = window.location.pathname.includes('/profile');
+      
       if (!token) {
         console.error('No token found in localStorage');
         throw new Error('Authentication required. Please log in.');
       }
       
-      const response = await axiosInstance.get('/accounts/current');
-      
-      // Store email address and account type in localStorage for consistency
-      if (response.data) {
-        if (response.data.mailAddress) {
-          localStorage.setItem('mailAddress', response.data.mailAddress);
-        }
-        if (response.data.accountType) {
-          localStorage.setItem('accountType', response.data.accountType);
-        }
-        if (response.data.firstName) {
-          localStorage.setItem('firstName', response.data.firstName);
-        }
-        if (response.data.lastName) {
-          localStorage.setItem('lastName', response.data.lastName);
-        }
-        if (response.data.id) {
-          localStorage.setItem('userId', response.data.id);
-          localStorage.setItem('accountId', response.data.id); // Also store as accountId for consistency
+      // IMPORTANT: On profile page, ALWAYS use cached data first
+      if (isOnProfilePage) {
+        const cachedData = getCachedProfileData();
+        
+        if (cachedData) {
+          console.log('Using cached profile data on profile page (immediate return)');
+          
+          // Start a background fetch that won't block rendering
+          setTimeout(() => {
+            console.log('Starting background profile fetch...');
+            axiosInstance.get('/accounts/current')
+              .then(response => {
+                console.log('Background profile fetch successful');
+                
+                // Update localStorage with fresh data
+                if (response.data) {
+                  if (response.data.mailAddress) localStorage.setItem('mailAddress', response.data.mailAddress);
+                  if (response.data.accountType) localStorage.setItem('accountType', response.data.accountType);
+                  if (response.data.firstName) localStorage.setItem('firstName', response.data.firstName);
+                  if (response.data.lastName) localStorage.setItem('lastName', response.data.lastName);
+                  if (response.data.id) {
+                    localStorage.setItem('userId', response.data.id);
+                    localStorage.setItem('accountId', response.data.id);
+                    localStorage.setItem('id', response.data.id);
+                  }
+                  if (response.data.profilePicture) localStorage.setItem('profilePicture', response.data.profilePicture);
+                  
+                  // Send event to update UI with new data
+                  window.dispatchEvent(new Event('userDataUpdated'));
+                }
+              })
+              .catch(error => {
+                // Just log the error, but don't affect the UI
+                console.warn('Background profile fetch failed, continuing with cached data', error);
+              });
+          }, 1500);
+          
+          return cachedData;
         }
       }
       
-      console.log("Fetched user profile data:", response.data);
+      // For non-profile pages or if no cached data, fetch from API
+      const response = await axiosInstance.get('/accounts/current');
+      
+      // Store data in localStorage for future use
+      if (response.data) {
+        if (response.data.mailAddress) localStorage.setItem('mailAddress', response.data.mailAddress);
+        if (response.data.accountType) localStorage.setItem('accountType', response.data.accountType);
+        if (response.data.firstName) localStorage.setItem('firstName', response.data.firstName);
+        if (response.data.lastName) localStorage.setItem('lastName', response.data.lastName);
+        if (response.data.id) {
+          localStorage.setItem('userId', response.data.id);
+          localStorage.setItem('accountId', response.data.id);
+          localStorage.setItem('id', response.data.id);
+        }
+        if (response.data.profilePicture) localStorage.setItem('profilePicture', response.data.profilePicture);
+      }
+      
+      console.log("Fetched user profile data from API:", response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching user profile:', error);
       
-      // Handle different types of errors with more informative messages
+      // On ANY error on profile page, prefer cached data
+      if (window.location.pathname.includes('/profile')) {
+        const cachedData = getCachedProfileData();
+        
+        if (cachedData) {
+          console.log('Error fetching profile, using cached data as fallback');
+          return cachedData;
+        }
+      }
+      
+      // Handle different error types
       if (error.response) {
-        // Server responded with an error status
-        if (error.response.status === 403) {
-          throw new Error('Session expired or insufficient permissions. Please log in again.');
-        } else if (error.response.status === 401) {
-          throw new Error('Unauthorized. Please log in again.');
+        if (error.response.status === 403 || error.response.status === 401) {
+          throw new Error('Session expired. Please log in again.');
         } else if (error.response.status === 404) {
           throw new Error('User profile not found.');
         } else {
           throw new Error(error.response.data?.message || `Server error: ${error.response.status}`);
         }
       } else if (error.request) {
-        // Request made but no response received (network error)
         throw new Error('Network error. Please check your connection and try again.');
       } else {
-        // Something else happened
         throw new Error(error.message || 'Failed to fetch profile details');
       }
     }

@@ -4,6 +4,19 @@ import { useAuth } from "../contexts/AuthContext";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
+// Utility function to prevent redirects on profile page
+export const getStoredToken = () => {
+  const token = localStorage.getItem('token');
+  const isProfilePage = window.location.pathname.includes('/profile');
+  
+  if (token && isProfilePage) {
+    console.log("On profile page with token - skipping validation");
+    return { valid: true, token };
+  }
+  
+  return token;
+};
+
 // Референция към текущото състояние на userUpdating флага
 let isUserUpdating = false;
 let lastUpdateTime = 0; // Запазваме времето на последната промяна на флага

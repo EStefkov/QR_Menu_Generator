@@ -77,29 +77,12 @@ const ProfilePage = () => {
     }
   };
   
+  // Инициализация на страницата и зареждане на данни
   useEffect(() => {
-    if (userData && userData.token) {
-      fetchUserData();
-    } else {
-      // Check if we're in the middle of a profile update before redirecting
-      const isUpdating = localStorage.getItem("userIsUpdating") === "true";
-      const updatingTimestamp = localStorage.getItem("userUpdatingTimestamp");
-      
-      if (isUpdating || (updatingTimestamp && Date.now() - parseInt(updatingTimestamp) < 30000)) {
-        console.log("Page refresh during profile update - attempting to recover session");
-        
-        // Try to recover from localStorage
-        const storedToken = localStorage.getItem("token");
-        if (storedToken) {
-          console.log("Found token in localStorage, attempting to restore session");
-          // Let the page load without redirecting - AuthContext will handle reinitialization
-          return;
-        }
-      }
-      
-      navigate('/login');
-    }
-  }, [userData, navigate]);
+    // Веднага зареждаме потребителските данни
+    fetchUserData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Ensure accountId is set in localStorage when profile data is updated
   useEffect(() => {
@@ -124,27 +107,49 @@ const ProfilePage = () => {
     setMobileMenuOpen(false); // Close mobile menu after tab selection
   };
   
-  // Check if we have a token in localStorage even if AuthContext hasn't loaded yet
-  // This prevents flashing redirect during page load/refresh
-  if (!userData || !userData.token) {
-    const storedToken = localStorage.getItem("token");
-    const isUpdating = localStorage.getItem("userIsUpdating") === "true";
-    const updatingTimestamp = localStorage.getItem("userUpdatingTimestamp");
-    
-    if (storedToken && (isUpdating || (updatingTimestamp && Date.now() - parseInt(updatingTimestamp) < 30000))) {
-      // Show loading state instead of redirecting during profile update
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-700 dark:text-gray-300">{t('common.loading') || 'Loading...'}</p>
+  // Показваме съдържание с кеширани данни, докато зареждаме
+  const getCachedName = () => {
+    return `${localStorage.getItem('firstName') || ''} ${localStorage.getItem('lastName') || ''}`;
+  };
+  
+  const getCachedProfile = () => {
+    return localStorage.getItem('profilePicture') || '';
+  };
+  
+  // Показваме loading спинер, докато се зареждат данните
+  if (!profileData && loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="container mx-auto px-4 py-4 md:py-8">
+          {/* Header with cached data */}
+          <div className="flex items-center justify-between md:hidden mb-4">
+            <div className="flex items-center">
+              <img 
+                src={getCachedProfile() ? `${import.meta.env.VITE_API_URL}${getCachedProfile()}` : "/vite.svg"}
+                alt="Profile"
+                className="w-10 h-10 rounded-full border-2 border-blue-500 dark:border-blue-400 object-cover mr-3"
+                onError={(e) => {
+                  e.target.src = "/vite.svg";
+                }}
+              />
+              <div>
+                <h1 className="text-lg font-bold text-gray-800 dark:text-white truncate max-w-[200px]">
+                  {getCachedName()}
+                </h1>
+              </div>
+            </div>
+          </div>
+          
+          {/* Loading spinner */}
+          <div className="flex items-center justify-center py-12">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-700 dark:text-gray-300">{t('common.loading') || 'Loading...'}</p>
+            </div>
           </div>
         </div>
-      );
-    }
-    
-    navigate('/login');
-    return null;
+      </div>
+    );
   }
   
   const getTabContent = () => {
