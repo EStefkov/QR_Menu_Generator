@@ -3,10 +3,11 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { AuthContext } from '../../contexts/AuthContext';
 import { profileApi } from '../../api/profileApi';
 import { HiPhotograph, HiCheckCircle, HiExclamationCircle } from 'react-icons/hi';
+import { setUserUpdatingFlag } from '../../api/account';
 
 const ProfileSettings = ({ profileData, onUpdate }) => {
   const { t } = useLanguage();
-  const { userData, updateUserData } = useContext(AuthContext);
+  const { userData, updateUserData, setUserUpdating } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [selectedFile, setSelectedFile] = useState(null);
@@ -65,12 +66,35 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
     setMessage({ type: '', text: '' });
     
     try {
+      // Устанавливаем флаг, что пользователь обновляет профиль
+      console.log("ProfileSettings: Setting userUpdating flag to true");
+      setUserUpdating(true);
+      setUserUpdatingFlag(true); // Установка глобального флага
+
+      // Также сохраняем в localStorage для перезагрузки страницы
+      localStorage.setItem("userIsUpdating", "true");
+      
+      // Сохраняем временную метку
+      const timestamp = Date.now();
+      localStorage.setItem("userUpdatingTimestamp", timestamp.toString());
+      
+      // Prepare API request data - transform email to mailAddress
+      const profileUpdateData = {
+        ...formData,
+        mailAddress: formData.email, // Map email to mailAddress for API
+        number: formData.phone, // Map phone to number for API
+      };
+      
+      console.log("Updating profile with data:", profileUpdateData);
+      
       // Update profile info
-      await profileApi.updateUserProfile(formData);
+      const updateResult = await profileApi.updateUserProfile(profileUpdateData);
+      console.log("Profile update success:", updateResult);
       
       // Upload profile picture if selected
       let updatedProfilePicture = userData.profilePicture;
       if (selectedFile) {
+        console.log("Uploading new profile picture");
         const formDataForUpload = new FormData();
         formDataForUpload.append('profilePicture', selectedFile);
         const result = await profileApi.uploadProfilePicture(formDataForUpload);
@@ -78,21 +102,24 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
         // If the backend returns the updated profile picture path, use it
         if (result && result.profilePicture) {
           updatedProfilePicture = result.profilePicture;
+          console.log("Profile picture updated successfully:", updatedProfilePicture);
         }
-
-        // Update localStorage with the new profile data
-        localStorage.setItem("firstName", formData.firstName);
-        localStorage.setItem("lastName", formData.lastName);
-        if (updatedProfilePicture) {
-          localStorage.setItem("profilePicture", updatedProfilePicture);
-        }
+      }
+      
+      // Always update localStorage with the new profile data
+      localStorage.setItem("firstName", formData.firstName);
+      localStorage.setItem("lastName", formData.lastName);
+      localStorage.setItem("mailAddress", formData.email); // Set email as mailAddress
+      localStorage.setItem("phone", formData.phone);
+      if (updatedProfilePicture) {
+        localStorage.setItem("profilePicture", updatedProfilePicture);
       }
       
       // Update context/state with new data
       if (onUpdate) {
         onUpdate({
           ...profileData,
-          ...formData,
+          ...profileUpdateData,
           profilePicture: updatedProfilePicture || previewUrl || profileData?.profilePicture
         });
       }
@@ -101,12 +128,11 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
       updateUserData({
         firstName: formData.firstName,
         lastName: formData.lastName,
-        mailAddress: formData.email,
+        mailAddress: formData.email, // Use formData.email
         profilePicture: updatedProfilePicture
       });
       
-      // Trigger events to update NavBar and other components
-      window.dispatchEvent(new Event("storage"));
+      // Use custom event instead of storage event
       window.dispatchEvent(new Event("userDataUpdated"));
       
       setMessage({ 
@@ -117,13 +143,39 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
       // Clear the file selection after successful upload
       if (selectedFile) {
         setSelectedFile(null);
+        setPreviewUrl(null);
       }
+
+      // Reset updating flag after successful update
+      setTimeout(() => {
+        console.log("ProfileSettings: Resetting userUpdating flag");
+        setUserUpdating(false);
+        setUserUpdatingFlag(false);
+        localStorage.removeItem("userIsUpdating");
+      }, 5000); // Shorter timeout after successful update
+      
+      // Set a backup timeout to ensure flags are cleared eventually
+      setTimeout(() => {
+        console.log("ProfileSettings: Backup timeout to clear update flags");
+        setUserUpdating(false);
+        setUserUpdatingFlag(false);
+        localStorage.removeItem("userIsUpdating");
+        localStorage.removeItem("userUpdatingTimestamp");
+      }, 30000);
+      
     } catch (error) {
       console.error('Error updating profile:', error);
       setMessage({ 
         type: 'error', 
         text: t('profile.profileUpdateError') 
       });
+      
+      // Сбрасываем флаг обновления профиля в случае ошибки
+      console.log("ProfileSettings: Setting userUpdating flag to false due to error");
+      setUserUpdating(false);
+      setUserUpdatingFlag(false);
+      localStorage.removeItem("userIsUpdating");
+      localStorage.removeItem("userUpdatingTimestamp");
     } finally {
       setLoading(false);
     }

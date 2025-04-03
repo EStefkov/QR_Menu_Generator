@@ -1,19 +1,32 @@
 import { useState,useContext } from "react";
 import { updateAccountApi, uploadProfilePicture } from "../api/adminDashboard";
 import { AuthContext } from "../contexts/AuthContext";
+import { setUserUpdatingFlag } from "../api/account";
 
 const EditAccountForm = ({ account, onSave, onCancel, token }) => {
     const [editedAccount, setEditedAccount] = useState(account);
     const [selectedFile, setSelectedFile] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-// Взимаме userData, за да знаем кой е логнат
-const { userData } = useContext(AuthContext);
+    // Взимаме userData и setUserUpdating, за да управляваме обновяването на профила
+    const { userData, setUserUpdating } = useContext(AuthContext);
 
     const accountTypes = ["ROLE_ADMIN", "ROLE_USER", "ROLE_WAITER"];
 
     const handleSave = async () => {
         setIsLoading(true);
         try {
+            // Ако редактираме собствения си профил, задаваме флага userUpdating на true
+            if (userData?.id === editedAccount.id) {
+                console.log("EditAccountForm: Setting userUpdating flag to true");
+                setUserUpdating(true);
+                setUserUpdatingFlag(true);
+                localStorage.setItem("userIsUpdating", "true");
+                
+                // Записваме и времева марка
+                const timestamp = Date.now();
+                localStorage.setItem("userUpdatingTimestamp", timestamp.toString());
+            }
+
             let accountToUpdate = { ...editedAccount };
 
             if (selectedFile) {
@@ -33,9 +46,18 @@ const { userData } = useContext(AuthContext);
                 localStorage.setItem("lastName", accountToUpdate.lastName);
                 localStorage.setItem("accountType", accountToUpdate.accountType);
 
-                // Пускаме събития, за да се обнови NavBar
-                window.dispatchEvent(new Event("storage"));
+                // Пускаме събития, за да се обнови NavBar - Но НЕ пращаме storage събитие!
+                // window.dispatchEvent(new Event("storage")); - Това може да причини излизане от профила
                 window.dispatchEvent(new Event("userDataUpdated"));
+                
+                // Запазваме флага активен за 30 секунди, за да сме сигурни, че всички асинхронни събития ще се обработят
+                setTimeout(() => {
+                    console.log("EditAccountForm: Resetting userUpdating flag (delayed)");
+                    setUserUpdating(false);
+                    setUserUpdatingFlag(false);
+                    localStorage.removeItem("userIsUpdating");
+                    localStorage.removeItem("userUpdatingTimestamp");
+                }, 30000);
             }
 
             // Викаме onSave, за да обновим таблицата с акаунти
@@ -46,6 +68,15 @@ const { userData } = useContext(AuthContext);
             console.error("Error saving account:", error);
             alert("Възникна грешка при запазване на профилната снимка или данните.");
             setIsLoading(false);
+            
+            // Ако има грешка и редактираме собствения профил, връщаме флага в false
+            if (userData?.id === editedAccount.id) {
+                console.log("EditAccountForm: Setting userUpdating flag to false due to error");
+                setUserUpdating(false);
+                setUserUpdatingFlag(false);
+                localStorage.removeItem("userIsUpdating");
+                localStorage.removeItem("userUpdatingTimestamp");
+            }
         }
     };
 

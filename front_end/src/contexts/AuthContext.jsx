@@ -1,6 +1,7 @@
 // AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from 'axios';
+import { setUserUpdatingFlag } from "../api/account";
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -15,6 +16,30 @@ export const useAuth = () => {
   return context;
 };
 
+// Check if user is currently updating profile
+const isUserUpdatingProfile = () => {
+  // Check localStorage flags
+  if (localStorage.getItem("userIsUpdating") === "true") {
+    return true;
+  }
+  
+  // Check timestamp
+  const storedTimestamp = localStorage.getItem("userUpdatingTimestamp");
+  if (storedTimestamp) {
+    const timestamp = parseInt(storedTimestamp, 10);
+    const now = Date.now();
+    const elapsed = now - timestamp;
+    
+    // If less than 30 seconds passed, consider still updating
+    if (elapsed < 30000) {
+      console.log(`Token validation: Profile update in progress (${elapsed/1000}s ago)`);
+      return true;
+    }
+  }
+  
+  return false;
+};
+
 // Validate the stored token to make sure it's still valid
 const validateToken = async (token) => {
   if (!token) return false;
@@ -22,47 +47,72 @@ const validateToken = async (token) => {
   try {
     console.log("Validating stored token");
     
-    // Check if validate-token endpoint exists, otherwise just try to check user info
-    let endpoint = `${BASE_URL}/api/users/validate-token`;
+    // Check if user is updating profile - skip validation if true
+    if (isUserUpdatingProfile()) {
+      console.log("Token validation: User is updating profile - skipping validation");
+      return true;
+    }
     
-    // FALLBACK: If validate-token doesn't exist, we'll just trust the token is valid
-    // For proper security, implement the validate-token endpoint on your server
+    // Използваме правилния endpoint от AccountController
+    let endpoint = `${BASE_URL}/api/accounts/validate`;
+    
     try {
+      console.log("Attempting token validation with endpoint:", endpoint);
       const response = await axios.get(endpoint, {
         headers: {
           Authorization: `Bearer ${token}`
         },
-        timeout: 3000 // 3 second timeout to avoid hanging
+        timeout: 5000 // 5 second timeout to avoid hanging
       });
       
-      // If we get a successful response, the token is valid
+      // Ако получим успешен отговор, токенът е валиден
       console.log("Token validation result:", response.data);
-      return response.data.valid === true;
+      return true; // Щом имаме валиден отговор, токенът е ОК
     } catch (tokenError) {
-      console.warn("Token validation endpoint not available, using fallback validation:", tokenError.message);
+      console.warn("Token validation failed, trying fallback:", tokenError.message);
       
-      // Fallback: Try to get user profile info to validate token
+      // Skip additional validation if user is updating profile
+      if (isUserUpdatingProfile()) {
+        console.log("Token validation: User is updating profile during fallback - assuming valid");
+        return true;
+      }
+      
+      // Fallback: Опитваме с current endpoint
       try {
-        const userResponse = await axios.get(`${BASE_URL}/api/users/profile`, {
+        const userResponse = await axios.get(`${BASE_URL}/api/accounts/current`, {
           headers: { Authorization: `Bearer ${token}` },
-          timeout: 3000
+          timeout: 5000
         });
-        // If we can get the profile, the token is valid
+        // Ако можем да вземем профила, токенът е валиден
+        console.log("Fallback validation succeeded, token is valid");
         return !!userResponse.data;
       } catch (profileError) {
-        // If there's no validation endpoint and profile fails, we assume the token is invalid
-        if (profileError.response && profileError.response.status === 401) {
+        // Check again if user started updating between validation attempts
+        if (isUserUpdatingProfile()) {
+          console.log("Token validation: User started updating during validation - assuming valid");
+          return true;
+        }
+        
+        // Ако не можем да вземем профила, токенът е невалиден
+        console.error("Fallback validation failed, token is invalid:", profileError.message);
+        if (profileError.response && (profileError.response.status === 401 || profileError.response.status === 403)) {
           return false;
         }
-        // For other errors, we'll just trust the token for now
-        console.warn("Cannot validate token properly, assuming valid for now:", profileError);
+        // За други грешки, предполагаме, че токенът е валиден засега
+        console.warn("Cannot validate token properly due to server error, assuming valid for now:", profileError);
         return true;
       }
     }
   } catch (error) {
     console.error("Token validation failed:", error);
     
-    // Clear invalid token
+    // Don't clear token if user is updating profile
+    if (isUserUpdatingProfile()) {
+      console.log("Token validation error during profile update - preserving token");
+      return true;
+    }
+    
+    // Clear invalid token ONLY if we get 401 error
     if (error.response && error.response.status === 401) {
       console.log("Token is invalid, clearing auth data");
       localStorage.removeItem("token");
@@ -80,6 +130,7 @@ const validateToken = async (token) => {
 export function AuthProvider({ children }) {
   const [userData, setUserData] = useState({});
   const [isInitialized, setIsInitialized] = useState(false);
+  const [userUpdating, setUserUpdating] = useState(false);
   
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -141,13 +192,71 @@ export function AuthProvider({ children }) {
         return;
       }
       
-      // If token changed or id changed, update state
-      if ((currentToken && currentToken !== userData.token) || 
-          (currentId && currentId !== userData.id)) {
-        console.log("Auth data changed in localStorage, updating state");
+      // Важно: Проверяваме само дали токенът е премахнат, но не и дали е променен
+      // Това позволява обновяване на данни, без да прави логаут при сценарии като обновяване на профила
+      
+      // Проверяваме само за промени в други данни, но НЕ логваме при промяна на токен/id
+      if (currentToken && userData.token) {
+        // Обновяваме само допълнителните данни на потребителя, но не пипаме токена
+        const firstName = localStorage.getItem("firstName");
+        const lastName = localStorage.getItem("lastName");
+        const profilePicture = localStorage.getItem("profilePicture");
+        const accountType = localStorage.getItem("accountType");
+        const mailAddress = localStorage.getItem("mailAddress");
+        
+        if (firstName !== userData.firstName || 
+            lastName !== userData.lastName || 
+            profilePicture !== userData.profilePicture || 
+            accountType !== userData.accountType ||
+            mailAddress !== userData.mailAddress) {
+          
+          console.log("User profile data changed, updating state without affecting authentication");
+          setUserData(prev => ({
+            ...prev,
+            firstName,
+            lastName,
+            profilePicture,
+            accountType,
+            mailAddress
+          }));
+        }
+      }
+    };
+    
+    // Listen for storage event to detect changes from other tabs
+    const handleStorageChange = (event) => {
+      // Игнорираме промени, които могат да бъдат предизвикани от обновяване на профила
+      if (event.key === "firstName" || 
+          event.key === "lastName" || 
+          event.key === "profilePicture" || 
+          event.key === "phone" ||
+          event.key === "mailAddress") {
+        console.log(`Profile data updated (${event.key}), updating state without auth check`);
+        checkStoredAuth();
+        return;
+      }
+      
+      // За други промени изпълняваме пълната проверка
+      if (event.key === "token" || event.key === "id" || event.key === null) {
+        console.log("Critical auth data changed, full auth check needed");
+        checkStoredAuth();
+      }
+    };
+    
+    // Listen for custom events
+    const handleUserDataUpdated = () => {
+      console.log("AuthContext: User data updated event received");
+      updateUserUpdatingState(true); // Set updating flag to true
+      
+      // Simple refresh user data from localStorage without token validation
+      const id = localStorage.getItem("id");
+      const token = localStorage.getItem("token");
+      
+      if (id && token) {
+        console.log("AuthContext: Refreshing user data from localStorage");
         setUserData({
-          id: currentId,
-          token: currentToken,
+          id,
+          token,
           firstName: localStorage.getItem("firstName"),
           lastName: localStorage.getItem("lastName"),
           profilePicture: localStorage.getItem("profilePicture"),
@@ -155,30 +264,26 @@ export function AuthProvider({ children }) {
           mailAddress: localStorage.getItem("mailAddress"),
         });
       }
-    };
-    
-    // Listen for storage event to detect changes from other tabs
-    const handleStorageChange = () => {
-      checkStoredAuth();
-    };
-    
-    // Listen for custom events
-    const handleUserDataUpdated = () => {
-      checkStoredAuth();
+      
+      // Reset the updating flag after a longer delay to ensure all components have time to update
+      setTimeout(() => {
+        updateUserUpdatingState(false);
+        console.log("AuthContext: Profile update completed");
+      }, 30000); // Увеличиваем до 30 секунд
     };
     
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('userDataUpdated', handleUserDataUpdated);
     
-    // Check every 5 seconds as a fallback
-    const interval = setInterval(checkStoredAuth, 5000);
+    // Намаляваме честотата на периодичната проверка за да не натоварваме
+    const interval = setInterval(checkStoredAuth, 15000); // 15 секунди
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('userDataUpdated', handleUserDataUpdated);
       clearInterval(interval);
     };
-  }, [userData.token, userData.id]);
+  }, [userData.token, userData.id, userData.firstName, userData.lastName, userData.profilePicture, userData.accountType, userData.mailAddress]);
 
   // Login function: save data to localStorage and update state
   const login = (token, payload) => {
@@ -250,13 +355,32 @@ export function AuthProvider({ children }) {
     console.log("User data update complete");
   };
 
+  // Синхронизируем локальный state с глобальной переменной и localStorage
+  const updateUserUpdatingState = (newState) => {
+    console.log(`AuthContext: Setting userUpdating to ${newState}`);
+    setUserUpdating(newState);
+    setUserUpdatingFlag(newState);
+    
+    if (newState) {
+      localStorage.setItem("userIsUpdating", "true");
+      // Сохраняем временную метку
+      const timestamp = Date.now();
+      localStorage.setItem("userUpdatingTimestamp", timestamp.toString());
+    } else {
+      localStorage.removeItem("userIsUpdating");
+      localStorage.removeItem("userUpdatingTimestamp");
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       userData, 
       login, 
       logout, 
       updateUserData, 
-      isInitialized 
+      isInitialized,
+      userUpdating,
+      setUserUpdating: updateUserUpdatingState
     }}>
       {children}
     </AuthContext.Provider>

@@ -81,9 +81,25 @@ const ProfilePage = () => {
     if (userData && userData.token) {
       fetchUserData();
     } else {
+      // Check if we're in the middle of a profile update before redirecting
+      const isUpdating = localStorage.getItem("userIsUpdating") === "true";
+      const updatingTimestamp = localStorage.getItem("userUpdatingTimestamp");
+      
+      if (isUpdating || (updatingTimestamp && Date.now() - parseInt(updatingTimestamp) < 30000)) {
+        console.log("Page refresh during profile update - attempting to recover session");
+        
+        // Try to recover from localStorage
+        const storedToken = localStorage.getItem("token");
+        if (storedToken) {
+          console.log("Found token in localStorage, attempting to restore session");
+          // Let the page load without redirecting - AuthContext will handle reinitialization
+          return;
+        }
+      }
+      
       navigate('/login');
     }
-  }, [isAdmin, userData]);
+  }, [userData, navigate]);
   
   // Ensure accountId is set in localStorage when profile data is updated
   useEffect(() => {
@@ -108,7 +124,25 @@ const ProfilePage = () => {
     setMobileMenuOpen(false); // Close mobile menu after tab selection
   };
   
+  // Check if we have a token in localStorage even if AuthContext hasn't loaded yet
+  // This prevents flashing redirect during page load/refresh
   if (!userData || !userData.token) {
+    const storedToken = localStorage.getItem("token");
+    const isUpdating = localStorage.getItem("userIsUpdating") === "true";
+    const updatingTimestamp = localStorage.getItem("userUpdatingTimestamp");
+    
+    if (storedToken && (isUpdating || (updatingTimestamp && Date.now() - parseInt(updatingTimestamp) < 30000))) {
+      // Show loading state instead of redirecting during profile update
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-700 dark:text-gray-300">{t('common.loading') || 'Loading...'}</p>
+          </div>
+        </div>
+      );
+    }
+    
     navigate('/login');
     return null;
   }
@@ -165,7 +199,27 @@ const ProfilePage = () => {
       return storedEmail;
     }
     
-    return '';
+    return t('profile.notAvailable') || 'Не е налично';
+  };
+  
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return t('profile.notAvailable') || 'Не е налично';
+    
+    try {
+      const dateOptions = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      };
+      
+      // Use the current language to format the date
+      const locale = localStorage.getItem('language') === 'bg' ? 'bg-BG' : 'en-US';
+      return new Date(dateString).toLocaleDateString(locale, dateOptions);
+    } catch (e) {
+      console.error('Date formatting error:', e);
+      return t('profile.notAvailable') || 'Не е налично';
+    }
   };
   
   return (

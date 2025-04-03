@@ -111,17 +111,21 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
 
   // Format date
   const formatDate = (dateString) => {
-    if (!dateString) return t('profile.notAvailable') || 'Not available';
+    if (!dateString) return t('profile.notAvailable') || 'Не е налично';
     
     try {
-      return new Date(dateString).toLocaleDateString('bg-BG', {
+      const dateOptions = {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
-      });
+      };
+      
+      // Use the current language to format the date
+      const locale = localStorage.getItem('language') === 'bg' ? 'bg-BG' : 'en-US';
+      return new Date(dateString).toLocaleDateString(locale, dateOptions);
     } catch (e) {
       console.error('Date formatting error:', e);
-      return t('profile.notAvailable') || 'Not available';
+      return t('profile.notAvailable') || 'Не е налично';
     }
   };
   
@@ -137,6 +141,47 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
     }
     
     return t('profile.notProvided') || 'Not provided';
+  };
+
+  // Function to calculate how long ago a date was
+  const getTimeAgo = (dateString) => {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInMs = now - date;
+      
+      // Get difference in days, months, years
+      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+      const diffInMonths = Math.floor(diffInDays / 30);
+      const diffInYears = Math.floor(diffInDays / 365);
+      
+      // Current language
+      const isBulgarian = localStorage.getItem('language') === 'bg';
+      
+      let timeText = '';
+      
+      if (diffInYears > 0) {
+        timeText = isBulgarian 
+          ? `${diffInYears} ${diffInYears === 1 ? 'година' : diffInYears < 5 ? 'години' : 'години'}`
+          : `${diffInYears} ${diffInYears === 1 ? 'year' : 'years'}`;
+      } else if (diffInMonths > 0) {
+        timeText = isBulgarian 
+          ? `${diffInMonths} ${diffInMonths === 1 ? 'месец' : diffInMonths < 5 ? 'месеца' : 'месеца'}`
+          : `${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'}`;
+      } else {
+        timeText = isBulgarian 
+          ? `${diffInDays} ${diffInDays === 1 ? 'ден' : 'дни'}`
+          : `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'}`;
+      }
+      
+      // Add prefix
+      return isBulgarian ? `Преди ${timeText}` : `${timeText} ago`;
+    } catch (e) {
+      console.error('Error calculating time ago:', e);
+      return '';
+    }
   };
 
   return (
@@ -192,6 +237,9 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
               <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.memberSince') || 'Member Since'}</p>
               <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[120px] md:max-w-full">
                 {formatDate(profileData.createdAt)}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block mt-0.5">
+                {getTimeAgo(profileData.createdAt)}
               </p>
             </div>
           </div>

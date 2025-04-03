@@ -107,12 +107,32 @@ export const profileApi = {
       // Check if we have an ID to update
       if (!profileData.id) {
         profileData.id = localStorage.getItem('userId');
+        if (!profileData.id) {
+          throw new Error('User ID not found. Please refresh the page and try again.');
+        }
       }
       
+      // Ensure we have mailAddress field - for backward compatibility
+      if (!profileData.mailAddress && profileData.email) {
+        profileData.mailAddress = profileData.email;
+      }
+      
+      // Ensure we have number field if phone is provided
+      if (!profileData.number && profileData.phone) {
+        profileData.number = profileData.phone;
+      }
+      
+      console.log("Sending profile update with data:", profileData);
+      
+      // Set update flags before making the API call
+      localStorage.setItem("userIsUpdating", "true");
+      localStorage.setItem("userUpdatingTimestamp", Date.now().toString());
+      
       const response = await axiosInstance.put(`/accounts/update/${profileData.id}`, profileData);
+      console.log("Profile update API response:", response);
       
       // Update localStorage after successful database update
-      if (response.data) {
+      if (response.data || response.status === 200) {
         if (profileData.mailAddress) {
           localStorage.setItem('mailAddress', profileData.mailAddress);
         } else if (profileData.email) {
@@ -126,11 +146,24 @@ export const profileApi = {
         if (profileData.lastName) {
           localStorage.setItem('lastName', profileData.lastName);
         }
+        
+        if (profileData.number) {
+          localStorage.setItem('phone', profileData.number);
+        } else if (profileData.phone) {
+          localStorage.setItem('phone', profileData.phone);
+        }
+        
+        // Trigger custom event for UI updates
+        window.dispatchEvent(new Event("userDataUpdated"));
       }
       
       return response.data;
     } catch (error) {
       console.error('Error updating user profile:', error);
+      
+      // Reset update flags on error
+      localStorage.removeItem("userIsUpdating");
+      localStorage.removeItem("userUpdatingTimestamp");
       
       if (error.response) {
         // Server responded with an error
@@ -249,14 +282,12 @@ export const profileApi = {
       
       console.log(`Fetching order count for user ${accountId}`);
       const response = await axiosInstance.get(`/orders/count/${accountId}`);
-      console.log(`Order count response:`, response.data);
-      return response.data;
+      console.log('Orders count response:', response.data);
+      return response.data || 0;
     } catch (error) {
       console.error('Error fetching user orders count:', error);
-      if (error.response) {
-        console.error('Error response:', error.response.status, error.response.data);
-      }
-      return 0; // Return 0 as fallback
+      // Return 0 as a fallback for UI rendering purposes
+      return 0;
     }
   },
 
@@ -271,35 +302,33 @@ export const profileApi = {
       
       // If we still don't have an ID, try to get the current profile and extract the ID
       if (!accountId) {
-        console.log('No user ID found, attempting to fetch profile first');
+        console.log('No user ID found, attempting to fetch profile first for favorites count');
         try {
           const profileData = await profileApi.getUserProfile();
           if (profileData && profileData.id) {
             accountId = profileData.id;
             localStorage.setItem('userId', accountId);
             localStorage.setItem('accountId', accountId);
-            console.log('Successfully retrieved accountId from profile:', accountId);
+            console.log('Successfully retrieved accountId from profile for favorites:', accountId);
           }
         } catch (profileError) {
-          console.error('Failed to get profile data for ID:', profileError);
+          console.error('Failed to get profile data for favorites count:', profileError);
         }
       }
       
       if (!accountId) {
-        console.error('No accountId or userId found or retrievable');
+        console.error('No accountId or userId found or retrievable for favorites count');
         return 0;
       }
       
       console.log(`Fetching favorites count for user ${accountId}`);
       const response = await axiosInstance.get(`/favorites/count/${accountId}`);
-      console.log(`Favorites count response:`, response.data);
-      return response.data;
+      console.log('Favorites count response:', response.data);
+      return response.data || 0;
     } catch (error) {
       console.error('Error fetching user favorites count:', error);
-      if (error.response) {
-        console.error('Error response:', error.response.status, error.response.data);
-      }
-      return 0; // Return 0 as fallback
+      // Return 0 as a fallback for UI rendering purposes
+      return 0;
     }
   }
 };

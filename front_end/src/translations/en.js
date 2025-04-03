@@ -194,6 +194,7 @@ const translations = {
   "profile.phone": "Phone",
   "profile.memberSince": "Member Since",
   "profile.notProvided": "Not provided",
+  "profile.notAvailable": "Not available",
   "profile.activitySummary": "Activity Summary",
   "profile.totalOrders": "Total Orders",
   "profile.favoriteProducts": "Favorite Products",
@@ -217,6 +218,7 @@ const translations = {
   "profile.passwordChangeError": "Failed to change password. Please try again.",
   "profile.noProfileData": "No profile data available",
   "profile.noStatsAvailable": "No statistics available",
+  "profile.noActivityData": "No activity data available yet",
   
   // Admin Statistics
   "profile.todayOrders": "Today's Orders",

@@ -1,5 +1,5 @@
 // NavBar.jsx
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HiOutlineMenu, HiX, HiShoppingCart } from "react-icons/hi";
 import { AuthContext } from "../contexts/AuthContext";
@@ -13,11 +13,12 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 
 const NavBar = () => {
   const navigate = useNavigate();
-  const { userData, logout } = useContext(AuthContext);
+  const { userData, logout, userUpdating } = useContext(AuthContext);
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { cart } = useCart();
   const { t, language, changeLanguage } = useLanguage();
+  const tokenValidationTimeout = useRef(null);
   
   // Ensure language is properly initialized
   useEffect(() => {
@@ -46,20 +47,49 @@ const NavBar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isProfileOpen]);
 
-  // Validate token when component mounts
+  // Validate token when component mounts, but skip validation if userUpdating is true
   useEffect(() => {
-    if (userData?.token) {
-      validateToken(userData.token)
-        .then(() => {
-          // Token validation logic
-        })
-        .catch((err) => {
-          console.error("Token validation error:", err);
-          logout();
-          navigate("/login");
-        });
+    // Отменяем предыдущий таймаут, если он существует
+    if (tokenValidationTimeout.current) {
+      clearTimeout(tokenValidationTimeout.current);
     }
-  }, [userData?.token, logout, navigate]);
+
+    // Используем setTimeout для добавления задержки перед валидацией токена
+    tokenValidationTimeout.current = setTimeout(() => {
+      console.log("NavBar: Checking token validation status, userUpdating =", userUpdating);
+      
+      // Проверяем localStorage на случай, если флаг был установлен другим компонентом
+      const isUpdatingFromStorage = localStorage.getItem("userIsUpdating") === "true";
+      
+      if (isUpdatingFromStorage) {
+        console.log("NavBar: Skipping token validation, userIsUpdating flag found in localStorage");
+        return;
+      }
+      
+      if (userData?.token && !userUpdating) {
+        console.log("NavBar: Validating token");
+        validateToken(userData.token)
+          .then(() => {
+            // Token validation logic
+            console.log("NavBar: Token validated successfully");
+          })
+          .catch((err) => {
+            console.error("NavBar: Token validation error:", err);
+            logout();
+            navigate("/login");
+          });
+      } else if (userUpdating) {
+        console.log("NavBar: Skipping token validation during profile update");
+      }
+    }, 10000); // Увеличиваем задержку до 10 секунд
+    
+    // Очистка таймаута при размонтировании компонента
+    return () => {
+      if (tokenValidationTimeout.current) {
+        clearTimeout(tokenValidationTimeout.current);
+      }
+    };
+  }, [userData?.token, logout, navigate, userUpdating]);
 
   const handleLogout = () => {
     logout();

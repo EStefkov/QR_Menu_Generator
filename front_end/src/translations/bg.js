@@ -162,8 +162,8 @@ const translations = {
   "common.sortOldestFirst": "Най-стари първо",
   "common.sortNewestFirst": "Най-нови първо",
   "loading": "Зареждане...",
-  "common.retry": "Опитай отново",
-  "common.refresh": "Обнови",
+  "common.retry": "Опитайте отново",
+  "common.refresh": "Обновяване",
   
   // Pagination
   "pagination.showing": "Показване на",
@@ -192,13 +192,14 @@ const translations = {
   "profile.name": "Име",
   "profile.email": "Имейл",
   "profile.phone": "Телефон",
-  "profile.memberSince": "Регистриран от",
+  "profile.memberSince": "Регистриран на",
   "profile.notProvided": "Не е предоставено",
+  "profile.notAvailable": "Не е налично",
   "profile.activitySummary": "Обобщение на активността",
   "profile.totalOrders": "Общо поръчки",
   "profile.favoriteProducts": "Любими продукти",
   "profile.comingSoon": "Очаквайте скоро",
-  "profile.moreFeaturesSoon": "Очаквайте още функционалности скоро!",
+  "profile.moreFeaturesSoon": "Повече функции очаквайте скоро!",
   "profile.personalInfo": "Лична информация",
   "profile.changePicture": "Смяна на снимка",
   "profile.pictureRequirements": "JPG, PNG или GIF (макс. 2MB)",
@@ -217,6 +218,7 @@ const translations = {
   "profile.passwordChangeError": "Неуспешна промяна на паролата. Моля, опитайте отново.",
   "profile.noProfileData": "Няма налични данни за профила",
   "profile.noStatsAvailable": "Няма налична статистика",
+  "profile.noActivityData": "Все още няма данни за активност",
   
   // Admin Statistics
   "profile.todayOrders": "Поръчки днес",
@@ -277,7 +279,7 @@ const translations = {
   "responsive.collapse": "Свий",
   "responsive.menu": "Меню",
   "responsive.dashboard": "Табло",
-  "responsive.backToTop": "Връщане нагоре",
+  "responsive.backToTop": "Обратно нагоре",
   
   // Stats & data loading
   "common.loadData": "Зареди данни",

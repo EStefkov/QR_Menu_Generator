@@ -96,6 +96,20 @@ const AccountsTable = ({ accounts = [], onEdit, onDelete }) => {
 
             await profileApi.updateUserProfile(accountToUpdate);
 
+            // Проверяваме дали редактираме собствения акаунт
+            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+            const currentUserId = localStorage.getItem('id') || localStorage.getItem('userId');
+            
+            if (currentUserId && currentUserId == editAccount.id) {
+                console.log('Updating current user data in localStorage');
+                localStorage.setItem("firstName", accountToUpdate.firstName);
+                localStorage.setItem("lastName", accountToUpdate.lastName);
+                localStorage.setItem("mailAddress", accountToUpdate.mailAddress);
+                
+                // Обновяваме UI без да пращаме storage събитие
+                window.dispatchEvent(new Event("userDataUpdated"));
+            }
+
             // If the original onEdit function exists, call it
             if (onEdit) {
                 onEdit(accountToUpdate);

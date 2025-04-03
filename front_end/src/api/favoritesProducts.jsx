@@ -1,4 +1,4 @@
-import { axiosInstance } from './axiosInstance';
+import axiosInstance from './axiosInstance';
 import { getFullImageUrl } from './adminDashboard';
 
 export const favoritesApi = {
