@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh, HiChevronLeft, HiChevronRight } from 'react-icons/hi';
+import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh, HiChevronLeft, HiChevronRight, HiX } from 'react-icons/hi';
+import { orderApi } from '../../api/orderApi';
 
 const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const { t } = useLanguage();
@@ -10,6 +11,12 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const [productsPage, setProductsPage] = useState(1);
   const [ordersPage, setOrdersPage] = useState(1);
   const itemsPerPage = 5;
+  
+  // Order detail states
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderDetails, setOrderDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState(null);
   
   // Pagination functions
   const getPaginatedData = (data, page, perPage) => {
@@ -21,6 +28,57 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const getTotalPages = (data, perPage) => {
     if (!data || !Array.isArray(data)) return 0;
     return Math.ceil(data.length / perPage);
+  };
+  
+  // Function to handle clicking on an order row
+  const handleOrderClick = async (order) => {
+    setSelectedOrder(order);
+    setLoadingDetails(true);
+    setDetailsError(null);
+    
+    try {
+      // Fetch order details
+      const details = await orderApi.getOrderById(order.id);
+      setOrderDetails(details);
+    } catch (err) {
+      console.error('Error fetching order details:', err);
+      setDetailsError(t('errors.failedToLoadOrderDetails') || 'Failed to load order details');
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  // Function to close order details
+  const handleCloseDetails = () => {
+    setSelectedOrder(null);
+    setOrderDetails(null);
+  };
+
+  // Function to update order status
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await orderApi.updateOrderStatus(orderId, newStatus);
+      
+      // Update order details
+      setOrderDetails(prev => ({
+        ...prev,
+        orderStatus: newStatus
+      }));
+      
+      // Update in the main orders list
+      if (adminStats.recentOrders) {
+        const updatedOrders = adminStats.recentOrders.map(order => 
+          order.id === orderId ? { ...order, status: newStatus } : order
+        );
+        
+        // This is a hacky way to update the state since we can't modify adminStats directly
+        // In a real app, you would probably want to trigger a refresh of the parent component
+        adminStats.recentOrders = updatedOrders;
+      }
+    } catch (err) {
+      console.error('Error updating order status:', err);
+      setDetailsError(t('errors.failedToUpdateStatus') || 'Failed to update order status');
+    }
   };
   
   // Pagination controls component
@@ -182,6 +240,43 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
     }).format(value);
   };
   
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('bg-BG', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(date);
+    } catch (e) {
+      console.error('Date formatting error:', e);
+      return dateString;
+    }
+  };
+
+  // Get the appropriate status class for coloring
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100';
+      case 'PREPARING':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100';
+      case 'READY':
+        return 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100';
+      case 'DELIVERED':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100';
+      case 'CANCELLED':
+        return 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
+    }
+  };
+  
   // Format orders and order values as needed from real data
   const getTotalOrders = () => {
     if (adminStats.orderStatusCounts) {
@@ -267,10 +362,10 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
             {t('admin.restaurantPerformance') || 'Restaurant Performance'}
           </h3>
-          <div className="bg-white dark:bg-gray-750 rounded-xl shadow overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('admin.restaurantName') || 'Restaurant'}
@@ -286,7 +381,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                   {getPaginatedData(adminStats.restaurantStats, restaurantPage, itemsPerPage).map((restaurant, index) => (
                     <tr key={restaurant.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -342,10 +437,10 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
             {t('admin.popularProducts') || 'Most Popular Products'}
           </h3>
-          <div className="bg-white dark:bg-gray-750 rounded-xl shadow overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('admin.product') || 'Product'}
@@ -361,7 +456,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                   {getPaginatedData(adminStats.popularProducts, productsPage, itemsPerPage).map((product, index) => (
                     <tr key={product.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -398,75 +493,204 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
             {t('admin.recentOrders') || 'Recent Orders'}
           </h3>
-          <div className="bg-white dark:bg-gray-750 rounded-xl shadow overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.orderId') || 'Order ID'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.restaurant') || 'Restaurant'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.customer') || 'Customer'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.amount') || 'Amount'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.status') || 'Status'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.date') || 'Date'}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {getPaginatedData(adminStats.recentOrders, ordersPage, itemsPerPage).map((order, index) => (
-                    <tr key={order.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">#{order.id}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">{order.restaurantName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">{order.customerName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                          ${order.status === 'DELIVERED' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 
-                          order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' : 
-                          order.status === 'CANCELLED' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' : 
-                          order.status === 'PREPARING' ? 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100' : 
-                          'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(order.orderDate).toLocaleString()}
+          
+          {selectedOrder && orderDetails ? (
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
+              <div className="p-4 md:p-6 dark:bg-gray-900">
+                <div className="flex justify-between items-center mb-4 bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+                    {t('orders.orderDetails') || 'Order Details'} #{selectedOrder.id}
+                  </h3>
+                  <button 
+                    onClick={handleCloseDetails}
+                    className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none"
+                  >
+                    <HiX className="w-5 h-5" aria-hidden="true" />
+                  </button>
+                </div>
+                
+                {loadingDetails ? (
+                  <div className="flex justify-center items-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : detailsError ? (
+                  <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-4 rounded-lg">
+                    <p>{detailsError}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Order Info */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+                        <h4 className="font-medium text-gray-800 dark:text-white mb-2">{t('orders.orderInfo') || 'Order Information'}</h4>
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            <span className="font-medium">{t('orders.date') || 'Date'}:</span> {formatDate(orderDetails.orderTime || orderDetails.orderDate)}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            <span className="font-medium">{t('orders.status') || 'Status'}:</span> 
+                            <span className={`ml-2 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(orderDetails.orderStatus || orderDetails.status)}`}>
+                              {orderDetails.orderStatus || orderDetails.status || '-'}
+                            </span>
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            <span className="font-medium">{t('orders.total') || 'Total'}:</span> {formatCurrency(orderDetails.totalPrice || orderDetails.totalAmount || 0)}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            <span className="font-medium">{t('orders.restaurant') || 'Restaurant'}:</span> {orderDetails.restaurantName || '-'}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            <span className="font-medium">{t('orders.customer') || 'Customer'}:</span> {orderDetails.customerName || '-'}
+                          </p>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                      
+                      {/* Update Status */}
+                      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+                        <h4 className="font-medium text-gray-800 dark:text-white mb-2">{t('orders.updateStatus') || 'Update Status'}</h4>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {['PENDING', 'PREPARING', 'READY', 'DELIVERED', 'CANCELLED'].map(status => (
+                            <button
+                              key={status}
+                              onClick={() => handleUpdateOrderStatus(selectedOrder.id, status)}
+                              disabled={(orderDetails.orderStatus || orderDetails.status) === status}
+                              className={`px-3 py-1 text-xs font-medium rounded-md transition-colors 
+                                ${(orderDetails.orderStatus || orderDetails.status) === status 
+                                  ? 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
+                                  : `${getStatusClass(status)} hover:opacity-80`
+                                }`}
+                            >
+                              {t(`orders.status${status}`) || status}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Order Items */}
+                    <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+                      <h4 className="font-medium text-gray-800 dark:text-white mb-3">{t('orders.items') || 'Order Items'}</h4>
+                      {orderDetails.products && orderDetails.products.length > 0 ? (
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead className="bg-gray-100 dark:bg-gray-700">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  {t('orders.product') || 'Product'}
+                                </th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  {t('orders.quantity') || 'Quantity'}
+                                </th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  {t('orders.price') || 'Price'}
+                                </th>
+                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                  {t('orders.subtotal') || 'Subtotal'}
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-gray-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                              {orderDetails.products.map((item, index) => (
+                                <tr key={index} className="hover:bg-gray-100 dark:hover:bg-gray-700">
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    {item.productName || `Product #${item.productId}`}
+                                  </td>
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    {item.quantity}
+                                  </td>
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    {formatCurrency(item.productPriceAtOrder || 0)}
+                                  </td>
+                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    {formatCurrency((item.productPriceAtOrder || 0) * (item.quantity || 0))}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                          {t('orders.noItems') || 'No items available'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            
-            {/* Pagination */}
-            <PaginationControls 
-              currentPage={ordersPage} 
-              totalPages={getTotalPages(adminStats.recentOrders, itemsPerPage)}
-              onPageChange={setOrdersPage} 
-            />
-          </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('admin.orderId') || 'Order ID'}
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('admin.restaurant') || 'Restaurant'}
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('admin.customer') || 'Customer'}
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('admin.amount') || 'Amount'}
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('admin.status') || 'Status'}
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('admin.date') || 'Date'}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    {getPaginatedData(adminStats.recentOrders, ordersPage, itemsPerPage).map((order, index) => (
+                      <tr 
+                        key={order.id || index} 
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
+                        onClick={() => handleOrderClick(order)}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">#{order.id}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{order.restaurantName}</div>
+                          {order.restorantId && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">ID: {order.restorantId}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-white">{order.customerName}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {formatDate(order.orderDate)}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Pagination */}
+              <PaginationControls 
+                currentPage={ordersPage} 
+                totalPages={getTotalPages(adminStats.recentOrders, itemsPerPage)}
+                onPageChange={setOrdersPage} 
+              />
+            </div>
+          )}
         </div>
       )}
       
