@@ -232,4 +232,51 @@ public class OrderController {
         }
     }
 
+    // Endpoint to get count of orders for a specific user
+    @GetMapping("/count/{accountId}")
+    public ResponseEntity<Long> getOrderCountByAccountId(
+            @PathVariable Long accountId,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+        
+        try {
+            // Check if token exists
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(0L);
+            }
+            
+            // Extract user info from JWT token
+            String jwtToken = token.substring(7); // Remove "Bearer " prefix
+            Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken);
+            
+            // Get the user role from token
+            String role = claims.get("role", String.class);
+            if (role == null) {
+                role = "ROLE_USER"; // Default role if not found
+            }
+            
+            Long tokenAccountId = claims.get("accountId", Long.class);
+            
+            // Security check: Only admin users or the owner of the account can get order count
+            boolean isAdmin = "ROLE_ADMIN".equals(role);
+            boolean isAccountOwner = tokenAccountId != null && tokenAccountId.equals(accountId);
+            
+            if (!isAdmin && !isAccountOwner) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(0L);
+            }
+            
+            // Get the count of orders for the specified accountId
+            long orderCount = orderRepository.countByAccountId(accountId);
+            
+            return ResponseEntity.ok(orderCount);
+            
+        } catch (Exception e) {
+            System.out.println("Error getting order count: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(0L);
+        }
+    }
+
 }

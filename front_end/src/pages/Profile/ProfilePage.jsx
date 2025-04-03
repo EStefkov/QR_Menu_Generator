@@ -17,62 +17,81 @@ const ProfilePage = () => {
   const [adminStats, setAdminStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [authError, setAuthError] = useState(false);
   
   // Check if user is admin from JWT token data or localStorage
-  const isAdmin = userData?.accountType === 'ROLE_ADMIN' || localStorage.getItem('accountType') === 'ROLE_ADMIN';
+  const isAdminFromData = userData?.accountType === 'ROLE_ADMIN' || localStorage.getItem('accountType') === 'ROLE_ADMIN';
   
-  const fetchProfileData = async () => {
+  const fetchUserData = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
+      const userData = await profileApi.getUserProfile();
+      console.log('Successfully fetched profile data:', userData);
       
-      console.log('Attempting to fetch user profile data...');
-      
-      // Get real profile data from API
-      const result = await profileApi.getUserProfile();
-      console.log('Successfully fetched profile data:', result);
-      setProfileData(result);
-      
-      // Fetch admin statistics if user is admin
-      if (isAdmin) {
-        try {
-          console.log('User is admin, fetching admin statistics...');
-          const statsResult = await profileApi.getAdminStatistics();
-          console.log('Successfully fetched admin statistics');
-          setAdminStats(statsResult);
-        } catch (err) {
-          console.error("Error fetching admin statistics:", err);
-          setError(err.message || 'Failed to load admin statistics. Please try again.');
-        }
+      // Set user data in localStorage
+      if (userData && userData.id) {
+        localStorage.setItem('userId', userData.id);
+        localStorage.setItem('accountId', userData.id);
       }
+      
+      if (userData && userData.accountType) {
+        localStorage.setItem('accountType', userData.accountType);
+      }
+      
+      setProfileData(userData);
+      
+      if (userData.accountType === 'ROLE_ADMIN') {
+        setIsAdmin(true);
+        fetchAdminData();
+      } else {
+        setAdminLoading(false);
+      }
+      
     } catch (err) {
       console.error('Error fetching profile data:', err);
-      setError(err.message || 'Failed to load profile data. Please try again.');
-      
-      // If we get a 401 or 403 error, the token is probably invalid
-      if (err.message && (err.message.includes('401') || 
-                           err.message.includes('403') || 
-                           err.message.includes('Unauthorized') || 
-                           err.message.includes('expired'))) {
-        console.warn('Authentication error detected, redirecting to login');
-        // Wait 3 seconds before redirecting to login, to give user time to read error
-        setTimeout(() => {
-          logout();
-          navigate('/login');
-        }, 3000);
+      setError(err.message || 'Failed to load profile data.');
+      // If the error is authentication-related, set a flag for auto-redirect
+      if (err.message?.includes('log in again') || err.message?.includes('session') 
+          || err.message?.includes('Authentication required')) {
+        setAuthError(true);
       }
     } finally {
       setLoading(false);
     }
   };
   
+  const fetchAdminData = async () => {
+    try {
+      console.log('User is admin, fetching admin statistics...');
+      const statsResult = await profileApi.getAdminStatistics();
+      console.log('Successfully fetched admin statistics');
+      setAdminStats(statsResult);
+    } catch (err) {
+      console.error("Error fetching admin statistics:", err);
+      setError(err.message || 'Failed to load admin statistics. Please try again.');
+    }
+  };
+  
   useEffect(() => {
     if (userData && userData.token) {
-      fetchProfileData();
+      fetchUserData();
     } else {
       navigate('/login');
     }
   }, [isAdmin, userData]);
+  
+  // Ensure accountId is set in localStorage when profile data is updated
+  useEffect(() => {
+    if (profileData && profileData.id) {
+      console.log('Setting accountId in localStorage from profileData:', profileData.id);
+      localStorage.setItem('userId', profileData.id);
+      localStorage.setItem('accountId', profileData.id);
+    }
+  }, [profileData]);
   
   const handleLogout = () => {
     logout();
@@ -96,7 +115,7 @@ const ProfilePage = () => {
             </div>
             <p className="mb-4">{error}</p>
             <button
-              onClick={fetchProfileData}
+              onClick={fetchUserData}
               className="flex items-center justify-center mx-auto bg-red-100 hover:bg-red-200 dark:bg-red-800/50 dark:hover:bg-red-700/50 text-red-800 dark:text-red-300 font-medium py-2 px-4 rounded-lg transition"
             >
               <HiRefresh className="w-5 h-5 mr-2" />
@@ -110,14 +129,14 @@ const ProfilePage = () => {
     switch (activeTab) {
       case 'overview':
         return isAdmin 
-          ? <AdminProfileContent adminStats={adminStats} loading={loading} error={error} onRetry={fetchProfileData} /> 
-          : <UserProfileContent profileData={profileData} loading={loading} error={error} onRetry={fetchProfileData} />;
+          ? <AdminProfileContent adminStats={adminStats} loading={loading} error={error} onRetry={fetchUserData} /> 
+          : <UserProfileContent profileData={profileData} loading={loading} error={error} onRetry={fetchUserData} />;
       case 'settings':
         return <ProfileSettings profileData={profileData} onUpdate={setProfileData} />;
       default:
         return isAdmin 
-          ? <AdminProfileContent adminStats={adminStats} loading={loading} error={error} onRetry={fetchProfileData} /> 
-          : <UserProfileContent profileData={profileData} loading={loading} error={error} onRetry={fetchProfileData} />;
+          ? <AdminProfileContent adminStats={adminStats} loading={loading} error={error} onRetry={fetchUserData} /> 
+          : <UserProfileContent profileData={profileData} loading={loading} error={error} onRetry={fetchUserData} />;
     }
   };
   

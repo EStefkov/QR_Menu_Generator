@@ -70,6 +70,7 @@ export const profileApi = {
         }
         if (response.data.id) {
           localStorage.setItem('userId', response.data.id);
+          localStorage.setItem('accountId', response.data.id); // Also store as accountId for consistency
         }
       }
       
@@ -213,6 +214,92 @@ export const profileApi = {
       } else {
         throw new Error(error.message || 'Failed to fetch admin statistics');
       }
+    }
+  },
+
+  // Get user orders count
+  getUserOrdersCount: async () => {
+    try {
+      // Try to get accountId from various sources
+      let accountId = localStorage.getItem('accountId');
+      if (!accountId) {
+        accountId = localStorage.getItem('userId');
+      }
+      
+      // If we still don't have an ID, try to get the current profile and extract the ID
+      if (!accountId) {
+        console.log('No user ID found, attempting to fetch profile first');
+        try {
+          const profileData = await profileApi.getUserProfile();
+          if (profileData && profileData.id) {
+            accountId = profileData.id;
+            localStorage.setItem('userId', accountId);
+            localStorage.setItem('accountId', accountId);
+            console.log('Successfully retrieved accountId from profile:', accountId);
+          }
+        } catch (profileError) {
+          console.error('Failed to get profile data for ID:', profileError);
+        }
+      }
+      
+      if (!accountId) {
+        console.error('No accountId or userId found or retrievable');
+        return 0;
+      }
+      
+      console.log(`Fetching order count for user ${accountId}`);
+      const response = await axiosInstance.get(`/orders/count/${accountId}`);
+      console.log(`Order count response:`, response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user orders count:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.status, error.response.data);
+      }
+      return 0; // Return 0 as fallback
+    }
+  },
+
+  // Get user favorites count
+  getUserFavoritesCount: async () => {
+    try {
+      // Try to get accountId from various sources
+      let accountId = localStorage.getItem('accountId');
+      if (!accountId) {
+        accountId = localStorage.getItem('userId');
+      }
+      
+      // If we still don't have an ID, try to get the current profile and extract the ID
+      if (!accountId) {
+        console.log('No user ID found, attempting to fetch profile first');
+        try {
+          const profileData = await profileApi.getUserProfile();
+          if (profileData && profileData.id) {
+            accountId = profileData.id;
+            localStorage.setItem('userId', accountId);
+            localStorage.setItem('accountId', accountId);
+            console.log('Successfully retrieved accountId from profile:', accountId);
+          }
+        } catch (profileError) {
+          console.error('Failed to get profile data for ID:', profileError);
+        }
+      }
+      
+      if (!accountId) {
+        console.error('No accountId or userId found or retrievable');
+        return 0;
+      }
+      
+      console.log(`Fetching favorites count for user ${accountId}`);
+      const response = await axiosInstance.get(`/favorites/count/${accountId}`);
+      console.log(`Favorites count response:`, response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user favorites count:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.status, error.response.data);
+      }
+      return 0; // Return 0 as fallback
     }
   }
 };
