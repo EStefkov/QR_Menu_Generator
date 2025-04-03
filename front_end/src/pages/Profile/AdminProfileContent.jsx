@@ -1,9 +1,122 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh } from 'react-icons/hi';
+import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh, HiChevronLeft, HiChevronRight } from 'react-icons/hi';
 
 const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const { t } = useLanguage();
+  
+  // Pagination states
+  const [restaurantPage, setRestaurantPage] = useState(1);
+  const [productsPage, setProductsPage] = useState(1);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const itemsPerPage = 5;
+  
+  // Pagination functions
+  const getPaginatedData = (data, page, perPage) => {
+    if (!data || !Array.isArray(data)) return [];
+    const startIndex = (page - 1) * perPage;
+    return data.slice(startIndex, startIndex + perPage);
+  };
+  
+  const getTotalPages = (data, perPage) => {
+    if (!data || !Array.isArray(data)) return 0;
+    return Math.ceil(data.length / perPage);
+  };
+  
+  // Pagination controls component
+  const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
+    if (totalPages <= 1) return null;
+    
+    return (
+      <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 bg-white dark:bg-gray-800">
+        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              {t('pagination.showing') || 'Showing'}{' '}
+              <span className="font-medium">
+                {((currentPage - 1) * itemsPerPage) + 1}
+              </span>{' '}
+              {t('pagination.to') || 'to'}{' '}
+              <span className="font-medium">
+                {Math.min(currentPage * itemsPerPage, totalPages * itemsPerPage)}
+              </span>{' '}
+              {t('pagination.of') || 'of'}{' '}
+              <span className="font-medium">{totalPages * itemsPerPage}</span>{' '}
+              {t('pagination.results') || 'results'}
+            </p>
+          </div>
+          <div>
+            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+              <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 dark:text-gray-400 ring-1 ring-inset ring-gray-300 
+                  dark:ring-gray-600 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-offset-0 
+                  ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <span className="sr-only">{t('pagination.previous') || 'Previous'}</span>
+                <HiChevronLeft className="h-5 w-5" aria-hidden="true" />
+              </button>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => onPageChange(page)}
+                  aria-current={currentPage === page ? 'page' : undefined}
+                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold 
+                    ${currentPage === page 
+                      ? 'z-10 bg-blue-600 dark:bg-blue-700 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600' 
+                      : 'text-gray-900 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-offset-0'}`}
+                >
+                  {page}
+                </button>
+              ))}
+              
+              <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 dark:text-gray-400 ring-1 ring-inset ring-gray-300 
+                  dark:ring-gray-600 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-offset-0 
+                  ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <span className="sr-only">{t('pagination.next') || 'Next'}</span>
+                <HiChevronRight className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </nav>
+          </div>
+        </div>
+        
+        {/* Mobile pagination */}
+        <div className="flex sm:hidden justify-between items-center w-full">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`relative inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-300
+              ring-1 ring-inset ring-gray-300 dark:ring-gray-600 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800
+              ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <HiChevronLeft className="h-5 w-5 mr-1" />
+            {t('pagination.previous') || 'Previous'}
+          </button>
+          
+          <span className="text-sm text-gray-700 dark:text-gray-300">
+            {currentPage} / {totalPages}
+          </span>
+          
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`relative inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-300
+              ring-1 ring-inset ring-gray-300 dark:ring-gray-600 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800
+              ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {t('pagination.next') || 'Next'}
+            <HiChevronRight className="h-5 w-5 ml-1" />
+          </button>
+        </div>
+      </div>
+    );
+  };
   
   if (loading) {
     return (
@@ -174,8 +287,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {adminStats.restaurantStats.map((restaurant, index) => (
-                    <tr key={restaurant.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+                  {getPaginatedData(adminStats.restaurantStats, restaurantPage, itemsPerPage).map((restaurant, index) => (
+                    <tr key={restaurant.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">{restaurant.name || restaurant.restorantName}</div>
                       </td>
@@ -193,6 +306,13 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                 </tbody>
               </table>
             </div>
+            
+            {/* Pagination */}
+            <PaginationControls 
+              currentPage={restaurantPage} 
+              totalPages={getTotalPages(adminStats.restaurantStats, itemsPerPage)} 
+              onPageChange={setRestaurantPage}
+            />
           </div>
         </div>
       )}
@@ -242,8 +362,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {adminStats.popularProducts.map((product, index) => (
-                    <tr key={product.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+                  {getPaginatedData(adminStats.popularProducts, productsPage, itemsPerPage).map((product, index) => (
+                    <tr key={product.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">{product.name}</div>
                       </td>
@@ -261,6 +381,13 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                 </tbody>
               </table>
             </div>
+            
+            {/* Pagination */}
+            <PaginationControls 
+              currentPage={productsPage} 
+              totalPages={getTotalPages(adminStats.popularProducts, itemsPerPage)} 
+              onPageChange={setProductsPage}
+            />
           </div>
         </div>
       )}
@@ -297,8 +424,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {adminStats.recentOrders.map((order, index) => (
-                    <tr key={order.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition">
+                  {getPaginatedData(adminStats.recentOrders, ordersPage, itemsPerPage).map((order, index) => (
+                    <tr key={order.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">#{order.id}</div>
                       </td>
@@ -332,6 +459,13 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                 </tbody>
               </table>
             </div>
+            
+            {/* Pagination */}
+            <PaginationControls 
+              currentPage={ordersPage} 
+              totalPages={getTotalPages(adminStats.recentOrders, itemsPerPage)}
+              onPageChange={setOrdersPage} 
+            />
           </div>
         </div>
       )}
