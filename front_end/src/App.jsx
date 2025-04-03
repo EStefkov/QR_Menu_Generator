@@ -231,6 +231,18 @@ import {
             }
           />
           
+          {/* Alternative route for restaurant menus */}
+          <Route
+            path="/restaurants/:restaurantId/menus"
+            element={
+              <ProtectedRoute role="ROLE_ADMIN">
+                <Layout>
+                  <RestaurantMenus />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
           {/* Profile page */}
           <Route
             path="/profile"

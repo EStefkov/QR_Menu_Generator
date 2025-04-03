@@ -9,6 +9,7 @@ import CreateCategoryForm from "../components/CreateCategoryForm";
 import CreateProductForm from "../components/CreateProductForm.jsx";
 import CreateRestaurantForm from "../components/CreateRestaurantForm";
 import OrdersHistory from "../components/OrdersHistory.jsx";
+import { restaurantApi } from "../api/restaurantApi";
 
 import {
     fetchAccountsApi,
@@ -148,16 +149,18 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleCreateMenu = async () => {
+    const handleCreateMenu = async (menuData) => {
         try {
-            console.log("Creating menu with token:", token);
-            await createMenuApi(token, newMenu);
-            fetchMenusByRestaurantId(newMenu.restaurantId);
+            await restaurantApi.createMenu(menuData.restaurantId, menuData);
+            
+            await fetchMenusByRestaurantId(menuData.restaurantId);
+            
             setNewMenu({ category: "", restaurantId: "" });
-            alert("Menu created successfully!");
+            
+            alert("Менюто беше създадено успешно!");
         } catch (error) {
             console.error("Error creating menu:", error);
-            alert("Failed to create menu: " + error.message);
+            alert("Неуспешно създаване на меню: " + error.message);
         }
     };
 

@@ -7,8 +7,7 @@ import { HiArrowLeft, HiExclamationCircle, HiEye, HiPencil, HiTrash, HiRefresh, 
 const CreateMenuForm = ({ restaurantId, onSuccess, onCancel }) => {
   const { t } = useLanguage();
   const [menuData, setMenuData] = useState({
-    name: '',
-    description: ''
+    name: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -33,14 +32,22 @@ const CreateMenuForm = ({ restaurantId, onSuccess, onCancel }) => {
     setError(null);
     
     try {
-      // Format menu data for API
+      // Format menu data for API - ensure we match the expected format
       const formattedData = {
-        category: menuData.name.trim(),
-        restaurantId: parseInt(restaurantId, 10),
-        description: menuData.description
+        category: menuData.name.trim(), // backend expects 'category' field
+        name: menuData.name.trim(),     // also include name for flexibility
+        restaurantId: parseInt(restaurantId, 10)
       };
       
+      console.log("Submitting menu creation:", formattedData);
+      
+      // Pass just the restaurantId and the formatted data
       await restaurantApi.createMenu(restaurantId, formattedData);
+      
+      // Clear form and show success message
+      setMenuData({ name: '' });
+      
+      // Notify parent component of success
       onSuccess();
     } catch (err) {
       console.error('Error creating menu:', err);
@@ -83,20 +90,6 @@ const CreateMenuForm = ({ restaurantId, onSuccess, onCancel }) => {
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             placeholder={t('menus.namePlaceholder') || 'Enter menu name'}
           />
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {t('menus.description') || 'Description'}
-          </label>
-          <textarea
-            name="description"
-            value={menuData.description}
-            onChange={handleChange}
-            rows="3"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-            placeholder={t('menus.descriptionPlaceholder') || 'Enter menu description'}
-          ></textarea>
         </div>
         
         <div className="flex justify-end">
@@ -195,13 +188,24 @@ const RestaurantMenus = () => {
     }
   };
   
-  const handleCreateMenu = () => {
-    setShowCreateForm(true);
+  const handleCreateMenuSuccess = async () => {
+    try {
+      // Reload the menus list to show the new menu
+      const menusData = await restaurantApi.getRestaurantMenus(restaurantId);
+      setMenus(menusData || []);
+      
+      // Hide the create form and show success
+      setShowCreateForm(false);
+      
+      // Show success message (optional)
+      alert(t('menus.createSuccess') || 'Menu created successfully!');
+    } catch (err) {
+      console.error('Error refreshing menus:', err);
+    }
   };
   
-  const handleMenuCreated = () => {
-    setShowCreateForm(false);
-    fetchRestaurantData(); // Refresh menu list
+  const handleCreateMenu = () => {
+    setShowCreateForm(true);
   };
   
   const formatDate = (dateString) => {
@@ -263,7 +267,7 @@ const RestaurantMenus = () => {
         <div className="flex items-center">
           <button
             onClick={() => navigate(-1)}
-            className="mr-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="mr-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </button>
@@ -275,7 +279,7 @@ const RestaurantMenus = () => {
         {!showCreateForm && (
           <button
             onClick={handleCreateMenu}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
             <HiPlusCircle className="mr-2 h-5 w-5" />
             {t('menus.createNew') || 'Create New Menu'}
@@ -283,12 +287,30 @@ const RestaurantMenus = () => {
         )}
       </div>
       
+      {/* Floating action button for creating new menu */}
+      {!showCreateForm && (
+        <div className="fixed bottom-6 right-6 z-10">
+          <button
+            onClick={handleCreateMenu}
+            className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-full p-4 shadow-lg flex items-center justify-center transition-colors"
+            aria-label="Create new menu"
+          >
+            <HiPlusCircle className="w-7 h-7" />
+          </button>
+        </div>
+      )}
+      
+      {/* Create Menu Form */}
       {showCreateForm && (
-        <CreateMenuForm 
-          restaurantId={restaurantId}
-          onSuccess={handleMenuCreated}
-          onCancel={() => setShowCreateForm(false)}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full mx-auto">
+            <CreateMenuForm 
+              restaurantId={restaurantId}
+              onSuccess={handleCreateMenuSuccess}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          </div>
+        </div>
       )}
       
       {restaurant && !showCreateForm && (
@@ -457,77 +479,89 @@ const RestaurantMenus = () => {
             {t('menus.availableMenus') || 'Available Menus'}
           </h3>
           
-          {menus && menus.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {menus.map((menu) => (
+          {/* Menu List */}
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {menus.length > 0 ? (
+              menus.map((menu) => (
                 <div 
                   key={menu.id} 
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden transition hover:shadow-md"
+                  className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow duration-200"
                 >
                   <div className="p-5">
-                    <h4 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
-                      {menu.name || menu.category}
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-2">
-                      {menu.description || t('admin.noDescription') || 'No description available'}
-                    </p>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-white truncate">
+                        {menu.category || menu.name}
+                      </h3>
+                      <span className="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                        ID: {menu.id}
+                      </span>
+                    </div>
                     
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        <span className="font-medium">{t('admin.categories') || 'Categories'}:</span> {menu.categoryCount || '0'}
-                      </div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">
-                        <span className="font-medium">{t('admin.products') || 'Products'}:</span> {menu.productCount || '0'}
-                      </div>
-                      {menu.lastUpdated && (
-                        <div className="col-span-2 text-sm text-gray-500 dark:text-gray-400">
-                          <span className="font-medium">{t('admin.lastUpdated') || 'Last updated'}:</span> {formatDate(menu.lastUpdated)}
-                        </div>
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-5">
+                      {menu.createdAt && (
+                        <span>
+                          {t('menus.created') || 'Created'}: {formatDate(menu.createdAt)}
+                        </span>
                       )}
                     </div>
                     
-                    <div className="flex justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-                      <button
-                        onClick={() => handleViewMenu(menu.id)}
-                        className="inline-flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                      >
-                        <HiEye className="w-4 h-4 mr-1" />
-                        {t('common.view') || 'View'}
-                      </button>
-                      
-                      <div className="flex space-x-4">
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          onClick={() => handleViewMenu(menu.id)}
+                          className="flex items-center justify-center px-3 py-2 font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
+                        >
+                          <HiEye className="w-4 h-4 mr-2" />
+                          {t('common.view') || 'View'}
+                        </button>
                         <button
                           onClick={() => handleEditMenu(menu.id)}
-                          className="inline-flex items-center text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300"
+                          className="flex items-center justify-center px-3 py-2 font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 transition-colors"
                         >
-                          <HiPencil className="w-4 h-4 mr-1" />
+                          <HiPencil className="w-4 h-4 mr-2" />
                           {t('common.edit') || 'Edit'}
                         </button>
-                        
                         <button
                           onClick={() => handleDeleteMenu(menu.id)}
-                          className="inline-flex items-center text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                          className="flex items-center justify-center px-3 py-2 font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 transition-colors"
                         >
-                          <HiTrash className="w-4 h-4 mr-1" />
+                          <HiTrash className="w-4 h-4 mr-2" />
                           {t('common.delete') || 'Delete'}
                         </button>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300 p-5 rounded-lg">
-              <p className="flex items-center">
-                <HiExclamationCircle className="w-5 h-5 mr-2" />
-                {t('admin.noMenusFound') || 'No menus found for this restaurant'}
-              </p>
-              <p className="mt-2">
-                {t('admin.clickCreateNew') || 'Click the "Create New Menu" button to add a menu.'}
-              </p>
-            </div>
-          )}
+              ))
+            ) : (
+              <div className="md:col-span-2 lg:col-span-3 p-8 bg-white dark:bg-gray-800 rounded-xl shadow-md text-center">
+                <div className="flex flex-col items-center justify-center py-8">
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mb-4"></div>
+                  ) : (
+                    <>
+                      <div className="bg-blue-100 dark:bg-blue-900/30 p-4 rounded-full mb-6">
+                        <HiExclamationCircle className="w-14 h-14 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        {t('menus.noMenus') || 'No menus found'}
+                      </h3>
+                      <p className="text-base text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                        {t('menus.createMenuPrompt') || 'This restaurant doesn\'t have any menus yet. Create your first menu to get started.'}
+                      </p>
+                      <button
+                        onClick={handleCreateMenu}
+                        className="inline-flex items-center px-6 py-3 rounded-lg shadow-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                      >
+                        <HiPlusCircle className="w-6 h-6 mr-2" />
+                        {t('menus.createMenu') || 'Create Menu'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>

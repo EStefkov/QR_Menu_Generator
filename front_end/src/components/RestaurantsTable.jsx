@@ -225,6 +225,15 @@ const RestaurantsTable = ({
                       </svg>
                       Изтрий
                     </button>
+                    <button
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
+                      onClick={() => navigate(`/restaurants/${restaurant.id}/menus`)}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      Управление на менюта
+                    </button>
                     {restaurant.id && (
                       <button
                         className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
@@ -246,70 +255,35 @@ const RestaurantsTable = ({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Избери меню:
+                          Меню:
                         </label>
                       </div>
-                      <select
-                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors duration-200"
-                        value={selectedMenu[restaurant.id] || ""}
-                        onChange={(e) => handleMenuChange(restaurant.id, e.target.value)}
-                      >
-                        <option value="">-- Избери меню --</option>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {menus[restaurant.id].map((menu) => (
-                          <option key={menu.id} value={menu.id}>
-                            {menu.category}
-                          </option>
-                        ))}
-                      </select>
-
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
-                          onClick={() => handleFetchQRCode(selectedMenu[restaurant.id])}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                          </svg>
-                          Вземи QR CODE
-                        </button>
-                        <button
-                          className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors duration-200 flex items-center gap-2"
-                          onClick={() => goToMenuPage(selectedMenu[restaurant.id])}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                          Отвори цялото меню
-                        </button>
-                      </div>
-
-                      {/* Показваме категориите (ако искаш да ги виждаш и тук) */}
-                      {selectedMenu[restaurant.id] &&
-                        categories[selectedMenu[restaurant.id]] &&
-                        categories[selectedMenu[restaurant.id]].length > 0 && (
-                          <div className="mt-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                              </svg>
-                              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Категории:
-                              </p>
+                          <div key={menu.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-medium text-gray-900 dark:text-white">{menu.category || menu.name}</h4>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">ID: {menu.id}</span>
                             </div>
-                            <ul className="space-y-2">
-                              {categories[selectedMenu[restaurant.id]].map((cat) => (
-                                <li key={cat.id} className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                  {cat.name}
-                                  <span className="text-xs text-gray-500 dark:text-gray-500">(ID: {cat.id})</span>
-                                </li>
-                              ))}
-                            </ul>
+                            
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              <button
+                                onClick={() => goToMenuPage(menu.id)}
+                                className="text-xs px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900/30 dark:hover:bg-blue-800/30 dark:text-blue-300 rounded transition-colors"
+                              >
+                                Преглед
+                              </button>
+                              <button
+                                onClick={() => handleFetchQRCode(menu.id)}
+                                className="text-xs px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-900/30 dark:hover:bg-purple-800/30 dark:text-purple-300 rounded transition-colors"
+                              >
+                                QR код
+                              </button>
+                            </div>
                           </div>
-                        )}
+                        ))}
+                      </div>
                     </div>
                   )}
                 </td>
