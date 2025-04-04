@@ -16,6 +16,11 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const [ordersPage, setOrdersPage] = useState(1);
   const itemsPerPage = 5;
   
+  // Search filter states
+  const [restaurantSearchTerm, setRestaurantSearchTerm] = useState('');
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [orderSearchTerm, setOrderSearchTerm] = useState('');
+  
   // Order detail states
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetails, setOrderDetails] = useState(null);
@@ -48,6 +53,18 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const [accounts, setAccounts] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [accountsError, setAccountsError] = useState(null);
+
+  // Add sorting state variables
+  const [restaurantSortField, setRestaurantSortField] = useState('name');
+  const [restaurantSortDirection, setRestaurantSortDirection] = useState('asc');
+
+  // Add sorting state variables for products
+  const [productSortField, setProductSortField] = useState('orderCount');
+  const [productSortDirection, setProductSortDirection] = useState('desc');
+
+  // Add sorting state variables for orders
+  const [orderSortField, setOrderSortField] = useState('date');
+  const [orderSortDirection, setOrderSortDirection] = useState('desc');
 
   // Load accounts on component mount
   useEffect(() => {
@@ -143,7 +160,19 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
     try {
       // Fetch order details
       const details = await orderApi.getOrderById(order.id);
-      setOrderDetails(details);
+      
+      // Ensure restaurant and customer information is available
+      const enhancedDetails = {
+        ...details,
+        restaurantName: details.restaurantName || order.restaurantName || 'Unknown Restaurant',
+        restaurantId: details.restaurantId || order.restorantId || order.restaurantId,
+        customerName: details.customerName || order.customerName || 'Unknown Customer',
+        customerId: details.customerId || order.customerId,
+        status: details.status || order.status || 'ACCEPTED', // Use order status if details.status is missing
+        totalAmount: details.totalAmount || order.totalAmount || 0, // Use order total if details.totalAmount is missing
+      };
+      
+      setOrderDetails(enhancedDetails);
     } catch (err) {
       console.error('Error fetching order details:', err);
       setDetailsError(t('errors.failedToLoadOrderDetails') || 'Failed to load order details');
@@ -175,10 +204,11 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
     try {
       await orderApi.updateOrderStatus(orderId, newStatus);
       
-      // Update order details
+      // Update order details with the correct status property
       setOrderDetails(prev => ({
         ...prev,
-        orderStatus: newStatus
+        status: newStatus,
+        statusDate: new Date().toISOString()
       }));
       
       // Update in the main orders list
@@ -623,6 +653,244 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
     }
   };
   
+  // Filter function for restaurants
+  const getFilteredRestaurants = () => {
+    if (!adminStats?.restaurantStats || !Array.isArray(adminStats.restaurantStats)) {
+      return [];
+    }
+    
+    // Filter by search term
+    const filtered = adminStats.restaurantStats.filter(restaurant => {
+      const searchTermLower = restaurantSearchTerm.toLowerCase();
+      return (
+        (restaurant.name?.toLowerCase() || '').includes(searchTermLower) ||
+        (restaurant.restorantName?.toLowerCase() || '').includes(searchTermLower) ||
+        (restaurant.id?.toString() || '').includes(searchTermLower)
+      );
+    });
+    
+    // Apply sorting
+    return [...filtered].sort((a, b) => {
+      let aValue, bValue;
+      
+      // Determine which field to sort by
+      switch(restaurantSortField) {
+        case 'id':
+          aValue = Number(a.id);
+          bValue = Number(b.id);
+          break;
+        case 'name':
+          aValue = (a.name || a.restorantName || '').toLowerCase();
+          bValue = (b.name || b.restorantName || '').toLowerCase();
+          break;
+        case 'revenue':
+          aValue = Number(a.totalRevenue || 0);
+          bValue = Number(b.totalRevenue || 0);
+          break;
+        case 'orders':
+          aValue = Number(a.orderCount || 0);
+          bValue = Number(b.orderCount || 0);
+          break;
+        case 'avgOrder':
+          aValue = Number(a.averageOrderValue || 0);
+          bValue = Number(b.averageOrderValue || 0);
+          break;
+        default:
+          aValue = a[restaurantSortField];
+          bValue = b[restaurantSortField];
+      }
+      
+      // Compare based on sort direction
+      if (restaurantSortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
+  // Handle column header click for sorting restaurants
+  const handleRestaurantSort = (field) => {
+    if (restaurantSortField === field) {
+      // Toggle direction if clicking the same field
+      setRestaurantSortDirection(restaurantSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to ascending
+      setRestaurantSortField(field);
+      setRestaurantSortDirection('asc');
+    }
+    setRestaurantPage(1); // Reset to first page when sorting
+  };
+
+  // Render sort indicator for restaurant table
+  const renderSortIndicator = (field, currentSortField, currentSortDirection) => {
+    if (currentSortField !== field) {
+      return (
+        <span className="text-gray-400 ml-1">
+          <svg className="h-4 w-4 inline-block" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+          </svg>
+        </span>
+      );
+    }
+    
+    if (currentSortDirection === 'asc') {
+      return (
+        <span className="text-blue-500 ml-1">
+          <svg className="h-4 w-4 inline-block" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M5 15l7-7 7 7"></path>
+          </svg>
+        </span>
+      );
+    } else {
+      return (
+        <span className="text-blue-500 ml-1">
+          <svg className="h-4 w-4 inline-block" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M19 9l-7 7-7-7"></path>
+          </svg>
+        </span>
+      );
+    }
+  };
+
+  // Filter function for products
+  const getFilteredProducts = () => {
+    if (!adminStats?.popularProducts || !Array.isArray(adminStats.popularProducts)) {
+      return [];
+    }
+    
+    // Filter by search term
+    const filtered = adminStats.popularProducts.filter(product => {
+      const searchTermLower = productSearchTerm.toLowerCase();
+      return (
+        (product.name?.toLowerCase() || '').includes(searchTermLower) ||
+        (product.restaurantName?.toLowerCase() || '').includes(searchTermLower)
+      );
+    });
+    
+    // Apply sorting
+    return [...filtered].sort((a, b) => {
+      let aValue, bValue;
+      
+      // Determine which field to sort by
+      switch(productSortField) {
+        case 'id':
+          aValue = Number(a.id);
+          bValue = Number(b.id);
+          break;
+        case 'name':
+          aValue = (a.name || '').toLowerCase();
+          bValue = (b.name || '').toLowerCase();
+          break;
+        case 'restaurant':
+          aValue = (a.restaurantName || '').toLowerCase();
+          bValue = (b.restaurantName || '').toLowerCase();
+          break;
+        case 'orderCount':
+          aValue = Number(a.orderCount || 0);
+          bValue = Number(b.orderCount || 0);
+          break;
+        default:
+          aValue = a[productSortField];
+          bValue = b[productSortField];
+      }
+      
+      // Compare based on sort direction
+      if (productSortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
+  // Handle column header click for sorting products
+  const handleProductSort = (field) => {
+    if (productSortField === field) {
+      // Toggle direction if clicking the same field
+      setProductSortDirection(productSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to ascending
+      setProductSortField(field);
+      setProductSortDirection('asc');
+    }
+    setProductsPage(1); // Reset to first page when sorting
+  };
+
+  // Filter function for orders
+  const getFilteredOrders = () => {
+    if (!adminStats?.recentOrders || !Array.isArray(adminStats.recentOrders)) {
+      return [];
+    }
+    
+    // Filter by search term
+    const filtered = adminStats.recentOrders.filter(order => {
+      const searchTermLower = orderSearchTerm.toLowerCase();
+      return (
+        (order.id?.toString() || '').includes(searchTermLower) ||
+        (order.customerName?.toLowerCase() || '').includes(searchTermLower) ||
+        (order.restaurantName?.toLowerCase() || '').includes(searchTermLower) ||
+        (order.status?.toLowerCase() || '').includes(searchTermLower)
+      );
+    });
+    
+    // Apply sorting
+    return [...filtered].sort((a, b) => {
+      let aValue, bValue;
+      
+      // Determine which field to sort by
+      switch(orderSortField) {
+        case 'id':
+          aValue = Number(a.id);
+          bValue = Number(b.id);
+          break;
+        case 'customer':
+          aValue = (a.customerName || '').toLowerCase();
+          bValue = (b.customerName || '').toLowerCase();
+          break;
+        case 'restaurant':
+          aValue = (a.restaurantName || '').toLowerCase();
+          bValue = (b.restaurantName || '').toLowerCase();
+          break;
+        case 'amount':
+          aValue = Number(a.amount || 0);
+          bValue = Number(b.amount || 0);
+          break;
+        case 'status':
+          aValue = (a.status || '').toLowerCase();
+          bValue = (b.status || '').toLowerCase();
+          break;
+        case 'date':
+          aValue = new Date(a.date || 0).getTime();
+          bValue = new Date(b.date || 0).getTime();
+          break;
+        default:
+          aValue = a[orderSortField];
+          bValue = b[orderSortField];
+      }
+      
+      // Compare based on sort direction
+      if (orderSortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+  };
+
+  // Handle column header click for sorting orders
+  const handleOrderSort = (field) => {
+    if (orderSortField === field) {
+      // Toggle direction if clicking the same field
+      setOrderSortDirection(orderSortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to ascending
+      setOrderSortField(field);
+      setOrderSortDirection('asc');
+    }
+    setOrdersPage(1); // Reset to first page when sorting
+  };
+  
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -706,21 +974,19 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
     }
   };
 
-  // Get the appropriate status class for coloring
+  // Update the getStatusClass function to handle the new status types
   const getStatusClass = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100';
-      case 'PREPARING':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100';
+    if (!status) return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    
+    switch (status.toUpperCase()) {
+      case 'ACCEPTED':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100';
       case 'READY':
-        return 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100';
-      case 'DELIVERED':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100';
+        return 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100';
       case 'CANCELLED':
-        return 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100';
+        return 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
     }
   };
   
@@ -732,7 +998,18 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
     return adminStats.totalOrders || 0;
   };
   
+  // Update the getTotalRevenue function to exclude cancelled orders
   const getTotalRevenue = () => {
+    // If we have recentOrders data, calculate revenue excluding cancelled orders
+    if (adminStats.recentOrders && Array.isArray(adminStats.recentOrders)) {
+      const activeOrdersRevenue = adminStats.recentOrders
+        .filter(order => order.status?.toUpperCase() !== 'CANCELLED')
+        .reduce((total, order) => total + (Number(order.totalAmount) || 0), 0);
+      
+      return activeOrdersRevenue;
+    }
+    
+    // Fallback to the pre-calculated total if recentOrders is not available
     return adminStats.totalRevenue || 0;
   };
   
@@ -808,8 +1085,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
         <div className="mt-8">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-            {t('admin.restaurantPerformance') || 'Restaurant Performance'}
-          </h3>
+              {t('admin.restaurantPerformance') || 'Restaurant Performance'}
+            </h3>
             <button
               onClick={() => setShowRestaurantModal(true)}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
@@ -820,29 +1097,88 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           </div>
           
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
+            {/* Search Bar */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder={t('admin.searchRestaurants') || 'Search restaurants...'}
+                  value={restaurantSearchTerm}
+                  onChange={(e) => {
+                    setRestaurantSearchTerm(e.target.value);
+                    setRestaurantPage(1); // Reset to first page when searching
+                  }}
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                />
+                <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                
+                {restaurantSearchTerm && (
+                  <button
+                    onClick={() => {
+                      setRestaurantSearchTerm('');
+                      setRestaurantPage(1);
+                    }}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                  >
+                    <HiX className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+            
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.restaurantName') || 'Restaurant'}
+                    <th 
+                      scope="col" 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                      onClick={() => handleRestaurantSort('name')}
+                    >
+                      <div className="flex items-center">
+                        {t('admin.restaurantName') || 'Restaurant'}
+                        {renderSortIndicator('name', restaurantSortField, restaurantSortDirection)}
+                      </div>
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.totalOrders') || 'Orders'}
+                    <th 
+                      scope="col" 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                      onClick={() => handleRestaurantSort('revenue')}
+                    >
+                      <div className="flex items-center">
+                        {t('admin.revenue') || 'Revenue'}
+                        {renderSortIndicator('revenue', restaurantSortField, restaurantSortDirection)}
+                      </div>
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.revenue') || 'Revenue'}
+                    <th 
+                      scope="col" 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                      onClick={() => handleRestaurantSort('orders')}
+                    >
+                      <div className="flex items-center">
+                        {t('admin.orderCount') || 'Orders'}
+                        {renderSortIndicator('orders', restaurantSortField, restaurantSortDirection)}
+                      </div>
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.avgOrder') || 'Avg. Order'}
+                    <th 
+                      scope="col" 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                      onClick={() => handleRestaurantSort('avgOrder')}
+                    >
+                      <div className="flex items-center">
+                        {t('admin.avgOrder') || 'Avg. Order'}
+                        {renderSortIndicator('avgOrder', restaurantSortField, restaurantSortDirection)}
+                      </div>
                     </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('admin.actions') || 'Actions'}
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                  {getPaginatedData(adminStats.restaurantStats, restaurantPage, itemsPerPage).map((restaurant, index) => (
+                  {getPaginatedData(getFilteredRestaurants(), restaurantPage, itemsPerPage).map((restaurant, index) => (
                     <tr 
                       key={restaurant.id || index} 
                       className="hover:bg-gray-50 dark:hover:bg-gray-700 transition"
@@ -854,10 +1190,10 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">{restaurant.totalOrders || 0}</div>
+                        <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(restaurant.totalRevenue || 0)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(restaurant.totalRevenue || 0)}</div>
+                        <div className="text-sm text-gray-900 dark:text-white">{restaurant.totalOrders || restaurant.orderCount || 0}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(restaurant.averageOrderValue || 0)}</div>
@@ -889,7 +1225,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
             {/* Pagination */}
             <PaginationControls 
               currentPage={restaurantPage} 
-              totalPages={getTotalPages(adminStats.restaurantStats, itemsPerPage)} 
+              totalPages={getTotalPages(getFilteredRestaurants(), itemsPerPage)} 
               onPageChange={setRestaurantPage}
             />
           </div>
@@ -922,18 +1258,70 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
             {t('admin.popularProducts') || 'Most Popular Products'}
           </h3>
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
+            {/* Search Bar */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder={t('admin.searchProducts') || 'Search products or restaurants...'}
+                  value={productSearchTerm}
+                  onChange={(e) => {
+                    setProductSearchTerm(e.target.value);
+                    setProductsPage(1); // Reset to first page when searching
+                  }}
+                  className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                />
+                <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                
+                {productSearchTerm && (
+                  <button
+                    onClick={() => {
+                      setProductSearchTerm('');
+                      setProductsPage(1);
+                    }}
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                  >
+                    <HiX className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+            
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.product') || 'Product'}
+                    <th 
+                      scope="col" 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                      onClick={() => handleProductSort('name')}
+                    >
+                      <div className="flex items-center">
+                        {t('admin.product') || 'Product'}
+                        {renderSortIndicator('name', productSortField, productSortDirection)}
+                      </div>
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.restaurant') || 'Restaurant'}
+                    <th 
+                      scope="col" 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                      onClick={() => handleProductSort('restaurant')}
+                    >
+                      <div className="flex items-center">
+                        {t('admin.restaurant') || 'Restaurant'}
+                        {renderSortIndicator('restaurant', productSortField, productSortDirection)}
+                      </div>
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.orderCount') || 'Orders'}
+                    <th 
+                      scope="col" 
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                      onClick={() => handleProductSort('orderCount')}
+                    >
+                      <div className="flex items-center">
+                        {t('admin.orderCount') || 'Orders'}
+                        {renderSortIndicator('orderCount', productSortField, productSortDirection)}
+                      </div>
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('admin.revenue') || 'Revenue'}
@@ -941,7 +1329,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                  {getPaginatedData(adminStats.popularProducts, productsPage, itemsPerPage).map((product, index) => (
+                  {getPaginatedData(getFilteredProducts(), productsPage, itemsPerPage).map((product, index) => (
                     <tr key={product.id || index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">{product.name}</div>
@@ -964,7 +1352,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
             {/* Pagination */}
             <PaginationControls 
               currentPage={productsPage} 
-              totalPages={getTotalPages(adminStats.popularProducts, itemsPerPage)} 
+              totalPages={getTotalPages(getFilteredProducts(), itemsPerPage)} 
               onPageChange={setProductsPage}
             />
           </div>
@@ -1004,100 +1392,145 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                 ) : (
                   <div className="space-y-6">
                     {/* Order Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
-                        <h4 className="font-medium text-gray-800 dark:text-white mb-2">{t('orders.orderInfo') || 'Order Information'}</h4>
-                        <div className="space-y-2">
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            <span className="font-medium">{t('orders.date') || 'Date'}:</span> {formatDate(orderDetails.orderTime || orderDetails.orderDate)}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            <span className="font-medium">{t('orders.status') || 'Status'}:</span> 
-                            <span className={`ml-2 px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(orderDetails.orderStatus || orderDetails.status)}`}>
-                              {orderDetails.orderStatus || orderDetails.status || '-'}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden mb-6">
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                        <h4 className="text-lg font-medium text-gray-800 dark:text-white">
+                          {t('orders.orderInfo') || 'Order Information'}
+                        </h4>
+                      </div>
+                      <div className="p-4 grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('orders.id') || 'ID'}</p>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">#{orderDetails.id}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('orders.date') || 'Date'}</p>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{formatDate(orderDetails.orderDate)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('orders.status') || 'Status'}</p>
+                          <p className="text-sm mt-1">
+                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(orderDetails.status)}`}>
+                              {orderDetails.status || 'ACCEPTED'}
                             </span>
                           </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            <span className="font-medium">{t('orders.total') || 'Total'}:</span> {formatCurrency(orderDetails.totalPrice || orderDetails.totalAmount || 0)}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            <span className="font-medium">{t('orders.restaurant') || 'Restaurant'}:</span> {orderDetails.restaurantName || '-'}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
-                            <span className="font-medium">{t('orders.customer') || 'Customer'}:</span> {orderDetails.customerName || '-'}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('orders.statusDate') || 'Status Date'}</p>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{formatDate(orderDetails.statusDate || orderDetails.lastUpdated)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('orders.total') || 'Total'}</p>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">
+                            {formatCurrency(orderDetails.totalAmount || orderDetails.totalPrice || 0)}
                           </p>
                         </div>
-                      </div>
-                      
-                      {/* Update Status */}
-                      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
-                        <h4 className="font-medium text-gray-800 dark:text-white mb-2">{t('orders.updateStatus') || 'Update Status'}</h4>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {['PENDING', 'PREPARING', 'READY', 'DELIVERED', 'CANCELLED'].map(status => (
-                            <button
-                              key={status}
-                              onClick={() => handleUpdateOrderStatus(selectedOrder.id, status)}
-                              disabled={(orderDetails.orderStatus || orderDetails.status) === status}
-                              className={`px-3 py-1 text-xs font-medium rounded-md transition-colors 
-                                ${(orderDetails.orderStatus || orderDetails.status) === status 
-                                  ? 'bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed' 
-                                  : `${getStatusClass(status)} hover:opacity-80`
-                                }`}
-                            >
-                              {t(`orders.status${status}`) || status}
-                            </button>
-                          ))}
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('orders.customer') || 'Customer'}</p>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{orderDetails.customerName || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('orders.restaurant') || 'Restaurant'}</p>
+                          <p className="text-sm text-gray-900 dark:text-white mt-1">{orderDetails.restaurantName || 'N/A'}</p>
                         </div>
                       </div>
                     </div>
                     
-                    {/* Order Items */}
+                    {/* Update Status */}
                     <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
-                      <h4 className="font-medium text-gray-800 dark:text-white mb-3">{t('orders.items') || 'Order Items'}</h4>
-                      {orderDetails.products && orderDetails.products.length > 0 ? (
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead className="bg-gray-100 dark:bg-gray-700">
-                              <tr>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                  {t('orders.product') || 'Product'}
-                                </th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                  {t('orders.quantity') || 'Quantity'}
-                                </th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                  {t('orders.price') || 'Price'}
-                                </th>
-                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                  {t('orders.subtotal') || 'Subtotal'}
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-gray-50 dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                              {orderDetails.products.map((item, index) => (
-                                <tr key={index} className="hover:bg-gray-100 dark:hover:bg-gray-700">
-                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                                    {item.productName || `Product #${item.productId}`}
-                                  </td>
-                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                                    {item.quantity}
-                                  </td>
-                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                                    {formatCurrency(item.productPriceAtOrder || 0)}
-                                  </td>
-                                  <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                                    {formatCurrency((item.productPriceAtOrder || 0) * (item.quantity || 0))}
-                                  </td>
+                      <h4 className="font-medium text-gray-800 dark:text-white mb-2">{t('orders.updateStatus') || 'Update Status'}</h4>
+                      <div className="flex items-center mt-4 space-x-3">
+                        <button
+                          onClick={() => handleUpdateOrderStatus(orderDetails.id, 'ACCEPTED')}
+                          className={`px-3 py-1 text-xs font-medium rounded-md ${
+                            (orderDetails.status || orderDetails.orderStatus || '').toUpperCase() === 'ACCEPTED'
+                              ? 'bg-blue-600 text-white cursor-not-allowed opacity-70'
+                              : 'bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100 hover:bg-blue-200 dark:hover:bg-blue-600'
+                          }`}
+                          disabled={(orderDetails.status || orderDetails.orderStatus || '').toUpperCase() === 'ACCEPTED'}
+                        >
+                          {t('admin.acceptOrder') || 'Accept'}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleUpdateOrderStatus(orderDetails.id, 'READY')}
+                          className={`px-3 py-1 text-xs font-medium rounded-md ${
+                            (orderDetails.status || orderDetails.orderStatus || '').toUpperCase() === 'READY'
+                              ? 'bg-green-600 text-white cursor-not-allowed opacity-70'
+                              : 'bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100 hover:bg-green-200 dark:hover:bg-green-600'
+                          }`}
+                          disabled={(orderDetails.status || orderDetails.orderStatus || '').toUpperCase() === 'READY'}
+                        >
+                          {t('admin.orderReady') || 'Ready'}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleUpdateOrderStatus(orderDetails.id, 'CANCELLED')}
+                          className={`px-3 py-1 text-xs font-medium rounded-md ${
+                            (orderDetails.status || orderDetails.orderStatus || '').toUpperCase() === 'CANCELLED'
+                              ? 'bg-red-600 text-white cursor-not-allowed opacity-70'
+                              : 'bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100 hover:bg-red-200 dark:hover:bg-red-600'
+                          }`}
+                          disabled={(orderDetails.status || orderDetails.orderStatus || '').toUpperCase() === 'CANCELLED'}
+                        >
+                          {t('admin.cancelOrder') || 'Cancel'}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Order Items */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden mb-6">
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                        <h4 className="text-lg font-medium text-gray-800 dark:text-white">
+                          {t('orders.items') || 'Order Items'}
+                        </h4>
+                      </div>
+                      <div className="p-4">
+                        {orderDetails.products && orderDetails.products.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                              <thead className="bg-gray-100 dark:bg-gray-700">
+                                <tr>
+                                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    {t('orders.product') || 'Product'}
+                                  </th>
+                                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    {t('orders.quantity') || 'Quantity'}
+                                  </th>
+                                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    {t('orders.price') || 'Price'}
+                                  </th>
+                                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    {t('orders.subtotal') || 'Subtotal'}
+                                  </th>
                                 </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                          {t('orders.noItems') || 'No items available'}
-                        </p>
-                      )}
+                              </thead>
+                              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                {orderDetails.products.map((item, index) => (
+                                  <tr key={index} className="hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                      {item.productName || `Product #${item.productId}`}
+                                    </td>
+                                    <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                      {item.quantity}
+                                    </td>
+                                    <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                      {formatCurrency(item.productPriceAtOrder || 0)}
+                                    </td>
+                                    <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                      {formatCurrency((item.productPriceAtOrder || 0) * (item.quantity || 0))}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                            {t('orders.noItems') || 'No items available'}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1105,35 +1538,108 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
             </div>
           ) : (
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.orderId') || 'Order ID'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.customer') || 'Customer'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.restaurant') || 'Restaurant'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.amount') || 'Amount'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.status') || 'Status'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.date') || 'Date'}
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.actions') || 'Actions'}
-                    </th>
-                  </tr>
-                </thead>
+              {/* Search Bar */}
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder={t('admin.searchOrders') || 'Search orders by ID, customer, restaurant or status...'}
+                    value={orderSearchTerm}
+                    onChange={(e) => {
+                      setOrderSearchTerm(e.target.value);
+                      setOrdersPage(1); // Reset to first page when searching
+                    }}
+                    className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                  />
+                  <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  
+                  {orderSearchTerm && (
+                    <button
+                      onClick={() => {
+                        setOrderSearchTerm('');
+                        setOrdersPage(1);
+                      }}
+                      className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                    >
+                      <HiX className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th 
+                        scope="col" 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                        onClick={() => handleOrderSort('id')}
+                      >
+                        <div className="flex items-center">
+                          {t('admin.orderId') || 'Order ID'}
+                          {renderSortIndicator('id', orderSortField, orderSortDirection)}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                        onClick={() => handleOrderSort('customer')}
+                      >
+                        <div className="flex items-center">
+                          {t('admin.customer') || 'Customer'}
+                          {renderSortIndicator('customer', orderSortField, orderSortDirection)}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                        onClick={() => handleOrderSort('restaurant')}
+                      >
+                        <div className="flex items-center">
+                          {t('admin.restaurant') || 'Restaurant'}
+                          {renderSortIndicator('restaurant', orderSortField, orderSortDirection)}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                        onClick={() => handleOrderSort('amount')}
+                      >
+                        <div className="flex items-center">
+                          {t('admin.amount') || 'Amount'}
+                          {renderSortIndicator('amount', orderSortField, orderSortDirection)}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                        onClick={() => handleOrderSort('status')}
+                      >
+                        <div className="flex items-center">
+                          {t('admin.status') || 'Status'}
+                          {renderSortIndicator('status', orderSortField, orderSortDirection)}
+                        </div>
+                      </th>
+                      <th 
+                        scope="col" 
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
+                        onClick={() => handleOrderSort('date')}
+                      >
+                        <div className="flex items-center">
+                          {t('admin.date') || 'Date'}
+                          {renderSortIndicator('date', orderSortField, orderSortDirection)}
+                        </div>
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        {t('admin.actions') || 'Actions'}
+                      </th>
+                    </tr>
+                  </thead>
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                    {getPaginatedData(adminStats.recentOrders, ordersPage, itemsPerPage).map((order, index) => (
+                    {getPaginatedData(getFilteredOrders(), ordersPage, itemsPerPage).map((order, index) => (
                       <tr 
                         key={order.id || index} 
                         className="hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
@@ -1142,56 +1648,56 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                           handleOrderClick(order);
                         }}
                       >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">#{order.id}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">{order.customerName}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{order.restaurantName}</div>
-                        {order.restorantId && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400">ID: {order.restorantId}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">#{order.id}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-white">{order.customerName}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{order.restaurantName}</div>
+                          {order.restorantId && (
+                            <div className="text-xs text-gray-500 dark:text-gray-400">ID: {order.restorantId}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
                             {formatDate(order.orderDate)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent triggering the row click
-                            handleOrderClick(order);
-                          }}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
-                        >
-                          <HiEye className="mr-1 h-4 w-4" />
-                          {t('admin.viewDetails') || 'View'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent triggering the row click
+                              handleOrderClick(order);
+                            }}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
+                          >
+                            <HiEye className="mr-1 h-4 w-4" />
+                            {t('admin.viewDetails') || 'View'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               
               {/* Pagination */}
               <PaginationControls 
                 currentPage={ordersPage} 
-                totalPages={getTotalPages(adminStats.recentOrders, itemsPerPage)}
+                totalPages={getTotalPages(getFilteredOrders(), itemsPerPage)}
                 onPageChange={setOrdersPage} 
               />
-          </div>
+            </div>
           )}
         </div>
       )}
@@ -1314,6 +1820,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
             accounts={accounts} 
             onEdit={handleEditAccount}
             onDelete={handleDeleteAccount}
+            showTitle={false}
+            showSearch={true}
           />
         )}
       </div>
