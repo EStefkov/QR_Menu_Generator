@@ -1,6 +1,6 @@
 // AdminMenuPage.jsx
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState, useContext } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   fetchCategoriesByMenuIdApi,
   fetchProductsByCategoryIdApi,
@@ -9,6 +9,7 @@ import {
   uploadMenuImageApi,
   getFullImageUrl
 } from "../api/adminDashboard";
+import { AuthContext } from "../contexts/AuthContext";
 
 import CategorySection from "../components/CategorySection";
 import DetailsModal from "../components/DetailsModal";
@@ -18,6 +19,8 @@ import { toast } from "react-hot-toast";
 
 const AdminMenuPage = () => {
   const { menuId } = useParams();
+  const navigate = useNavigate();
+  const { saveRedirectUrl } = useContext(AuthContext);
   const token = localStorage.getItem("token");
   const accountType = localStorage.getItem("accountType");
 
@@ -43,10 +46,22 @@ const AdminMenuPage = () => {
 
   useEffect(() => {
     if (menuId) {
+      // Check if user is authenticated
+      if (!token) {
+        // Save current URL for redirection after login
+        const currentPath = `/menu/${menuId}`;
+        console.log(`User not authenticated, saving redirect URL: ${currentPath}`);
+        saveRedirectUrl(currentPath);
+        
+        // Redirect to login
+        navigate('/login');
+        return;
+      }
+      
       loadMenuData();
       loadCategories();
     }
-  }, [menuId]);
+  }, [menuId, token, navigate, saveRedirectUrl]);
 
   const loadMenuData = async () => {
     try {

@@ -6,7 +6,7 @@ import { HiOutlineUser, HiOutlineMail, HiOutlineLockClosed, HiOutlineHome } from
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { login, redirectUrl, clearRedirectUrl } = useAuth();
   const [formData, setFormData] = useState({
     accountName: "",
     firstName: "",
@@ -57,10 +57,20 @@ const RegisterPage = () => {
     try {
       const response = await registerAccount(registrationData);
       if (response === "Account successfully created") {
+        // If registration needs login afterward, navigate to login
         navigate("/login");
       } else {
-        register(response);
-        navigate("/");
+        // If response contains token, user is automatically logged in
+        const savedRedirectUrl = login(response);
+        
+        // Navigate to the saved redirect URL or home page
+        if (savedRedirectUrl) {
+          console.log(`Redirecting to saved URL after registration: ${savedRedirectUrl}`);
+          clearRedirectUrl();
+          navigate(savedRedirectUrl);
+        } else {
+          navigate("/");
+        }
       }
     } catch (err) {
       setError(err.message || "Registration failed. Please try again.");
@@ -88,6 +98,11 @@ const RegisterPage = () => {
               Sign in
             </Link>
           </p>
+          {redirectUrl && (
+            <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+              You'll be redirected to your previous page after registration
+            </p>
+          )}
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

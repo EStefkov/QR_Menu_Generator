@@ -37,6 +37,22 @@ const translations = {
   "home_cta_title_1": "Готови ли сте да започнете?",
   "home_cta_title_2": "Създайте вашето дигитално меню днес.",
   
+  // User-specific home content
+  "home_user_hero_title_1": "Добре дошли във Вашето",
+  "home_user_hero_title_2": "Ресторантско изживяване",
+  "home_user_hero_description": "Разгледайте менюта на ресторанти, направете поръчки и се насладете на безпроблемно хранително изживяване с QR Меню Генератор.",
+  "home_user_go_to_menu": "Разгледай менюта",
+  "home_user_cta_title_1": "Готови ли сте да разгледате?",
+  "home_user_cta_title_2": "Открийте нови ресторанти и менюта.",
+  
+  // Admin-specific home content
+  "home_admin_hero_title_1": "Управлявайте Вашата",
+  "home_admin_hero_title_2": "Ресторантска платформа",
+  "home_admin_hero_description": "Контролирайте дигиталното присъствие на вашия ресторант, актуализирайте менюта, проследявайте поръчки и анализирайте ангажираността на клиентите чрез вашето табло.",
+  "home_admin_go_to_dashboard": "Към таблото",
+  "home_admin_cta_title_1": "Готови ли сте да оптимизирате?",
+  "home_admin_cta_title_2": "Актуализирайте менюто си и управлявайте ресторанта си.",
+  
   // Auth
   "login_title": "Вход в профила",
   "login_email": "Имейл адрес",

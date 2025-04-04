@@ -131,6 +131,7 @@ export function AuthProvider({ children }) {
   const [userData, setUserData] = useState({});
   const [isInitialized, setIsInitialized] = useState(false);
   const [userUpdating, setUserUpdating] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState(null);
   
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -142,6 +143,12 @@ export function AuthProvider({ children }) {
       // Get stored token
       const storedToken = localStorage.getItem("token");
       console.log("Initial auth state check - Token exists:", !!storedToken, "On profile page:", isOnProfilePage);
+      
+      // Check if there's a saved redirect URL
+      const savedRedirectUrl = localStorage.getItem("redirectUrl");
+      if (savedRedirectUrl) {
+        setRedirectUrl(savedRedirectUrl);
+      }
       
       // Опростена логика - на профил страница или където има токен в localStorage, винаги зареждаме от localStorage
       if (storedToken) {
@@ -247,6 +254,24 @@ export function AuthProvider({ children }) {
     });
     
     console.log("Login complete, user data set");
+    
+    // Return the saved redirect URL if available
+    return redirectUrl;
+  };
+
+  // Save URL to redirect after login
+  const saveRedirectUrl = (url) => {
+    if (!url || url === '/login' || url === '/register') return;
+    
+    console.log("Saving redirect URL:", url);
+    localStorage.setItem("redirectUrl", url);
+    setRedirectUrl(url);
+  };
+  
+  // Clear saved redirect URL
+  const clearRedirectUrl = () => {
+    localStorage.removeItem("redirectUrl");
+    setRedirectUrl(null);
   };
 
   // Logout function: clear localStorage and state
@@ -262,9 +287,11 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("accountType");
     localStorage.removeItem("mailAddress");
     localStorage.removeItem("userId");
+    localStorage.removeItem("redirectUrl");
 
     // Clear state
     setUserData({});
+    setRedirectUrl(null);
     
     console.log("Logout complete, user data cleared");
   };
@@ -316,7 +343,10 @@ export function AuthProvider({ children }) {
       updateUserData, 
       isInitialized,
       userUpdating,
-      setUserUpdating: updateUserUpdatingState
+      setUserUpdating: updateUserUpdatingState,
+      saveRedirectUrl,
+      clearRedirectUrl,
+      redirectUrl
     }}>
       {children}
     </AuthContext.Provider>

@@ -37,6 +37,22 @@ const translations = {
   "home_cta_title_1": "Ready to get started?",
   "home_cta_title_2": "Create your digital menu today.",
   
+  // User-specific home content
+  "home_user_hero_title_1": "Welcome to Your",
+  "home_user_hero_title_2": "Restaurant Experience",
+  "home_user_hero_description": "Browse restaurant menus, place orders, and enjoy a seamless dining experience with QR Menu Generator.",
+  "home_user_go_to_menu": "View Menus",
+  "home_user_cta_title_1": "Ready to explore?",
+  "home_user_cta_title_2": "Discover new restaurants and menus.",
+  
+  // Admin-specific home content
+  "home_admin_hero_title_1": "Manage Your",
+  "home_admin_hero_title_2": "Restaurant Platform",
+  "home_admin_hero_description": "Control your restaurant's digital presence, update menus, track orders, and analyze customer engagement through your dashboard.",
+  "home_admin_go_to_dashboard": "Go to Dashboard",
+  "home_admin_cta_title_1": "Ready to optimize?",
+  "home_admin_cta_title_2": "Update your menu and manage your restaurant.",
+  
   // Auth
   "login_title": "Login to your account",
   "login_email": "Email address",

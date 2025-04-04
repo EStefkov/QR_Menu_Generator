@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh, HiChevronLeft, HiChevronRight, HiMenu, HiEye, HiPlus, HiX, HiTrash, HiQrcode } from 'react-icons/hi';
+import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh, HiChevronLeft, HiChevronRight, HiEye, HiPlus, HiX, HiTrash, HiQrcode } from 'react-icons/hi';
 import { orderApi } from '../../api/orderApi';
 import { useNavigate } from 'react-router-dom';
 import { createRestaurantApi, deleteRestaurantApi, fetchMenusByRestaurantIdApi, fetchAccountsApi, deleteAccountApi } from '../../api/adminDashboard';
@@ -622,7 +622,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
       setDeletingRestaurant(false);
     }
   };
-
+  
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -808,8 +808,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
         <div className="mt-8">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-              {t('admin.restaurantPerformance') || 'Restaurant Performance'}
-            </h3>
+            {t('admin.restaurantPerformance') || 'Restaurant Performance'}
+          </h3>
             <button
               onClick={() => setShowRestaurantModal(true)}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
@@ -868,7 +868,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                             onClick={() => handleRestaurantClick(restaurant)}
                             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
                           >
-                            <HiMenu className="mr-1 h-4 w-4" />
+                            <HiEye className="mr-1 h-4 w-4" />
                             {t('admin.viewMenus') || 'View Menus'}
                           </button>
                           <button

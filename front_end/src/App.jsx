@@ -9,7 +9,6 @@ import {
   import NavBar from "./components/NavBar";
   import Login from "./pages/Login.jsx";
   import RegisterPage from "./pages/Register.jsx";
-  import AdminDashboard from "./pages/AdminDashboard.jsx";
   import UserDashboard from "./pages/UserDashboard.jsx";
   import WaiterDashboard from "./pages/WaiterDashboard.jsx";
   import Home from "./pages/Home.jsx";
@@ -155,14 +154,12 @@ import {
             }
           />
   
-          {/* Admin Dashboard */}
+          {/* Admin Dashboard - Redirect to Profile */}
           <Route
             path="/admin"
             element={
               isAuthenticated && accountType === "ROLE_ADMIN" ? (
-                <Layout>
-                  <AdminDashboard />
-                </Layout>
+                <Navigate to="/profile" />
               ) : (
                 <Navigate to="/" />
               )

@@ -1,13 +1,13 @@
 // Login.jsx
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { loginAccount } from "../api/account";
 import { AuthContext } from "../contexts/AuthContext";
 import { HiOutlineMail, HiOutlineLockClosed, HiOutlineHome } from "react-icons/hi";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useContext(AuthContext);
+  const { login, redirectUrl, clearRedirectUrl } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     accountName: "",
     password: "",
@@ -64,8 +64,16 @@ const Login = () => {
         console.log("Final ID being saved:", payload.id);
         
         // Log in the user
-        login(response, payload);
-        navigate("/");
+        const savedRedirectUrl = login(response, payload);
+        
+        // Navigate to the saved redirect URL or home page
+        if (savedRedirectUrl) {
+          console.log(`Redirecting to saved URL: ${savedRedirectUrl}`);
+          clearRedirectUrl();
+          navigate(savedRedirectUrl);
+        } else {
+          navigate("/");
+        }
       } catch (parseError) {
         console.error("Error parsing JWT token:", parseError);
         setError("Invalid authentication response from server");
@@ -94,6 +102,11 @@ const Login = () => {
               Sign up now
             </Link>
           </p>
+          {redirectUrl && (
+            <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+              You'll be redirected to your previous page after login
+            </p>
+          )}
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
