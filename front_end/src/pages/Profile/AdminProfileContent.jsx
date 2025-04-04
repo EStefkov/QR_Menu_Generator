@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh, HiChevronLeft, HiChevronRight, HiMenu, HiEye } from 'react-icons/hi';
+import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh, HiChevronLeft, HiChevronRight, HiMenu, HiEye, HiPlus, HiX, HiTrash, HiQrcode } from 'react-icons/hi';
 import { orderApi } from '../../api/orderApi';
 import { useNavigate } from 'react-router-dom';
+import { createRestaurantApi, deleteRestaurantApi, fetchMenusByRestaurantIdApi } from '../../api/adminDashboard';
 
 const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const { t } = useLanguage();
@@ -19,6 +20,28 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const [orderDetails, setOrderDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState(null);
+
+  // Menu states
+  const [menus, setMenus] = useState({}); // Map of restaurantId -> menus array
+  const [loadingMenus, setLoadingMenus] = useState({});
+  const [menusError, setMenusError] = useState({});
+
+  // Create Restaurant Modal State
+  const [showRestaurantModal, setShowRestaurantModal] = useState(false);
+  const [restaurantData, setRestaurantData] = useState({
+    restorantName: '',
+    phoneNumber: '',
+    address: '',
+    email: '',
+  });
+  const [creatingRestaurant, setCreatingRestaurant] = useState(false);
+  const [createError, setCreateError] = useState(null);
+
+  // Delete Restaurant Confirmation
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [restaurantToDelete, setRestaurantToDelete] = useState(null);
+  const [deletingRestaurant, setDeletingRestaurant] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   // Navigation to menu
   const handleViewMenu = (menuId) => {
@@ -197,6 +220,348 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
     );
   };
   
+  // Handle restaurant form input change
+  const handleRestaurantInputChange = (e) => {
+    const { name, value } = e.target;
+    setRestaurantData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle create restaurant form submission
+  const handleCreateRestaurant = async (e) => {
+    e.preventDefault();
+    setCreatingRestaurant(true);
+    setCreateError(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+
+      // Validate form
+      if (!restaurantData.restorantName.trim()) {
+        throw new Error('Restaurant name is required');
+      }
+
+      const newRestaurant = await createRestaurantApi(token, restaurantData);
+      
+      // Close modal and reset form
+      setShowRestaurantModal(false);
+      setRestaurantData({
+        restorantName: '',
+        phoneNumber: '',
+        address: '',
+        email: '',
+      });
+
+      // If onRetry is available, call it to refresh the data
+      if (onRetry) {
+        onRetry();
+      }
+
+      // Show success message
+      alert(t('admin.restaurantCreated') || 'Restaurant created successfully!');
+    } catch (err) {
+      console.error('Error creating restaurant:', err);
+      setCreateError(err.message || 'Failed to create restaurant. Please try again.');
+    } finally {
+      setCreatingRestaurant(false);
+    }
+  };
+
+  // Restaurant Creation Modal
+  const RestaurantModal = () => {
+    if (!showRestaurantModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full mx-auto">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+                {t('admin.createRestaurant') || 'Create New Restaurant'}
+              </h3>
+              <button 
+                onClick={() => setShowRestaurantModal(false)}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <HiX className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {createError && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-md">
+                {createError}
+              </div>
+            )}
+            
+            <form onSubmit={handleCreateRestaurant}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('restaurants.name') || 'Restaurant Name'} *
+                  </label>
+                  <input
+                    type="text"
+                    name="restorantName"
+                    value={restaurantData.restorantName}
+                    onChange={handleRestaurantInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder={t('restaurants.namePlaceholder') || 'Enter restaurant name'}
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('restaurants.phone') || 'Phone Number'}
+                  </label>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={restaurantData.phoneNumber}
+                    onChange={handleRestaurantInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder={t('restaurants.phonePlaceholder') || 'Enter phone number'}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('restaurants.address') || 'Address'}
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={restaurantData.address}
+                    onChange={handleRestaurantInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder={t('restaurants.addressPlaceholder') || 'Enter address'}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('restaurants.email') || 'Email'}
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={restaurantData.email}
+                    onChange={handleRestaurantInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder={t('restaurants.emailPlaceholder') || 'Enter email'}
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowRestaurantModal(false)}
+                  className="mr-3 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {t('common.cancel') || 'Cancel'}
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingRestaurant}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {creatingRestaurant 
+                    ? (t('common.creating') || 'Creating...') 
+                    : (t('common.create') || 'Create')
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Delete Restaurant Confirmation Modal
+  const DeleteConfirmationModal = () => {
+    if (!showDeleteConfirmation || !restaurantToDelete) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-auto">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+                {t('admin.confirmDeleteRestaurant') || 'Delete Restaurant'}
+              </h3>
+              <button 
+                onClick={() => setShowDeleteConfirmation(false)}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                <HiX className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {deleteError && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-md">
+                {deleteError}
+              </div>
+            )}
+            
+            <div className="mb-6">
+              <p className="text-gray-700 dark:text-gray-300">
+                {t('admin.deleteRestaurantWarning') || 'Are you sure you want to delete this restaurant? This action cannot be undone and will remove all menus, categories, and products associated with it.'}
+              </p>
+              <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                <p className="text-yellow-800 dark:text-yellow-200 font-semibold">
+                  {restaurantToDelete.name || restaurantToDelete.restorantName}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirmation(false)}
+                className="mr-3 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                disabled={deletingRestaurant}
+              >
+                {t('common.cancel') || 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteRestaurant}
+                disabled={deletingRestaurant}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {deletingRestaurant 
+                  ? (t('common.deleting') || 'Deleting...') 
+                  : (t('common.delete') || 'Delete')
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Handle QR code generation for a menu
+  const handleFetchQRCode = async (menuId) => {
+    if (!menuId) {
+      console.error("Invalid menu ID:", menuId);
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/menus/${menuId}/qrcode`, {
+        headers: { 
+          Authorization: `Bearer ${token}` 
+        },
+      });
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch QR code (Status: ${response.status})`);
+        throw new Error(`Failed to fetch QR code. Server responded with status ${response.status}`);
+      }
+      
+      // Return binary blob (image)
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      // Open in new tab/window
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error("Error fetching QR code:", error);
+      alert("Failed to fetch QR code. Please try again.");
+    }
+  };
+
+  // Handle opening the restaurant menus management page
+  const handleManageMenus = (restaurant) => {
+    navigate(`/restaurants/${restaurant.id}/menus`);
+  };
+
+  // Function to fetch menus for a restaurant
+  const handleFetchMenus = async (restaurantId) => {
+    if (!restaurantId) {
+      console.error('Restaurant ID is missing');
+      return;
+    }
+    
+    setLoadingMenus(prev => ({ ...prev, [restaurantId]: true }));
+    setMenusError(prev => ({ ...prev, [restaurantId]: null }));
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      const fetchedMenus = await fetchMenusByRestaurantIdApi(token, restaurantId);
+      setMenus(prev => ({ ...prev, [restaurantId]: fetchedMenus }));
+    } catch (error) {
+      console.error('Error fetching menus:', error);
+      setMenusError(prev => ({ 
+        ...prev, 
+        [restaurantId]: t('errors.failedToLoadMenus') || 'Failed to load restaurant menus'
+      }));
+    } finally {
+      setLoadingMenus(prev => ({ ...prev, [restaurantId]: false }));
+    }
+  };
+
+  // Function to show delete confirmation modal
+  const handleDeleteRestaurant = (restaurant, e) => {
+    e.stopPropagation(); // Prevent triggering row click if any
+    setRestaurantToDelete(restaurant);
+    setShowDeleteConfirmation(true);
+    setDeleteError(null);
+  };
+
+  // Function to confirm and process restaurant deletion
+  const confirmDeleteRestaurant = async () => {
+    if (!restaurantToDelete || !restaurantToDelete.id) {
+      setDeleteError('Restaurant ID is missing');
+      return;
+    }
+
+    setDeletingRestaurant(true);
+    setDeleteError(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+
+      await deleteRestaurantApi(token, restaurantToDelete.id);
+      
+      // Close modal
+      setShowDeleteConfirmation(false);
+      setRestaurantToDelete(null);
+      
+      // If onRetry is available, call it to refresh the data
+      if (onRetry) {
+        onRetry();
+      }
+      
+      // Show success message
+      alert(t('admin.restaurantDeleted') || 'Restaurant deleted successfully!');
+    } catch (err) {
+      console.error('Error deleting restaurant:', err);
+      setDeleteError(err.message || 'Failed to delete restaurant. Please try again.');
+    } finally {
+      setDeletingRestaurant(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -380,14 +745,23 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
       {/* Restaurant Performance */}
       {adminStats.restaurantStats && adminStats.restaurantStats.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-            {t('admin.restaurantPerformance') || 'Restaurant Performance'}
-          </h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+              {t('admin.restaurantPerformance') || 'Restaurant Performance'}
+            </h3>
+            <button
+              onClick={() => setShowRestaurantModal(true)}
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
+            >
+              <HiPlus className="mr-1 h-4 w-4" />
+              {t('admin.addRestaurant') || 'Add Restaurant'}
+            </button>
+          </div>
           
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-800">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('admin.restaurantName') || 'Restaurant'}
@@ -428,13 +802,22 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                         <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(restaurant.averageOrderValue || 0)}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <button
-                          onClick={() => handleRestaurantClick(restaurant)}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
-                        >
-                          <HiMenu className="mr-1 h-4 w-4" />
-                          {t('admin.viewMenus') || 'View Menus'}
-                        </button>
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleRestaurantClick(restaurant)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
+                          >
+                            <HiMenu className="mr-1 h-4 w-4" />
+                            {t('admin.viewMenus') || 'View Menus'}
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteRestaurant(restaurant, e)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition"
+                          >
+                            <HiTrash className="mr-1 h-4 w-4" />
+                            {t('common.delete') || 'Delete'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -458,10 +841,10 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
             {t('admin.orderStatusDistribution') || 'Order Status Distribution'}
           </h3>
-          <div className="bg-white dark:bg-gray-750 rounded-xl shadow p-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow p-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               {Object.entries(adminStats.orderStatusCounts).map(([status, count]) => (
-                <div key={status} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg text-center">
+                <div key={status} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
                   <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{status}</p>
                   <p className="mt-2 text-2xl font-bold text-gray-800 dark:text-white">{count}</p>
                 </div>
@@ -480,7 +863,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-800">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('admin.product') || 'Product'}
@@ -663,16 +1046,16 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-800">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('admin.orderId') || 'Order ID'}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.restaurant') || 'Restaurant'}
+                      {t('admin.customer') || 'Customer'}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      {t('admin.customer') || 'Customer'}
+                      {t('admin.restaurant') || 'Restaurant'}
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('admin.amount') || 'Amount'}
@@ -683,6 +1066,9 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       {t('admin.date') || 'Date'}
                     </th>
+                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      {t('admin.actions') || 'Actions'}
+                    </th>
                   </tr>
                 </thead>
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -690,19 +1076,22 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                       <tr 
                         key={order.id || index} 
                         className="hover:bg-gray-50 dark:hover:bg-gray-700 transition cursor-pointer"
-                        onClick={() => handleOrderClick(order)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent triggering the row click
+                          handleOrderClick(order);
+                        }}
                       >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">#{order.id}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">{order.restaurantName}</div>
-                          {order.restorantId && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400">ID: {order.restorantId}</div>
-                          )}
+                        <div className="text-sm text-gray-900 dark:text-white">{order.customerName}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">{order.customerName}</div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{order.restaurantName}</div>
+                        {order.restorantId && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400">ID: {order.restorantId}</div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</div>
@@ -716,6 +1105,18 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                         <div className="text-sm text-gray-500 dark:text-gray-400">
                             {formatDate(order.orderDate)}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering the row click
+                            handleOrderClick(order);
+                          }}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
+                        >
+                          <HiEye className="mr-1 h-4 w-4" />
+                          {t('admin.viewDetails') || 'View'}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -809,6 +1210,12 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           </div>
         </div>
       )}
+      
+      {/* Render the restaurant modal */}
+      <RestaurantModal />
+
+      {/* Delete Restaurant Confirmation Modal */}
+      <DeleteConfirmationModal />
     </div>
   );
 };

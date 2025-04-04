@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { restaurantApi } from '../../api/restaurantApi';
-import { HiArrowLeft, HiExclamationCircle, HiEye, HiPencil, HiTrash, HiRefresh, HiPlusCircle, HiX, HiLocationMarker } from 'react-icons/hi';
+import { HiArrowLeft, HiExclamationCircle, HiEye, HiPencil, HiTrash, HiRefresh, HiPlusCircle, HiX, HiLocationMarker, HiQrcode } from 'react-icons/hi';
 
 const CreateMenuForm = ({ restaurantId, onSuccess, onCancel }) => {
   const { t } = useLanguage();
@@ -230,6 +230,40 @@ const RestaurantMenus = () => {
     } catch (e) {
       console.error('Date formatting error:', e);
       return dateString;
+    }
+  };
+  
+  const handleFetchQRCode = async (menuId) => {
+    if (!menuId) {
+      console.error("Invalid menu ID:", menuId);
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/menus/${menuId}/qrcode`, {
+        headers: { 
+          Authorization: `Bearer ${token}` 
+        },
+      });
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch QR code (Status: ${response.status})`);
+        throw new Error(`Failed to fetch QR code. Server responded with status ${response.status}`);
+      }
+      
+      // Return binary blob (image)
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      // Open in new tab/window
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error("Error fetching QR code:", error);
+      alert("Failed to fetch QR code. Please try again.");
     }
   };
   
@@ -513,7 +547,7 @@ const RestaurantMenus = () => {
                     </div>
                     
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-4 gap-2">
                         <button
                           onClick={() => handleViewMenu(menu.id)}
                           className="flex items-center justify-center px-3 py-2 font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
@@ -527,6 +561,14 @@ const RestaurantMenus = () => {
                         >
                           <HiPencil className="w-4 h-4 mr-2" />
                           {t('common.edit') || 'Edit'}
+                        </button>
+                        <button
+                          onClick={() => handleFetchQRCode(menu.id)}
+                          className="flex items-center justify-center px-3 py-2 font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 transition-colors"
+                          title={t('common.generateQrCode') || 'Generate QR Code'}
+                        >
+                          <HiQrcode className="w-4 h-4 mr-2" />
+                          {t('common.qr') || 'QR'}
                         </button>
                         <button
                           onClick={() => handleDeleteMenu(menu.id)}

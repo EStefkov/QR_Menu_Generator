@@ -172,6 +172,8 @@ const translations = {
   "common.saving": "Saving...",
   "common.of": "of",
   "common.to": "to",
+  "common.qr": "QR",
+  "common.generateQrCode": "Generate QR Code",
   
   // Pagination
   "pagination.showing": "Showing",
@@ -249,32 +251,43 @@ const translations = {
   // Admin Dashboard
   "admin.dashboard": "Admin Dashboard",
   "admin.totalRevenue": "Total Revenue",
-  "admin.totalOrders": "Total Orders",
-  "admin.restaurants": "Restaurants",
   "admin.allTimeRevenue": "All-time revenue across all restaurants",
+  "admin.totalOrders": "Total Orders",
   "admin.ordersProcessed": "Orders processed across all restaurants",
+  "admin.restaurants": "Restaurants",
   "admin.activeRestaurants": "Active restaurants in your portfolio",
   "admin.restaurantPerformance": "Restaurant Performance",
+  "admin.popularProducts": "Most Popular Products",
+  "admin.recentOrders": "Recent Orders",
   "admin.restaurantName": "Restaurant",
   "admin.revenue": "Revenue",
   "admin.avgOrder": "Avg. Order",
-  "admin.orderStatusDistribution": "Order Status Distribution",
-  "admin.popularProducts": "Most Popular Products",
-  "admin.restaurant": "Restaurant",
-  "admin.product": "Product",
+  "admin.actions": "Actions",
   "admin.orderCount": "Orders",
-  "admin.recentOrders": "Recent Orders",
-  "admin.orderId": "Order ID",
-  "admin.customer": "Customer",
-  "admin.amount": "Amount",
-  "admin.status": "Status",
-  "admin.date": "Date",
+  "admin.viewMenus": "View Menus",
+  "admin.viewDetails": "View",
+  "admin.manageMenus": "Manage Menus",
+  "admin.orderStatusDistribution": "Order Status Distribution",
+  "admin.selectMenu": "Select menu:",
   "admin.timePeriodStats": "Time Period Statistics",
   "admin.today": "Today",
   "admin.thisWeek": "This Week",
   "admin.thisMonth": "This Month",
   "admin.orders": "Orders",
+  "admin.orderId": "Order ID",
+  "admin.status": "Status",
+  "admin.customer": "Customer",
+  "admin.amount": "Amount",
+  "admin.date": "Date",
+  "admin.product": "Product",
+  "admin.restaurant": "Restaurant",
   "admin.noDataAvailable": "No statistics available yet. Start adding restaurants and products to see your dashboard.",
+  "admin.addRestaurant": "Add Restaurant",
+  "admin.createRestaurant": "Create New Restaurant",
+  "admin.restaurantCreated": "Restaurant created successfully!",
+  "admin.confirmDeleteRestaurant": "Delete Restaurant",
+  "admin.deleteRestaurantWarning": "Are you sure you want to delete this restaurant? This action cannot be undone and will remove all menus, categories, and products associated with it.",
+  "admin.restaurantDeleted": "Restaurant deleted successfully!",
   
   // Demo page
   "demo_title": "Language & Theme Demo",
@@ -296,6 +309,7 @@ const translations = {
   
   // Stats & data loading
   "common.loadData": "Load Data",
+  "common.showQrCodes": "Show QR Codes",
   "common.loadingData": "Loading data...",
   "common.noData": "No data available",
   "common.dataError": "Error loading data",
@@ -408,6 +422,19 @@ const translations = {
   // Validation
   "validation.nameRequired": "Menu name is required",
   "validation.requiredFields": "Name and price are required",
+
+  // Restaurant Form
+  "restaurants.namePlaceholder": "Enter restaurant name",
+  "restaurants.phonePlaceholder": "Enter phone number",
+  "restaurants.addressPlaceholder": "Enter address",
+  "restaurants.emailPlaceholder": "Enter email",
+  "restaurants.websitePlaceholder": "Enter website URL",
+  "restaurants.cuisinePlaceholder": "Enter cuisine type",
+  
+  // Common action buttons
+  "common.creating": "Creating...",
+  "common.create": "Create",
+  "common.deleting": "Deleting...",
 };
 
 export default translations; 
