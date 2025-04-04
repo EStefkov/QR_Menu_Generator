@@ -19,7 +19,6 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
     const [searchTerm, setSearchTerm] = useState('');
     const [accountTypeFilter, setAccountTypeFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
     const [showEditModal, setShowEditModal] = useState(false);
     const [editAccount, setEditAccount] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -31,6 +30,9 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
     const [accountToDelete, setAccountToDelete] = useState(null);
     const [sortField, setSortField] = useState('id');
     const [sortDirection, setSortDirection] = useState('asc');
+
+    // Define itemsPerPage as a constant
+    const itemsPerPage = 5;
 
     // Add filter function for accounts
     const getFilteredAccounts = () => {
@@ -346,113 +348,100 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
         setAccountToDelete(null);
     };
 
-    // Pagination control component to match AdminProfileContent
+    // Replace the existing PaginationControls component with the one that matches AdminProfileContent.jsx
     const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
+        if (totalPages <= 1) return null;
+        
         return (
-            <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                <div className="flex-1 flex justify-between sm:hidden">
+          <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 bg-white dark:bg-gray-800">
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {t('pagination.showing') || 'Showing'}{' '}
+                  <span className="font-medium">
+                    {sortedAndFilteredAccounts.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}
+                  </span>{' '}
+                  {t('pagination.to') || 'to'}{' '}
+                  <span className="font-medium">
+                    {Math.min(currentPage * itemsPerPage, sortedAndFilteredAccounts.length)}
+                  </span>{' '}
+                  {t('pagination.of') || 'of'}{' '}
+                  <span className="font-medium">{sortedAndFilteredAccounts.length}</span>{' '}
+                  {t('pagination.results') || 'results'}
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 dark:text-gray-400 ring-1 ring-inset ring-gray-300 
+                      dark:ring-gray-600 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-offset-0 
+                      ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span className="sr-only">{t('pagination.previous') || 'Previous'}</span>
+                    <HiChevronLeft className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                     <button
-                        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                        className={`relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md ${
-                            currentPage === 1
-                                ? 'text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-                                : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
-                        }`}
+                      key={page}
+                      onClick={() => onPageChange(page)}
+                      aria-current={currentPage === page ? 'page' : undefined}
+                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold 
+                        ${currentPage === page 
+                          ? 'z-10 bg-blue-600 dark:bg-blue-700 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600' 
+                          : 'text-gray-900 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-offset-0'}`}
                     >
-                        {t('pagination.previous') || 'Previous'}
+                      {page}
                     </button>
-                    <button
-                        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages || totalPages === 0}
-                        className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md ${
-                            currentPage === totalPages || totalPages === 0
-                                ? 'text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-                                : 'text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
-                        }`}
-                    >
-                        {t('pagination.next') || 'Next'}
-                    </button>
-                </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
-                            {t('pagination.showing') || 'Showing'}{' '}
-                            <span className="font-medium">{sortedAndFilteredAccounts.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</span>{' '}
-                            {t('pagination.to') || 'to'}{' '}
-                            <span className="font-medium">
-                                {Math.min(currentPage * itemsPerPage, sortedAndFilteredAccounts.length)}
-                            </span>{' '}
-                            {t('pagination.of') || 'of'}{' '}
-                            <span className="font-medium">{sortedAndFilteredAccounts.length}</span>{' '}
-                            {t('pagination.results') || 'results'}
-                        </p>
-                    </div>
-                    <div>
-                        <nav className="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                            <button
-                                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-                                disabled={currentPage === 1}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 text-sm font-medium ${
-                                    currentPage === 1
-                                        ? 'text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-                                        : 'text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
-                                }`}
-                            >
-                                <span className="sr-only">{t('pagination.previous') || 'Previous'}</span>
-                                <HiChevronLeft className="h-5 w-5" aria-hidden="true" />
-                            </button>
-                            
-                            {/* Page numbers - show max 5 pages */}
-                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                let pageNum;
-                                if (totalPages <= 5) {
-                                    // If there are 5 or fewer pages, show all
-                                    pageNum = i + 1;
-                                } else if (currentPage <= 3) {
-                                    // If on page 1-3, show pages 1-5
-                                    pageNum = i + 1;
-                                } else if (currentPage >= totalPages - 2) {
-                                    // If on last 3 pages, show last 5 pages
-                                    pageNum = totalPages - 4 + i;
-                                } else {
-                                    // Otherwise show current page and 2 on each side
-                                    pageNum = currentPage - 2 + i;
-                                }
-                                
-                                return (
-                                    <button
-                                        key={pageNum}
-                                        onClick={() => onPageChange(pageNum)}
-                                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                            currentPage === pageNum
-                                                ? 'z-10 bg-blue-50 dark:bg-blue-900 border-blue-500 dark:border-blue-500 text-blue-600 dark:text-blue-200'
-                                                : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
-                                        }`}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                );
-                            })}
-                            
-                            <button
-                                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-                                disabled={currentPage === totalPages || totalPages === 0}
-                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 text-sm font-medium ${
-                                    currentPage === totalPages || totalPages === 0
-                                        ? 'text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-                                        : 'text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
-                                }`}
-                            >
-                                <span className="sr-only">{t('pagination.next') || 'Next'}</span>
-                                <HiChevronRight className="h-5 w-5" aria-hidden="true" />
-                            </button>
-                        </nav>
-                    </div>
-                </div>
+                  ))}
+                  
+                  <button
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 dark:text-gray-400 ring-1 ring-inset ring-gray-300 
+                      dark:ring-gray-600 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-offset-0 
+                      ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <span className="sr-only">{t('pagination.next') || 'Next'}</span>
+                    <HiChevronRight className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </nav>
+              </div>
             </div>
+            
+            {/* Mobile pagination */}
+            <div className="flex sm:hidden justify-between items-center w-full">
+              <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={`relative inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-300
+                  ring-1 ring-inset ring-gray-300 dark:ring-gray-600 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800
+                  ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <HiChevronLeft className="h-5 w-5 mr-1" />
+                {t('pagination.previous') || 'Previous'}
+              </button>
+              
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {currentPage} / {totalPages}
+              </span>
+              
+              <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={`relative inline-flex items-center rounded-md px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-300
+                  ring-1 ring-inset ring-gray-300 dark:ring-gray-600 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800
+                  ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {t('pagination.next') || 'Next'}
+                <HiChevronRight className="h-5 w-5 ml-1" />
+              </button>
+            </div>
+          </div>
         );
-    };
+      };
 
     if (!Array.isArray(accounts)) {
         return (
@@ -513,61 +502,22 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
                 <div className={`flex flex-wrap gap-4 w-full ${showTitle ? 'md:w-auto' : 'justify-between'}`}>
                     {/* Search Bar */}
                     {showSearch && (
-                    <div className="relative flex-1 md:flex-none">
+                    <div className="relative flex-1">
                         <input
                             type="text"
-                                placeholder={t('accounts.search') || 'Search...'}
+                            placeholder={t('accounts.search') || 'Search...'}
                             value={searchTerm}
-                                onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    setCurrentPage(1); // Reset to first page when filtering
-                                }}
-                                className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1); // Reset to first page when filtering
+                            }}
+                            className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                         />
                         <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                     )}
-
-                    {/* Role Filter Dropdown */}
-                    <div className="relative">
-                    <select
-                        value={accountTypeFilter}
-                            onChange={(e) => {
-                                setAccountTypeFilter(e.target.value);
-                                setCurrentPage(1); // Reset to first page when filtering
-                            }}
-                            className="appearance-none pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                        >
-                            <option value="all">{t('accounts.all') || 'All Types'}</option>
-                            <option value="ROLE_ADMIN">{t('accounts.admin') || 'Administrator'}</option>
-                            <option value="ROLE_USER">{t('accounts.user') || 'User'}</option>
-                    </select>
-                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                            <HiFilter className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                        </div>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
-                            </svg>
-                        </div>
-                    </div>
-
-                    {/* Items Per Page Selector */}
-                    <select
-                        value={itemsPerPage}
-                        onChange={(e) => {
-                            setItemsPerPage(Number(e.target.value));
-                            setCurrentPage(1);
-                        }}
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                    >
-                        <option value={5}>5 {t('accounts.perPage') || 'per page'}</option>
-                        <option value={10}>10 {t('accounts.perPage') || 'per page'}</option>
-                        <option value={20}>20 {t('accounts.perPage') || 'per page'}</option>
-                        <option value={50}>50 {t('accounts.perPage') || 'per page'}</option>
-                    </select>
                 </div>
             </div>
             
