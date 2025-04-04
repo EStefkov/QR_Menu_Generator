@@ -581,3 +581,21 @@ export const fetchAllOrdersApi = async (token, page = 0, size = 10, sortBy = 'or
     }
     return response.json();
 };
+
+/**
+ * Извлича всички акаунти (без пагинация).
+ * @param {string} token - JWT токен за автентикация.
+ * @returns {Promise<any[]>} Масив с всички акаунти.
+ */
+export const fetchAllAccountsApi = async (token) => {
+    const response = await fetch(
+        `${API_BASE_URL}/api/accounts/all`,
+        {
+            headers: { Authorization: `Bearer ${token}` },
+        }
+    );
+    if (!response.ok) {
+        throw new Error("Failed to fetch all accounts");
+    }
+    return response.json();
+};

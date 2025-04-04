@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiUserGroup, HiClock, HiExclamationCircle, HiRefresh, HiChevronLeft, HiChevronRight, HiMenu, HiEye, HiPlus, HiX, HiTrash, HiQrcode } from 'react-icons/hi';
 import { orderApi } from '../../api/orderApi';
 import { useNavigate } from 'react-router-dom';
-import { createRestaurantApi, deleteRestaurantApi, fetchMenusByRestaurantIdApi } from '../../api/adminDashboard';
+import { createRestaurantApi, deleteRestaurantApi, fetchMenusByRestaurantIdApi, fetchAccountsApi, deleteAccountApi } from '../../api/adminDashboard';
+import { AccountsTable } from '../../components/AccountsTable';
 
 const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const { t } = useLanguage();
@@ -28,20 +29,91 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
 
   // Create Restaurant Modal State
   const [showRestaurantModal, setShowRestaurantModal] = useState(false);
-  const [restaurantData, setRestaurantData] = useState({
-    restorantName: '',
-    phoneNumber: '',
-    address: '',
-    email: '',
-  });
   const [creatingRestaurant, setCreatingRestaurant] = useState(false);
   const [createError, setCreateError] = useState(null);
+  
+  // Form refs
+  const restorantNameRef = React.useRef();
+  const phoneNumberRef = React.useRef();
+  const addressRef = React.useRef();
+  const emailRef = React.useRef();
 
   // Delete Restaurant Confirmation
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [restaurantToDelete, setRestaurantToDelete] = useState(null);
   const [deletingRestaurant, setDeletingRestaurant] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+
+  // Accounts state
+  const [accounts, setAccounts] = useState([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [accountsError, setAccountsError] = useState(null);
+
+  // Load accounts on component mount
+  useEffect(() => {
+    if (adminStats) {
+      loadAccounts();
+    }
+  }, [adminStats]); // Only load accounts when adminStats are available
+
+  // Function to load accounts
+  const loadAccounts = async () => {
+    setLoadingAccounts(true);
+    setAccountsError(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      // Use paginated accounts API instead of fetchAllAccountsApi
+      const accountsData = await fetchAccountsApi(token, 0, 100);
+      setAccounts(accountsData.content || []);
+    } catch (error) {
+      console.error('Error fetching accounts:', error);
+      setAccountsError(
+        t('errors.failedToLoadAccounts') || 'Failed to load accounts'
+      );
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  // Handle account deletion
+  const handleDeleteAccount = async (accountId) => {
+    if (!accountId) return;
+    
+    if (!window.confirm(t('admin.confirmDeleteAccount') || 'Are you sure you want to delete this account?')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      await deleteAccountApi(token, accountId);
+      
+      // Update accounts list by removing the deleted account
+      setAccounts(prevAccounts => prevAccounts.filter(account => account.id !== accountId));
+      
+      alert(t('admin.accountDeleted') || 'Account deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      alert(error.message || 'Failed to delete account. Please try again.');
+    }
+  };
+  
+  // Handle account edit
+  const handleEditAccount = (updatedAccount) => {
+    setAccounts(prevAccounts => 
+      prevAccounts.map(account => 
+        account.id === updatedAccount.id ? { ...account, ...updatedAccount } : account
+      )
+    );
+  };
 
   // Navigation to menu
   const handleViewMenu = (menuId) => {
@@ -220,15 +292,6 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
     );
   };
   
-  // Handle restaurant form input change
-  const handleRestaurantInputChange = (e) => {
-    const { name, value } = e.target;
-    setRestaurantData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   // Handle create restaurant form submission
   const handleCreateRestaurant = async (e) => {
     e.preventDefault();
@@ -241,8 +304,16 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
         throw new Error('Authentication required. Please log in again.');
       }
 
+      // Get values from refs
+      const restaurantData = {
+        restorantName: restorantNameRef.current.value.trim(),
+        phoneNumber: phoneNumberRef.current.value.trim(),
+        address: addressRef.current.value.trim(),
+        email: emailRef.current.value.trim()
+      };
+
       // Validate form
-      if (!restaurantData.restorantName.trim()) {
+      if (!restaurantData.restorantName) {
         throw new Error('Restaurant name is required');
       }
 
@@ -250,12 +321,6 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
       
       // Close modal and reset form
       setShowRestaurantModal(false);
-      setRestaurantData({
-        restorantName: '',
-        phoneNumber: '',
-        address: '',
-        email: '',
-      });
 
       // If onRetry is available, call it to refresh the data
       if (onRetry) {
@@ -307,8 +372,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                   <input
                     type="text"
                     name="restorantName"
-                    value={restaurantData.restorantName}
-                    onChange={handleRestaurantInputChange}
+                    ref={restorantNameRef}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder={t('restaurants.namePlaceholder') || 'Enter restaurant name'}
                     required
@@ -322,8 +386,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                   <input
                     type="tel"
                     name="phoneNumber"
-                    value={restaurantData.phoneNumber}
-                    onChange={handleRestaurantInputChange}
+                    ref={phoneNumberRef}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder={t('restaurants.phonePlaceholder') || 'Enter phone number'}
                   />
@@ -336,8 +399,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                   <input
                     type="text"
                     name="address"
-                    value={restaurantData.address}
-                    onChange={handleRestaurantInputChange}
+                    ref={addressRef}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder={t('restaurants.addressPlaceholder') || 'Enter address'}
                   />
@@ -350,8 +412,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                   <input
                     type="email"
                     name="email"
-                    value={restaurantData.email}
-                    onChange={handleRestaurantInputChange}
+                    ref={emailRef}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     placeholder={t('restaurants.emailPlaceholder') || 'Enter email'}
                   />
@@ -1210,6 +1271,52 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           </div>
         </div>
       )}
+      
+      {/* Accounts */}
+      {/* User Accounts Management */}
+      <div className="mt-8">
+        <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
+          {t('admin.accountsManagement') || 'Accounts Management'}
+        </h3>
+        
+        {loadingAccounts ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : accountsError ? (
+          <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-5 rounded-lg flex flex-col items-start">
+            <div className="flex items-start mb-4">
+              <HiExclamationCircle className="w-6 h-6 mr-3 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-bold text-lg mb-1">{t('errors.loadFailed') || 'Failed to load accounts'}</h3>
+                <p>{accountsError}</p>
+                <p className="mt-2 text-sm">Access to this feature might be restricted to certain account types.</p>
+              </div>
+            </div>
+            
+            <button
+              onClick={loadAccounts}
+              className="flex items-center self-center mt-4 bg-red-100 hover:bg-red-200 dark:bg-red-800/30 dark:hover:bg-red-700/30 text-red-800 dark:text-red-300 font-medium py-2 px-4 rounded-lg transition"
+            >
+              <HiRefresh className="w-5 h-5 mr-2" />
+              {t('common.retry') || 'Retry'}
+            </button>
+          </div>
+        ) : !accounts || accounts.length === 0 ? (
+          <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-5 rounded-lg">
+            <div className="flex items-center justify-center">
+              <HiExclamationCircle className="w-6 h-6 mr-3 flex-shrink-0" />
+              <p>{t('admin.noAccountsAvailable') || 'No accounts available or you may not have permission to view them.'}</p>
+            </div>
+          </div>
+        ) : (
+          <AccountsTable 
+            accounts={accounts} 
+            onEdit={handleEditAccount}
+            onDelete={handleDeleteAccount}
+          />
+        )}
+      </div>
       
       {/* Render the restaurant modal */}
       <RestaurantModal />
