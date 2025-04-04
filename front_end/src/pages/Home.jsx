@@ -495,6 +495,28 @@ const Home = () => {
             </main>
           </div>
         </div>
+        
+        {/* Decorative elements */}
+        <div className="hidden lg:block absolute top-0 right-0 -mt-20 opacity-10">
+          <svg width="404" height="384" fill="none" viewBox="0 0 404 384">
+            <defs>
+              <pattern id="de316486-4a29-4312-bdfc-fbce2132a2c1" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                <rect x="0" y="0" width="4" height="4" className="text-blue-600 dark:text-blue-400" fill="currentColor" />
+              </pattern>
+            </defs>
+            <rect width="404" height="384" fill="url(#de316486-4a29-4312-bdfc-fbce2132a2c1)" />
+          </svg>
+        </div>
+        <div className="hidden lg:block absolute bottom-0 left-0 opacity-10">
+          <svg width="404" height="384" fill="none" viewBox="0 0 404 384">
+            <defs>
+              <pattern id="e80155a9-dfde-425a-b5ea-1f6fadd20131" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                <rect x="0" y="0" width="4" height="4" className="text-blue-600 dark:text-blue-400" fill="currentColor" />
+              </pattern>
+            </defs>
+            <rect width="404" height="384" fill="url(#e80155a9-dfde-425a-b5ea-1f6fadd20131)" />
+          </svg>
+        </div>
       </div>
 
       {/* Features Section - Conditionally rendered based on user type */}
