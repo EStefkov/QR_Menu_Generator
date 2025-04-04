@@ -1,6 +1,6 @@
 // NavBar.jsx
 import { useContext, useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { HiShoppingCart } from "react-icons/hi";
 import { AuthContext } from "../contexts/AuthContext";
 import { validateToken } from "../api/account";
@@ -12,7 +12,8 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 
 const NavBar = () => {
   const navigate = useNavigate();
-  const { userData, logout, userUpdating } = useContext(AuthContext);
+  const location = useLocation();
+  const { userData, logout, userUpdating, saveRedirectUrl } = useContext(AuthContext);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { cart } = useCart();
   const { t, language, changeLanguage } = useLanguage();
@@ -88,6 +89,24 @@ const NavBar = () => {
       }
     };
   }, [userData?.token, logout, navigate, userUpdating]);
+
+  const handleLogin = () => {
+    // Save current path for redirecting back after login
+    const currentPath = location.pathname;
+    if (currentPath !== '/login' && currentPath !== '/register') {
+      saveRedirectUrl(currentPath);
+    }
+    navigate('/login');
+  };
+
+  const handleRegister = () => {
+    // Save current path for redirecting back after registration
+    const currentPath = location.pathname;
+    if (currentPath !== '/login' && currentPath !== '/register') {
+      saveRedirectUrl(currentPath);
+    }
+    navigate('/register');
+  };
 
   const handleLogout = () => {
     logout();
@@ -215,18 +234,18 @@ const NavBar = () => {
                 </div>
               ) : (
                 <div className="flex space-x-4 order-4 md:order-none">
-                  <Link 
-                    to="/login" 
+                  <button 
+                    onClick={handleLogin}
                     className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors font-medium"
                   >
                     {t('nav_login')}
-                  </Link>
-                  <Link 
-                    to="/register" 
+                  </button>
+                  <button 
+                    onClick={handleRegister}
                     className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors font-medium"
                   >
                     {t('nav_register')}
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>

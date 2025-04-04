@@ -46,18 +46,6 @@ const AdminMenuPage = () => {
 
   useEffect(() => {
     if (menuId) {
-      // Check if user is authenticated
-      if (!token) {
-        // Save current URL for redirection after login
-        const currentPath = `/menu/${menuId}`;
-        console.log(`User not authenticated, saving redirect URL: ${currentPath}`);
-        saveRedirectUrl(currentPath);
-        
-        // Redirect to login
-        navigate('/login');
-        return;
-      }
-      
       loadMenuData();
       loadCategories();
     }
@@ -65,14 +53,14 @@ const AdminMenuPage = () => {
 
   const loadMenuData = async () => {
     try {
+      // Allow any user to view the menu (not just logged-in users)
+      const headers = token 
+        ? { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+        : { 'Accept': 'application/json' };
+        
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/menus/${menuId}`, 
-        { 
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          } 
-        }
+        { headers }
       );
 
       if (!response.ok) {
@@ -165,11 +153,25 @@ const AdminMenuPage = () => {
 
   const loadCategories = async () => {
     try {
-      const data = await fetchCategoriesByMenuIdApi(token, menuId);
+      // Use a different approach for non-logged in users
+      const headers = token 
+        ? { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+        : { 'Accept': 'application/json' };
+        
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/categories/menu/${menuId}`, 
+        { headers }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
       setCategories(data);
     } catch (error) {
       console.error('Error loading categories:', error);
-      alert("Грешка при зареждане на категориите");
+      setCategories([]);
     }
   };
 
@@ -181,7 +183,21 @@ const AdminMenuPage = () => {
 
     if (!categoryProducts[catId]) {
       try {
-        const products = await fetchProductsByCategoryIdApi(token, catId);
+        // Use a different approach for non-logged in users
+        const headers = token 
+          ? { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+          : { 'Accept': 'application/json' };
+          
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/products/category/${catId}`, 
+          { headers }
+        );
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const products = await response.json();
         const formattedProducts = products.map(product => ({
           ...product,
           productImage: product.productImage ? getFullImageUrl(product.productImage) : null,
@@ -195,7 +211,7 @@ const AdminMenuPage = () => {
         setCategoryProducts((prev) => ({ ...prev, [catId]: formattedProducts }));
       } catch (error) {
         console.error('Error loading products:', error);
-        alert("Грешка при зареждане на продуктите");
+        setCategoryProducts((prev) => ({ ...prev, [catId]: [] }));
       }
     }
   };
@@ -278,10 +294,29 @@ const AdminMenuPage = () => {
         onBannerUpload={handleBannerUpload}
         onDefaultProductImageUpload={handleDefaultProductImageUpload}
         defaultProductImage={menuData.defaultProductImage}
-        isAdmin={accountType === "ROLE_ADMIN"}
+        isAdmin={token && accountType === "ROLE_ADMIN"}
         menuId={menuId}
         initialTextColor={menuData.textColor}
       />
+
+      {/* Add a login prompt for non-logged in users */}
+      {!token && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 mb-4 rounded-lg flex justify-between items-center">
+          <p className="text-blue-700 dark:text-blue-300">
+            Log in to save this menu or place orders.
+          </p>
+          <button
+            onClick={() => {
+              const currentPath = `/menu/${menuId}`;
+              saveRedirectUrl(currentPath);
+              navigate('/login');
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Log In
+          </button>
+        </div>
+      )}
 
       <div className="p-4 sm:p-6">
         <div className="space-y-4">
