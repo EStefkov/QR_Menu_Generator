@@ -513,27 +513,27 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
                 <div className={`flex flex-wrap gap-4 w-full ${showTitle ? 'md:w-auto' : 'justify-between'}`}>
                     {/* Search Bar */}
                     {showSearch && (
-                        <div className="relative flex-1 md:flex-none">
-                            <input
-                                type="text"
+                    <div className="relative flex-1 md:flex-none">
+                        <input
+                            type="text"
                                 placeholder={t('accounts.search') || 'Search...'}
-                                value={searchTerm}
+                            value={searchTerm}
                                 onChange={(e) => {
                                     setSearchTerm(e.target.value);
                                     setCurrentPage(1); // Reset to first page when filtering
                                 }}
                                 className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                            />
-                            <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </div>
+                        />
+                        <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
                     )}
 
                     {/* Role Filter Dropdown */}
                     <div className="relative">
-                        <select
-                            value={accountTypeFilter}
+                    <select
+                        value={accountTypeFilter}
                             onChange={(e) => {
                                 setAccountTypeFilter(e.target.value);
                                 setCurrentPage(1); // Reset to first page when filtering
@@ -543,7 +543,7 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
                             <option value="all">{t('accounts.all') || 'All Types'}</option>
                             <option value="ROLE_ADMIN">{t('accounts.admin') || 'Administrator'}</option>
                             <option value="ROLE_USER">{t('accounts.user') || 'User'}</option>
-                        </select>
+                    </select>
                         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                             <HiFilter className="h-5 w-5 text-gray-400" aria-hidden="true" />
                         </div>
@@ -705,193 +705,193 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
                                     {t('accounts.editAccount') || 'Edit Account'}
-                                </h3>
-                                <button 
-                                    onClick={handleCloseModal}
+                            </h3>
+                            <button 
+                                onClick={handleCloseModal}
                                     className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                                >
+                            >
                                     <HiX className="w-5 h-5" />
-                                </button>
-                            </div>
-                            
-                            {message.text && (
+                            </button>
+                        </div>
+
+                        {message.text && (
                                 <div className={`mb-4 p-3 ${
                                     message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 
                                     'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
                                 } rounded-md flex items-center`}>
-                                    {message.type === 'success' ? 
-                                    <HiCheckCircle className="w-5 h-5 mr-2" /> : 
-                                    <HiExclamationCircle className="w-5 h-5 mr-2" />
-                                    }
-                                    {message.text}
-                                </div>
-                            )}
+                                {message.type === 'success' ? 
+                                <HiCheckCircle className="w-5 h-5 mr-2" /> : 
+                                <HiExclamationCircle className="w-5 h-5 mr-2" />
+                                }
+                                {message.text}
+                            </div>
+                        )}
 
-                            {/* Profile Picture */}
-                            <div className="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        {/* Profile Picture */}
+                        <div className="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                                 <h4 className="text-lg font-medium text-gray-800 dark:text-white mb-4">
                                     {t('accounts.profilePicture') || 'Profile Picture'}
                                 </h4>
+                            
+                            <div className="flex flex-col md:flex-row items-center gap-6">
+                                {/* Preview */}
+                                <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex items-center justify-center border-2 border-gray-200 dark:border-gray-600">
+                                    {imagePreview ? (
+                                        <img 
+                                            src={imagePreview} 
+                                            alt="Profile Preview" 
+                                            className="w-full h-full object-cover" 
+                                        />
+                                    ) : (
+                                        <HiPhotograph className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+                                    )}
+                                </div>
                                 
-                                <div className="flex flex-col md:flex-row items-center gap-6">
-                                    {/* Preview */}
-                                    <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden flex items-center justify-center border-2 border-gray-200 dark:border-gray-600">
-                                        {imagePreview ? (
-                                            <img 
-                                                src={imagePreview} 
-                                                alt="Profile Preview" 
-                                                className="w-full h-full object-cover" 
-                                            />
-                                        ) : (
-                                            <HiPhotograph className="w-12 h-12 text-gray-400 dark:text-gray-500" />
-                                        )}
+                                <div className="flex-1 space-y-4">
+                                    <div>
+                                        <label 
+                                            htmlFor="profilePicture" 
+                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                        >
+                                                {t('accounts.chooseNewPicture') || 'Choose new picture'}
+                                        </label>
+                                        <input
+                                            type="file"
+                                            id="profilePicture"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            className="w-full text-sm text-gray-600 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900 dark:file:text-blue-200 hover:file:bg-blue-100 dark:hover:file:bg-blue-800 cursor-pointer"
+                                        />
+                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                {t('accounts.imageRequirements') || 'JPG, PNG or GIF (max. 5MB)'}
+                                        </p>
                                     </div>
                                     
-                                    <div className="flex-1 space-y-4">
-                                        <div>
-                                            <label 
-                                                htmlFor="profilePicture" 
-                                                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                                            >
-                                                {t('accounts.chooseNewPicture') || 'Choose new picture'}
-                                            </label>
-                                            <input
-                                                type="file"
-                                                id="profilePicture"
-                                                accept="image/*"
-                                                onChange={handleImageChange}
-                                                className="w-full text-sm text-gray-600 dark:text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-900 dark:file:text-blue-200 hover:file:bg-blue-100 dark:hover:file:bg-blue-800 cursor-pointer"
-                                            />
-                                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                {t('accounts.imageRequirements') || 'JPG, PNG or GIF (max. 5MB)'}
-                                            </p>
-                                        </div>
-                                        
-                                        <button
-                                            type="button"
-                                            onClick={handleUploadImage}
-                                            disabled={!profileImage || uploadingImage}
-                                            className={`px-4 py-2 rounded-lg font-medium ${
-                                                !profileImage || uploadingImage
-                                                    ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                            } transition-colors`}
-                                        >
+                                    <button
+                                        type="button"
+                                        onClick={handleUploadImage}
+                                        disabled={!profileImage || uploadingImage}
+                                        className={`px-4 py-2 rounded-lg font-medium ${
+                                            !profileImage || uploadingImage
+                                                ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                        } transition-colors`}
+                                    >
                                             {uploadingImage ? 
                                                 (t('accounts.uploading') || 'Uploading...') : 
                                                 (t('accounts.uploadPicture') || 'Upload Picture')}
-                                        </button>
+                                    </button>
                                     </div>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleSaveAccount} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Account ID */}
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            {t('accounts.accountId') || 'Account ID'}
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        value={editAccount.id}
+                                        disabled
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white transition cursor-not-allowed"
+                                    />
+                                </div>
+
+                                {/* First Name */}
+                                <div>
+                                    <label 
+                                        htmlFor="firstName" 
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                    >
+                                            {t('accounts.firstName') || 'First Name'}
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="firstName" 
+                                        name="firstName" 
+                                        value={editAccount.firstName}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Last Name */}
+                                <div>
+                                    <label 
+                                        htmlFor="lastName" 
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                    >
+                                            {t('accounts.lastName') || 'Last Name'}
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="lastName" 
+                                        name="lastName" 
+                                        value={editAccount.lastName}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Email */}
+                                <div>
+                                    <label 
+                                        htmlFor="email" 
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                    >
+                                            {t('accounts.email') || 'Email'}
+                                    </label>
+                                    <input 
+                                        type="email" 
+                                        id="email" 
+                                        name="email" 
+                                        value={editAccount.email}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                        required
+                                    />
+                                </div>
+
+                                {/* Account Type */}
+                                <div>
+                                    <label 
+                                        htmlFor="accountType" 
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                                    >
+                                            {t('accounts.accountType') || 'Account Type'}
+                                    </label>
+                                    <select
+                                        id="accountType"
+                                        value={editAccount.accountType}
+                                        onChange={handleAccountTypeChange}
+                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                    >
+                                            <option value="ROLE_USER">{t('accounts.user') || 'User'}</option>
+                                            <option value="ROLE_ADMIN">{t('accounts.admin') || 'Administrator'}</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            <form onSubmit={handleSaveAccount} className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Account ID */}
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            {t('accounts.accountId') || 'Account ID'}
-                                        </label>
-                                        <input 
-                                            type="text" 
-                                            value={editAccount.id}
-                                            disabled
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white transition cursor-not-allowed"
-                                        />
-                                    </div>
-
-                                    {/* First Name */}
-                                    <div>
-                                        <label 
-                                            htmlFor="firstName" 
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                                        >
-                                            {t('accounts.firstName') || 'First Name'}
-                                        </label>
-                                        <input 
-                                            type="text" 
-                                            id="firstName" 
-                                            name="firstName" 
-                                            value={editAccount.firstName}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                                            required
-                                        />
-                                    </div>
-
-                                    {/* Last Name */}
-                                    <div>
-                                        <label 
-                                            htmlFor="lastName" 
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                                        >
-                                            {t('accounts.lastName') || 'Last Name'}
-                                        </label>
-                                        <input 
-                                            type="text" 
-                                            id="lastName" 
-                                            name="lastName" 
-                                            value={editAccount.lastName}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                                            required
-                                        />
-                                    </div>
-
-                                    {/* Email */}
-                                    <div>
-                                        <label 
-                                            htmlFor="email" 
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                                        >
-                                            {t('accounts.email') || 'Email'}
-                                        </label>
-                                        <input 
-                                            type="email" 
-                                            id="email" 
-                                            name="email" 
-                                            value={editAccount.email}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                                            required
-                                        />
-                                    </div>
-
-                                    {/* Account Type */}
-                                    <div>
-                                        <label 
-                                            htmlFor="accountType" 
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                                        >
-                                            {t('accounts.accountType') || 'Account Type'}
-                                        </label>
-                                        <select
-                                            id="accountType"
-                                            value={editAccount.accountType}
-                                            onChange={handleAccountTypeChange}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                                        >
-                                            <option value="ROLE_USER">{t('accounts.user') || 'User'}</option>
-                                            <option value="ROLE_ADMIN">{t('accounts.admin') || 'Administrator'}</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={handleCloseModal}
-                                        className="px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg font-medium transition-colors"
-                                    >
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={handleCloseModal}
+                                    className="px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg font-medium transition-colors"
+                                >
                                         {t('accounts.cancel') || 'Cancel'}
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className={`px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors ${
-                                            loading ? 'opacity-70 cursor-not-allowed' : ''
-                                        }`}
-                                    >
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className={`px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors ${
+                                        loading ? 'opacity-70 cursor-not-allowed' : ''
+                                    }`}
+                                >
                                         {loading ? 
                                             (t('accounts.saving') || 'Saving...') : 
                                             (t('accounts.saveChanges') || 'Save Changes')}

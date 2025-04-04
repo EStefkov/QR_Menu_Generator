@@ -688,8 +688,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           bValue = Number(b.totalRevenue || 0);
           break;
         case 'orders':
-          aValue = Number(a.orderCount || 0);
-          bValue = Number(b.orderCount || 0);
+          aValue = Number(a.totalOrders || a.orderCount || 0);
+          bValue = Number(b.totalOrders || b.orderCount || 0);
           break;
         case 'avgOrder':
           aValue = Number(a.averageOrderValue || 0);
@@ -853,16 +853,16 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
           bValue = (b.restaurantName || '').toLowerCase();
           break;
         case 'amount':
-          aValue = Number(a.amount || 0);
-          bValue = Number(b.amount || 0);
+          aValue = Number(a.totalAmount || 0);
+          bValue = Number(b.totalAmount || 0);
           break;
         case 'status':
           aValue = (a.status || '').toLowerCase();
           bValue = (b.status || '').toLowerCase();
           break;
         case 'date':
-          aValue = new Date(a.date || 0).getTime();
-          bValue = new Date(b.date || 0).getTime();
+          aValue = new Date(a.orderDate || 0).getTime();
+          bValue = new Date(b.orderDate || 0).getTime();
           break;
         default:
           aValue = a[orderSortField];
@@ -1017,6 +1017,75 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
     return adminStats.restaurantStats ? adminStats.restaurantStats.length : 0;
   };
   
+  // Add filter functions for time period statistics to exclude cancelled orders
+  // Create filtered time statistics that exclude cancelled orders
+  const getFilteredTimeStats = () => {
+    // If we don't have recentOrders data, return the pre-calculated stats
+    if (!adminStats.recentOrders || !Array.isArray(adminStats.recentOrders)) {
+      return adminStats.timeStats || {};
+    }
+
+    // Helper to check if a date is today
+    const isToday = (dateString) => {
+      const today = new Date();
+      const date = new Date(dateString);
+      return date.getDate() === today.getDate() &&
+             date.getMonth() === today.getMonth() &&
+             date.getFullYear() === today.getFullYear();
+    };
+
+    // Helper to check if a date is this week
+    const isThisWeek = (dateString) => {
+      const today = new Date();
+      const date = new Date(dateString);
+      const firstDayOfWeek = new Date(today);
+      firstDayOfWeek.setDate(today.getDate() - today.getDay()); // Sunday as the first day of week
+      firstDayOfWeek.setHours(0, 0, 0, 0);
+      
+      return date >= firstDayOfWeek;
+    };
+
+    // Helper to check if a date is this month
+    const isThisMonth = (dateString) => {
+      const today = new Date();
+      const date = new Date(dateString);
+      return date.getMonth() === today.getMonth() &&
+             date.getFullYear() === today.getFullYear();
+    };
+
+    // Filter out cancelled orders
+    const activeOrders = adminStats.recentOrders.filter(order => 
+      order.status?.toUpperCase() !== 'CANCELLED'
+    );
+
+    // Calculate today's stats
+    const todayOrders = activeOrders.filter(order => isToday(order.orderDate));
+    const todayRevenue = todayOrders.reduce((total, order) => total + (Number(order.totalAmount) || 0), 0);
+
+    // Calculate this week's stats
+    const thisWeekOrders = activeOrders.filter(order => isThisWeek(order.orderDate));
+    const thisWeekRevenue = thisWeekOrders.reduce((total, order) => total + (Number(order.totalAmount) || 0), 0);
+
+    // Calculate this month's stats
+    const thisMonthOrders = activeOrders.filter(order => isThisMonth(order.orderDate));
+    const thisMonthRevenue = thisMonthOrders.reduce((total, order) => total + (Number(order.totalAmount) || 0), 0);
+
+    return {
+      today: {
+        orders: todayOrders.length,
+        revenue: todayRevenue
+      },
+      thisWeek: {
+        orders: thisWeekOrders.length,
+        revenue: thisWeekRevenue
+      },
+      thisMonth: {
+        orders: thisMonthOrders.length,
+        revenue: thisMonthRevenue
+      }
+    };
+  };
+
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
@@ -1085,8 +1154,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
         <div className="mt-8">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-              {t('admin.restaurantPerformance') || 'Restaurant Performance'}
-            </h3>
+            {t('admin.restaurantPerformance') || 'Restaurant Performance'}
+          </h3>
             <button
               onClick={() => setShowRestaurantModal(true)}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
@@ -1138,7 +1207,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                       onClick={() => handleRestaurantSort('name')}
                     >
                       <div className="flex items-center">
-                        {t('admin.restaurantName') || 'Restaurant'}
+                      {t('admin.restaurantName') || 'Restaurant'}
                         {renderSortIndicator('name', restaurantSortField, restaurantSortDirection)}
                       </div>
                     </th>
@@ -1148,7 +1217,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                       onClick={() => handleRestaurantSort('revenue')}
                     >
                       <div className="flex items-center">
-                        {t('admin.revenue') || 'Revenue'}
+                      {t('admin.revenue') || 'Revenue'}
                         {renderSortIndicator('revenue', restaurantSortField, restaurantSortDirection)}
                       </div>
                     </th>
@@ -1168,7 +1237,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                       onClick={() => handleRestaurantSort('avgOrder')}
                     >
                       <div className="flex items-center">
-                        {t('admin.avgOrder') || 'Avg. Order'}
+                      {t('admin.avgOrder') || 'Avg. Order'}
                         {renderSortIndicator('avgOrder', restaurantSortField, restaurantSortDirection)}
                       </div>
                     </th>
@@ -1299,7 +1368,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                       onClick={() => handleProductSort('name')}
                     >
                       <div className="flex items-center">
-                        {t('admin.product') || 'Product'}
+                      {t('admin.product') || 'Product'}
                         {renderSortIndicator('name', productSortField, productSortDirection)}
                       </div>
                     </th>
@@ -1309,7 +1378,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                       onClick={() => handleProductSort('restaurant')}
                     >
                       <div className="flex items-center">
-                        {t('admin.restaurant') || 'Restaurant'}
+                      {t('admin.restaurant') || 'Restaurant'}
                         {renderSortIndicator('restaurant', productSortField, productSortDirection)}
                       </div>
                     </th>
@@ -1319,7 +1388,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                       onClick={() => handleProductSort('orderCount')}
                     >
                       <div className="flex items-center">
-                        {t('admin.orderCount') || 'Orders'}
+                      {t('admin.orderCount') || 'Orders'}
                         {renderSortIndicator('orderCount', productSortField, productSortDirection)}
                       </div>
                     </th>
@@ -1569,30 +1638,30 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                 </div>
               </div>
               
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
                       <th 
                         scope="col" 
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
                         onClick={() => handleOrderSort('id')}
                       >
                         <div className="flex items-center">
-                          {t('admin.orderId') || 'Order ID'}
+                      {t('admin.orderId') || 'Order ID'}
                           {renderSortIndicator('id', orderSortField, orderSortDirection)}
                         </div>
-                      </th>
+                    </th>
                       <th 
                         scope="col" 
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
                         onClick={() => handleOrderSort('customer')}
                       >
                         <div className="flex items-center">
-                          {t('admin.customer') || 'Customer'}
+                      {t('admin.customer') || 'Customer'}
                           {renderSortIndicator('customer', orderSortField, orderSortDirection)}
                         </div>
-                      </th>
+                    </th>
                       <th 
                         scope="col" 
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
@@ -1609,35 +1678,35 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                         onClick={() => handleOrderSort('amount')}
                       >
                         <div className="flex items-center">
-                          {t('admin.amount') || 'Amount'}
+                      {t('admin.amount') || 'Amount'}
                           {renderSortIndicator('amount', orderSortField, orderSortDirection)}
                         </div>
-                      </th>
+                    </th>
                       <th 
                         scope="col" 
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
                         onClick={() => handleOrderSort('status')}
                       >
                         <div className="flex items-center">
-                          {t('admin.status') || 'Status'}
+                      {t('admin.status') || 'Status'}
                           {renderSortIndicator('status', orderSortField, orderSortDirection)}
                         </div>
-                      </th>
+                    </th>
                       <th 
                         scope="col" 
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600"
                         onClick={() => handleOrderSort('date')}
                       >
                         <div className="flex items-center">
-                          {t('admin.date') || 'Date'}
+                      {t('admin.date') || 'Date'}
                           {renderSortIndicator('date', orderSortField, orderSortDirection)}
                         </div>
                       </th>
                       <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         {t('admin.actions') || 'Actions'}
-                      </th>
-                    </tr>
-                  </thead>
+                    </th>
+                  </tr>
+                </thead>
                   <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {getPaginatedData(getFilteredOrders(), ordersPage, itemsPerPage).map((order, index) => (
                       <tr 
@@ -1648,31 +1717,31 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                           handleOrderClick(order);
                         }}
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">#{order.id}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">#{order.id}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900 dark:text-white">{order.customerName}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">{order.restaurantName}</div>
                           {order.restorantId && (
                             <div className="text-xs text-gray-500 dark:text-gray-400">ID: {order.restorantId}</div>
                           )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">{formatCurrency(order.totalAmount)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
-                            {order.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                             {formatDate(order.orderDate)}
-                          </div>
-                        </td>
+                        </div>
+                      </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <button
                             onClick={(e) => {
@@ -1685,11 +1754,11 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                             {t('admin.viewDetails') || 'View'}
                           </button>
                         </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
               
               {/* Pagination */}
               <PaginationControls 
@@ -1697,7 +1766,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
                 totalPages={getTotalPages(getFilteredOrders(), itemsPerPage)}
                 onPageChange={setOrdersPage} 
               />
-            </div>
+          </div>
           )}
         </div>
       )}
@@ -1722,11 +1791,15 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.orders') || 'Orders'}</p>
-                  <p className="text-xl font-bold text-gray-800 dark:text-white">{adminStats.timeStats.today?.orders || 0}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">
+                    {getFilteredTimeStats().today?.orders || 0}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.revenue') || 'Revenue'}</p>
-                  <p className="text-xl font-bold text-gray-800 dark:text-white">{formatCurrency(adminStats.timeStats.today?.revenue || 0)}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">
+                    {formatCurrency(getFilteredTimeStats().today?.revenue || 0)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1744,11 +1817,15 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.orders') || 'Orders'}</p>
-                  <p className="text-xl font-bold text-gray-800 dark:text-white">{adminStats.timeStats.thisWeek?.orders || 0}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">
+                    {getFilteredTimeStats().thisWeek?.orders || 0}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.revenue') || 'Revenue'}</p>
-                  <p className="text-xl font-bold text-gray-800 dark:text-white">{formatCurrency(adminStats.timeStats.thisWeek?.revenue || 0)}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">
+                    {formatCurrency(getFilteredTimeStats().thisWeek?.revenue || 0)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1766,11 +1843,15 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.orders') || 'Orders'}</p>
-                  <p className="text-xl font-bold text-gray-800 dark:text-white">{adminStats.timeStats.thisMonth?.orders || 0}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">
+                    {getFilteredTimeStats().thisMonth?.orders || 0}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.revenue') || 'Revenue'}</p>
-                  <p className="text-xl font-bold text-gray-800 dark:text-white">{formatCurrency(adminStats.timeStats.thisMonth?.revenue || 0)}</p>
+                  <p className="text-xl font-bold text-gray-800 dark:text-white">
+                    {formatCurrency(getFilteredTimeStats().thisMonth?.revenue || 0)}
+                  </p>
                 </div>
               </div>
             </div>
