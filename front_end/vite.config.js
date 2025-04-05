@@ -8,9 +8,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  base: './', // ✅ добави този ред!
   server: {
     port: 5173,
-    
-
   }
 })

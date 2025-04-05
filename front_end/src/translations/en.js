@@ -273,8 +273,8 @@ const translations = {
   "admin.totalRevenue": "Total Revenue",
   "admin.totalOrders": "Total Orders",
   "admin.restaurants": "Restaurants",
-  "admin.allTimeRevenue": "All-time revenue across all restaurants",
-  "admin.ordersProcessed": "Orders processed across all restaurants",
+  "admin.allTimeRevenue": "All-time revenue",
+  "admin.ordersProcessed": "Orders processed",
   "admin.activeRestaurants": "Active restaurants in your portfolio",
   "admin.restaurantPerformance": "Restaurant Performance",
   "admin.addRestaurant": "Add Restaurant",
@@ -305,7 +305,7 @@ const translations = {
   "admin.today": "Today",
   "admin.thisWeek": "This Week",
   "admin.thisMonth": "This Month",
-  "admin.orders": "Orders",
+  "admin.orders": "orders",
   "admin.accountsManagement": "Accounts Management",
   "admin.noDataAvailable": "No statistics available yet. Start adding restaurants and products to see your dashboard.",
   "admin.createRestaurant": "Create New Restaurant",
@@ -506,7 +506,54 @@ const translations = {
   // Admin specific translations for order status
   "admin.acceptOrder": "Accept",
   "admin.orderReady": "Ready",
-  "admin.cancelOrder": "Cancel"
+  "admin.cancelOrder": "Cancel",
+
+  // Add admin section translations
+  "admin.dashboard": "Admin Dashboard",
+  "admin.popularProducts": "Most Popular Products",
+  "admin.searchProducts": "Search products or restaurants...",
+  "admin.noPopularProducts": "No popular products found",
+  "admin.recentOrders": "Recent Orders",
+  "admin.timeStats": "Performance Over Time",
+  "admin.today": "Today",
+  "admin.week": "Week",
+  "admin.month": "Month",
+  "admin.orderStatus": "Order Status Distribution",
+  "admin.restaurantPerformance": "Restaurant Performance",
+  "admin.accountsManagement": "User Accounts",
+  "admin.overview": "Dashboard Overview",
+  "admin.statsTitle": "Business Statistics",
+  "admin.totalRevenue": "Total Revenue",
+  "admin.totalOrders": "Total Orders",
+  "admin.deleteRestaurantWarning": "Are you sure you want to delete this restaurant? This action cannot be undone.",
+  "admin.confirmDeleteRestaurant": "Delete Restaurant",
+  "admin.restaurantManagement": "Restaurant Management",
+  "admin.newRestaurant": "New Restaurant",
+  "admin.editRestaurant": "Edit Restaurant",
+  "admin.restaurantNameLabel": "Restaurant Name",
+  "admin.restaurantAddressLabel": "Restaurant Address",
+  "admin.restaurantNamePlaceholder": "Enter restaurant name",
+  "admin.restaurantAddressPlaceholder": "Enter restaurant address",
+  "admin.searchAccounts": "Search accounts...",
+  "admin.searchRestaurants": "Search restaurants...",
+  "admin.searchOrders": "Search orders...",
+  "admin.noAccounts": "No accounts found",
+  "admin.noRestaurants": "No restaurants found",
+  "admin.noOrders": "No orders found",
+
+  // Add restaurant section
+  "restaurants.restaurant": "Restaurant",
+  "restaurants.name": "Name",
+  "restaurants.address": "Address",
+  "restaurants.title": "Restaurants",
+  "restaurants.addRestaurant": "Add Restaurant",
+
+  // Add product section
+  "products.products": "products",
+  "products.name": "Product Name",
+  "products.image": "Image",
+  "products.price": "Price",
+  "products.description": "Description"
 };
 
 export default translations; 

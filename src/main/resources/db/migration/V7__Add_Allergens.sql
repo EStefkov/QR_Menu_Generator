@@ -1,20 +1,20 @@
 -- 1) Създаваме таблица allergen
 CREATE TABLE allergen (
-                          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                          id BIGINT IDENTITY(1,1) PRIMARY KEY,
                           allergen_name VARCHAR(255) NOT NULL,
-                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                          created_at DATETIME DEFAULT GETDATE(),
+                          updated_at DATETIME DEFAULT GETDATE()
 );
 
 -- 2) Създаваме таблица product_allergen за Many-to-Many връзка
 CREATE TABLE product_allergen (
                                   product_id BIGINT NOT NULL,
                                   allergen_id BIGINT NOT NULL,
+                                  created_at DATETIME DEFAULT GETDATE(),
+                                  updated_at DATETIME DEFAULT GETDATE(),
                                   PRIMARY KEY (product_id, allergen_id),
                                   CONSTRAINT fk_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-                                  CONSTRAINT fk_allergen FOREIGN KEY (allergen_id) REFERENCES allergen(id) ON DELETE CASCADE,
-                                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                                  CONSTRAINT fk_allergen FOREIGN KEY (allergen_id) REFERENCES allergen(id) ON DELETE CASCADE
 );
 
 -- 3) Въвеждаме 14-те задължителни алергена

@@ -1,1 +1,1 @@
-ALTER TABLE menu ADD COLUMN default_product_image VARCHAR(255); 
+ALTER TABLE menu ADD default_product_image VARCHAR(255);

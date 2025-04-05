@@ -1,9 +1,9 @@
 CREATE TABLE favorites (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    account_id BIGINT NOT NULL,
-    product_id BIGINT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    UNIQUE KEY unique_account_product (account_id, product_id)
-); 
+                           id BIGINT IDENTITY(1,1) PRIMARY KEY,
+                           account_id BIGINT NOT NULL,
+                           product_id BIGINT NOT NULL,
+                           created_at DATETIME DEFAULT GETDATE(),
+                           CONSTRAINT fk_fav_account FOREIGN KEY (account_id) REFERENCES account(id) ON DELETE CASCADE,
+                           CONSTRAINT fk_fav_product FOREIGN KEY (product_id) REFERENCES products(id),
+                           CONSTRAINT uq_account_product UNIQUE (account_id, product_id)
+);
