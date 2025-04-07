@@ -32,8 +32,18 @@ public class RestaurantController {
     public ResponseEntity<Map<String, String>> createRestaurant(
             @RequestBody RestaurantDTO restaurantDTO,
             @RequestHeader("Authorization") String token) {
+        // Log incoming restaurant data for debugging
+        System.out.println("Restaurant creation request received with data: " + restaurantDTO);
+        
+        // Log detailed field information
+        System.out.println("Restaurant name: " + restaurantDTO.getRestorantName());
+        System.out.println("Phone number: " + restaurantDTO.getPhoneNumber());
+        System.out.println("Address: " + restaurantDTO.getAddress());
+        System.out.println("Email: " + restaurantDTO.getEmail());
+        
         String email = jwtTokenUtil.extractUsername(token.substring(7));
         restaurantService.createRestaurant(restaurantDTO, email);
+        
         Map<String, String> response = Map.of("message", "Restaurant created successfully");
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }

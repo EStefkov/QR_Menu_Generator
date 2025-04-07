@@ -135,12 +135,86 @@ const RestaurantMenus = () => {
   const getFieldValue = (obj, fieldNames, defaultValue = '-') => {
     if (!obj) return defaultValue;
     
+    // Log obj structure for debugging
+    console.log("Getting field value from object:", obj);
+    console.log("Looking for fields:", fieldNames);
+    
+    // First check direct fields
     for (const field of fieldNames) {
       if (obj[field] !== undefined && obj[field] !== null && obj[field] !== '') {
+        console.log(`Found direct field: ${field} = ${obj[field]}`);
         return obj[field];
       }
     }
     
+    // Then check for nested fields
+    for (const field of fieldNames) {
+      if (field.includes('.')) {
+        const parts = field.split('.');
+        let value = obj;
+        let valid = true;
+        
+        for (const part of parts) {
+          if (value && value[part] !== undefined && value[part] !== null) {
+            value = value[part];
+          } else {
+            valid = false;
+            break;
+          }
+        }
+        
+        if (valid && value !== '') {
+          console.log(`Found nested field: ${field} = ${value}`);
+          return value;
+        }
+      }
+    }
+    
+    // Explicitly check all possible locations of the address field
+    if (fieldNames.includes('address') || fieldNames.includes('restaurantAddress') || fieldNames.includes('restorantAddress')) {
+      // Check in contactInfo object
+      if (obj.contactInfo && obj.contactInfo.address) {
+        console.log(`Found address in contactInfo: ${obj.contactInfo.address}`);
+        return obj.contactInfo.address;
+      }
+      
+      // Check other common address fields
+      for (const addressField of ['contactInfo.address', 'address', 'restaurantAddress', 'restorantAddress', 'location']) {
+        const fieldParts = addressField.split('.');
+        let value = obj;
+        let valid = true;
+        
+        for (const part of fieldParts) {
+          if (value && value[part] !== undefined && value[part] !== null) {
+            value = value[part];
+          } else {
+            valid = false;
+            break;
+          }
+        }
+        
+        if (valid && value !== '') {
+          console.log(`Found address in alternative field: ${addressField} = ${value}`);
+          return value;
+        }
+      }
+    }
+    
+    // Check special case for contactInfo
+    if (obj.contactInfo) {
+      if (fieldNames.includes('address') && obj.contactInfo.address) {
+        console.log(`Found address in contactInfo: ${obj.contactInfo.address}`);
+        return obj.contactInfo.address;
+      }
+      if (fieldNames.includes('phone') && obj.contactInfo.phone) {
+        return obj.contactInfo.phone;
+      }
+      if (fieldNames.includes('email') && obj.contactInfo.email) {
+        return obj.contactInfo.email;
+      }
+    }
+    
+    console.log(`No matching field found, returning default: ${defaultValue}`);
     return defaultValue;
   };
   
@@ -380,7 +454,7 @@ const RestaurantMenus = () => {
                 {t('restaurants.address') || 'Address'}
               </p>
               <p className="text-lg text-gray-900 dark:text-white">
-                {getFieldValue(restaurant, ['address', 'restorantAddress', 'restaurantAddress', 'location'])}
+                {getFieldValue(restaurant, ['address', 'restorantAddress', 'restaurantAddress', 'location', 'contactInfo.address'])}
               </p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">

@@ -30,7 +30,31 @@ const RestaurantModal = ({
       email: emailRef.current.value.trim()
     };
     
-    onSubmit(restaurantData);
+    // Validate address field
+    if (!restaurantData.address) {
+      console.error("Restaurant address is empty");
+      // You might want to show an error here
+      return; // Don't proceed if address is empty
+    }
+    
+    // Add contactInfo structure to ensure address is properly saved
+    // Some backends expect address in a nested structure
+    const enhancedData = {
+      ...restaurantData,
+      contactInfo: {
+        address: restaurantData.address,
+        phone: restaurantData.phoneNumber,
+        email: restaurantData.email
+      },
+      // Ensure compatibility with different field name conventions
+      restorantAddress: restaurantData.address,
+      restaurantAddress: restaurantData.address
+    };
+    
+    // Log the data being sent
+    console.log("Sending restaurant data:", JSON.stringify(enhancedData, null, 2));
+    
+    onSubmit(enhancedData);
   };
 
   return (
@@ -86,15 +110,19 @@ const RestaurantModal = ({
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('restaurants.address') || 'Address'}
+                  {t('restaurants.address') || 'Address'} *
                 </label>
                 <input
                   type="text"
                   name="address"
                   ref={addressRef}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                  placeholder={t('restaurants.addressPlaceholder') || 'Enter address'}
+                  placeholder={t('restaurants.addressPlaceholder') || 'Enter complete address'}
+                  required
                 />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {t('restaurants.addressHelp') || 'Please provide a complete address for the restaurant to be displayed properly.'}
+                </p>
               </div>
               
               <div>

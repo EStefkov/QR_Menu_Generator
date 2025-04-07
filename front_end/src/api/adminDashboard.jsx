@@ -332,20 +332,60 @@ export const createProductApi = async (token, formData) => {
  * @returns {Promise<any>} Създаденият ресторант (JSON).
  */
 export const createRestaurantApi = async (token, restaurantData) => {
-    const response = await fetch(`${API_BASE_URL}/api/restaurants`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(restaurantData),
-    });
-
-    if (!response.ok) {
-        throw new Error("Failed to create restaurant");
+    // Ensure address is properly structured
+    const enhancedData = { ...restaurantData };
+    
+    // Make sure we have a contactInfo structure if address exists
+    if (restaurantData.address && !restaurantData.contactInfo) {
+        enhancedData.contactInfo = {
+            ...(restaurantData.contactInfo || {}),
+            address: restaurantData.address,
+            phone: restaurantData.phoneNumber || restaurantData.phone,
+            email: restaurantData.email
+        };
     }
+    
+    // Make sure we have the address in all possible field formats
+    enhancedData.restorantAddress = restaurantData.address;
+    enhancedData.restaurantAddress = restaurantData.address;
+    enhancedData.address = restaurantData.address;
+    
+    // Log the final data being sent to the API
+    console.log("Creating restaurant with data:", JSON.stringify(enhancedData, null, 2));
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/restaurants`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(enhancedData),
+        });
 
-    return response.json();
+        const contentType = response.headers.get("content-type");
+        let responseData;
+        
+        if (contentType && contentType.includes("application/json")) {
+            responseData = await response.json();
+            console.log("Server response (JSON):", responseData);
+        } else {
+            responseData = await response.text();
+            console.log("Server response (Text):", responseData);
+        }
+
+        if (!response.ok) {
+            console.error("Restaurant creation failed with status:", response.status);
+            console.error("Response headers:", Object.fromEntries([...response.headers]));
+            throw new Error(`Failed to create restaurant: ${response.status} - ${responseData}`);
+        }
+
+        console.log("Restaurant created successfully:", responseData);
+        return responseData;
+    } catch (error) {
+        console.error("Error in createRestaurantApi:", error);
+        throw error;
+    }
 };
 
 /**

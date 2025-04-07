@@ -42,13 +42,38 @@ public class RestaurantService {
         Account account = accountRepository.findByAccountNameOrMailAddress(identifier, identifier)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
+        // Log incoming restaurant data for debugging
+        System.out.println("Creating restaurant with data: " + restaurantDTO);
+        
+        // Extract address from contactInfo if direct address is null
+        String address = restaurantDTO.getAddress();
+        if ((address == null || address.trim().isEmpty()) && restaurantDTO.getContactInfo() != null) {
+            try {
+                // Try to get address from contactInfo if it's a map
+                if (restaurantDTO.getContactInfo() instanceof java.util.Map) {
+                    java.util.Map<?, ?> contactInfo = (java.util.Map<?, ?>) restaurantDTO.getContactInfo();
+                    Object contactAddress = contactInfo.get("address");
+                    if (contactAddress != null && !contactAddress.toString().trim().isEmpty()) {
+                        address = contactAddress.toString();
+                        System.out.println("Extracted address from contactInfo: " + address);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error extracting address from contactInfo: " + e.getMessage());
+            }
+        }
+
         // Build restaurant with associated account
         Restorant restaurant = Restorant.builder()
                 .restorantName(restaurantDTO.getRestorantName())
                 .phoneNumber(restaurantDTO.getPhoneNumber())
-                .account(account) // Associate restaurant with account
+                .address(address)  // Set the extracted address field
                 .email(restaurantDTO.getEmail())
+                .account(account) // Associate restaurant with account
                 .build();
+
+        // Log the restaurant object before saving
+        System.out.println("Restaurant object before saving: " + restaurant);
 
         restaurantRepository.save(restaurant);
     }
