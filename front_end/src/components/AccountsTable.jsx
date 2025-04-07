@@ -178,6 +178,10 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
     };
 
     const handleEditClick = (account) => {
+        // Add a warning if editing the current logged-in user
+        const currentUserId = localStorage.getItem('id') || localStorage.getItem('userId');
+        const isCurrentUser = currentUserId && currentUserId == account.id;
+        
         setEditAccount({
             ...account,
             firstName: account.firstName || '',
@@ -185,9 +189,19 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
             email: account.mailAddress || '',
             accountType: account.accountType || 'ROLE_USER',
             profilePicture: account.profilePicture || '',
+            isCurrentUser: isCurrentUser // Add flag to track if editing current user
         });
         setImagePreview(account.profilePicture || null);
         setShowEditModal(true);
+        
+        if (isCurrentUser) {
+            setMessage({
+                type: 'warning',
+                text: t('accounts.editingSelfWarning') || 'Warning: You are editing your own account. For proper updates, please use the profile page instead.'
+            });
+        } else {
+            setMessage({ type: '', text: '' });
+        }
     };
 
     const handleCloseModal = () => {
@@ -216,8 +230,7 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
     const handleSaveAccount = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setMessage({ type: '', text: '' });
-
+        
         try {
             const accountToUpdate = {
                 id: editAccount.id,
@@ -227,33 +240,35 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
                 accountType: editAccount.accountType
             };
 
+            // Make the API call to update the user profile
             await profileApi.updateUserProfile(accountToUpdate);
-
-            // Update user data if editing own account
-            const currentUserId = localStorage.getItem('id') || localStorage.getItem('userId');
             
-            if (currentUserId && currentUserId == editAccount.id) {
-                console.log('Updating current user data in localStorage');
-                localStorage.setItem("firstName", accountToUpdate.firstName);
-                localStorage.setItem("lastName", accountToUpdate.lastName);
-                localStorage.setItem("mailAddress", accountToUpdate.mailAddress);
-                
-                window.dispatchEvent(new Event("userDataUpdated"));
-            }
-
-            // If the original onEdit function exists, call it
+            // Only update our component state through the callback
             if (onEdit) {
                 onEdit(accountToUpdate);
             }
 
-            setMessage({
-                type: 'success',
-                text: t('accounts.updateSuccess') || 'Account updated successfully'
-            });
-
-            setTimeout(() => {
-                handleCloseModal();
-            }, 1500);
+            // Show special message for own account edits
+            if (editAccount.isCurrentUser) {
+                setMessage({
+                    type: 'warning',
+                    text: t('accounts.selfUpdateAdvice') || 'You have updated your own account. Please go to your profile page and refresh for changes to take effect properly.'
+                });
+                
+                // Keep the modal open longer for this warning
+                setTimeout(() => {
+                    handleCloseModal();
+                }, 4000);
+            } else {
+                setMessage({
+                    type: 'success',
+                    text: t('accounts.updateSuccess') || 'Account updated successfully'
+                });
+                
+                setTimeout(() => {
+                    handleCloseModal();
+                }, 1500);
+            }
         } catch (error) {
             console.error('Error updating account:', error);
             setMessage({

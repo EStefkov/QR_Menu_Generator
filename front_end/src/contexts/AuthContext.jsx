@@ -197,21 +197,28 @@ export function AuthProvider({ children }) {
       console.log("AuthContext: User data updated event received");
       updateUserUpdatingState(true); // Set updating flag to true
       
-      // Simple refresh user data from localStorage without token validation
-      const id = localStorage.getItem("id") || localStorage.getItem("userId");
-      const token = localStorage.getItem("token");
+      // Get current user ID from state and localStorage
+      const currentStateId = userData.id;
+      const localStorageId = localStorage.getItem("id") || localStorage.getItem("userId");
       
-      if (id && token) {
-        console.log("AuthContext: Refreshing user data from localStorage");
-        setUserData({
-          id,
-          token,
-          firstName: localStorage.getItem("firstName"),
-          lastName: localStorage.getItem("lastName"),
-          profilePicture: localStorage.getItem("profilePicture"),
-          accountType: localStorage.getItem("accountType"),
-          mailAddress: localStorage.getItem("mailAddress"),
-        });
+      // Only update if the IDs match and we have a token
+      if (currentStateId && localStorageId && currentStateId === localStorageId) {
+        const token = localStorage.getItem("token");
+        
+        if (token) {
+          console.log("AuthContext: Refreshing user data from localStorage for current user");
+          setUserData({
+            id: localStorageId,
+            token,
+            firstName: localStorage.getItem("firstName"),
+            lastName: localStorage.getItem("lastName"),
+            profilePicture: localStorage.getItem("profilePicture"),
+            accountType: localStorage.getItem("accountType"),
+            mailAddress: localStorage.getItem("mailAddress"),
+          });
+        }
+      } else {
+        console.log("AuthContext: Ignoring user data update for different user");
       }
       
       // Reset the updating flag after a delay
