@@ -489,8 +489,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
         <div className="mt-8">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-              {t('admin.restaurantPerformance') || 'Restaurant Performance'}
-            </h3>
+            {t('admin.restaurantPerformance') || 'Restaurant Performance'}
+          </h3>
             <button
               onClick={() => setShowRestaurantModal(true)}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
@@ -506,7 +506,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
             onDeleteRestaurant={handleDeleteRestaurant}
             formatCurrency={formatCurrency}
           />
-        </div>
+              </div>
       )}
       
       {/* Order Status Distribution */}
@@ -556,8 +556,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
               formatCurrency={formatCurrency}
               formatDate={formatDate}
             />
-          )}
-        </div>
+                  )}
+                </div>
       )}
       
       {/* Time-based Statistics */}
