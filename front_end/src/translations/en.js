@@ -140,6 +140,53 @@ const translations = {
   // Admin dashboard
   "admin.ordersHistory": "Orders History",
   
+  // Role Management
+  "admin.updateUserRole": "Update User Role",
+  "admin.roleUpdatedSuccess": "User role updated successfully",
+  "admin.updateRoleFor": "Update role for",
+  "admin.currentRole": "Current role",
+  "admin.selectRole": "Select new role",
+  "admin.managerRoleNote": "Note: After changing the role to Manager, you can assign restaurants to this user from the Manager Assignments section.",
+  "admin.managerAssignments": "Manager Assignments",
+  "admin.manageManagerAssignments": "Manage Manager Assignments",
+  "admin.newAssignment": "New Assignment",
+  "admin.selectManager": "Select Manager",
+  "admin.selectRestaurant": "Select Restaurant",
+  "admin.selectRestaurants": "Select Restaurants",
+  "admin.selected": "selected",
+  "admin.noManagersAvailable": "No managers available",
+  "admin.createManagersFirst": "Create accounts with Manager role first",
+  "admin.noRestaurantsAvailable": "No restaurants available",
+  "admin.existingAssignments": "Existing Assignments",
+  "admin.noAssignments": "No manager assignments yet",
+  "admin.assignManager": "Assign Manager",
+  "admin.assigning": "Assigning...",
+  "admin.manager": "Manager",
+  "admin.restaurant": "Restaurant",
+  "admin.assignedBy": "Assigned By",
+  "admin.assignedAt": "Date",
+  "admin.assignmentExists": "This manager is already assigned to this restaurant",
+  "admin.loadingManagers": "Loading managers...",
+  "admin.switchToSingleMode": "Switch to Single Assignment",
+  "admin.switchToBatchMode": "Switch to Batch Assignment",
+  "admin.managerAssigned": "Manager successfully assigned to restaurant",
+  "admin.managersAssignedBatch": "Manager successfully assigned to selected restaurants",
+  "admin.alreadyAssigned": "already assigned",
+  "admin.assignToBatch": "Assign to selected restaurant(s)",
+  
+  // Nav sections  
+  "nav.managerDashboard": "Manager Dashboard",
+  
+  // Roles
+  "roles.user": "User",
+  "roles.admin": "Administrator", 
+  "roles.manager": "Manager",
+  "roles.waiter": "Waiter",
+  
+  // Common actions
+  "common.update": "Update",
+  "common.updating": "Updating...",
+  
   // Orders
   "orders.allStatuses": "All Statuses",
   "orders.statusPending": "Pending",
@@ -312,6 +359,14 @@ const translations = {
   "admin.confirmDeleteRestaurant": "Delete Restaurant",
   "admin.deleteRestaurantWarning": "Are you sure you want to delete this restaurant? This action cannot be undone and will remove all menus, categories, and products associated with it.",
   "admin.restaurantDeleted": "Restaurant deleted successfully!",
+  "admin.manageManagers": "Manage Managers",
+  "admin.noRestaurantsAvailable": "No restaurants available",
+  "admin.noAssignments": "No manager assignments yet",
+  "admin.assigning": "Assigning...",
+  "admin.manager": "Manager",
+  "admin.remove": "Remove",
+  "admin.assignedBy": "Assigned By",
+  "admin.assignedAt": "Date",
   
   // Demo page
   "demo_title": "Language & Theme Demo",
@@ -487,6 +542,8 @@ const translations = {
   "accounts.firstName": "First Name",
   "accounts.lastName": "Last Name",
   "accounts.accountType": "Account Type",
+  "accounts.waiter": "Waiter",
+  "accounts.manager": "Manager",
   "accounts.cancel": "Cancel",
   "accounts.saving": "Saving...",
   "accounts.saveChanges": "Save Changes",
@@ -506,7 +563,26 @@ const translations = {
   // Admin specific translations for order status
   "admin.acceptOrder": "Accept",
   "admin.orderReady": "Ready",
-  "admin.cancelOrder": "Cancel"
+  "admin.cancelOrder": "Cancel",
+
+  // Add manager dashboard translations
+  
+  // Manager Dashboard
+  "manager.dashboard": "Manager Dashboard",
+  "manager.yourRestaurants": "Your Restaurants",
+  "manager.noRestaurantsAssigned": "You are not assigned to any restaurants yet.",
+  "manager.contactAdmin": "Please contact an administrator to get assigned to restaurants.",
+  "manager.selectRestaurant": "Select a restaurant to view details",
+  "manager.otherManagers": "Other Managers",
+  "manager.noOtherManagers": "No other managers assigned to this restaurant",
+  "manager.manageMenus": "Manage Menus",
+  
+  // Common elements
+  "common.address": "Address",
+  "common.phone": "Phone",
+  "common.email": "Email",
+  "common.notProvided": "Not provided",
+  "common.errorFetchingData": "Failed to load data",
 };
 
 export default translations; 

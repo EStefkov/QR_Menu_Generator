@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiExclamationCircle, HiRefresh, HiPlus } from 'react-icons/hi';
+import { HiCurrencyDollar, HiShoppingCart, HiCollection, HiExclamationCircle, HiRefresh, HiPlus, HiUserGroup } from 'react-icons/hi';
 import { orderApi } from '../../api/orderApi';
 import { useNavigate } from 'react-router-dom';
-import { createRestaurantApi, deleteRestaurantApi, fetchMenusByRestaurantIdApi, fetchAccountsApi, deleteAccountApi } from '../../api/adminDashboard';
+import { createRestaurantApi, deleteRestaurantApi, fetchMenusByRestaurantIdApi, fetchAccountsApi, deleteAccountApi, getManagerAssignments } from '../../api/adminDashboard.jsx';
 import { AccountsTable } from '../../components/AccountsTable';
 
 // Import reusable components
@@ -16,6 +16,7 @@ import OrderStatusDistribution from '../../components/admin/OrderStatusDistribut
 import RestaurantModal from '../../components/admin/RestaurantModal';
 import DeleteConfirmationModal from '../../components/admin/DeleteConfirmationModal';
 import OrderDetailsModal from '../../components/admin/OrderDetailsModal';
+import ManagerAssignmentModal from '../../components/admin/ManagerAssignmentModal';
 
 const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const { t } = useLanguage();
@@ -38,6 +39,11 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   const [deletingRestaurant, setDeletingRestaurant] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
 
+  // Manager Assignment Modal
+  const [showManagerAssignmentModal, setShowManagerAssignmentModal] = useState(false);
+  const [managerAssignments, setManagerAssignments] = useState([]);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+
   // Accounts state
   const [accounts, setAccounts] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
@@ -47,8 +53,28 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
   useEffect(() => {
     if (adminStats) {
       loadAccounts();
+      loadManagerAssignments();
     }
   }, [adminStats]); // Only load accounts when adminStats are available
+
+  // Function to load manager assignments
+  const loadManagerAssignments = async () => {
+    setLoadingAssignments(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      const assignmentsData = await getManagerAssignments(token);
+      setManagerAssignments(assignmentsData || []);
+    } catch (error) {
+      console.error('Error fetching manager assignments:', error);
+    } finally {
+      setLoadingAssignments(false);
+    }
+  };
 
   // Function to load accounts
   const loadAccounts = async () => {
@@ -489,15 +515,24 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
         <div className="mt-8">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
-            {t('admin.restaurantPerformance') || 'Restaurant Performance'}
-          </h3>
-            <button
-              onClick={() => setShowRestaurantModal(true)}
-              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
-            >
-              <HiPlus className="mr-1 h-4 w-4" />
-              {t('admin.addRestaurant') || 'Add Restaurant'}
-            </button>
+              {t('admin.restaurantPerformance') || 'Restaurant Performance'}
+            </h3>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowManagerAssignmentModal(true)}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition"
+              >
+                <HiUserGroup className="mr-1 h-4 w-4" />
+                {t('admin.manageManagers') || 'Manage Managers'}
+              </button>
+              <button
+                onClick={() => setShowRestaurantModal(true)}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition"
+              >
+                <HiPlus className="mr-1 h-4 w-4" />
+                {t('admin.addRestaurant') || 'Add Restaurant'}
+              </button>
+            </div>
           </div>
           
           <RestaurantTable 
@@ -506,7 +541,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
             onDeleteRestaurant={handleDeleteRestaurant}
             formatCurrency={formatCurrency}
           />
-              </div>
+        </div>
       )}
       
       {/* Order Status Distribution */}
@@ -556,8 +591,8 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
               formatCurrency={formatCurrency}
               formatDate={formatDate}
             />
-                  )}
-                </div>
+          )}
+        </div>
       )}
       
       {/* Time-based Statistics */}
@@ -639,6 +674,15 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
         error={deleteError}
         itemToDelete={restaurantToDelete}
         itemType="restaurant"
+      />
+
+      {/* Manager Assignment Modal */}
+      <ManagerAssignmentModal
+        isOpen={showManagerAssignmentModal}
+        onClose={() => setShowManagerAssignmentModal(false)}
+        managers={accounts.filter(a => a.accountType === 'ROLE_MANAGER')}
+        restaurants={adminStats.restaurantStats || []}
+        existingAssignments={managerAssignments}
       />
     </div>
   );

@@ -28,7 +28,7 @@ public class RestaurantController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<Map<String, String>> createRestaurant(
             @RequestBody RestaurantDTO restaurantDTO,
             @RequestHeader("Authorization") String token) {
@@ -49,35 +49,35 @@ public class RestaurantController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN') or (hasRole('MANAGER') and @restaurantAccessService.canManageRestaurant(authentication.name, #id))")
     public ResponseEntity<String> updateRestaurant(@PathVariable Long id, @RequestBody RestaurantDTO restaurantDTO) {
         restaurantService.updateRestaurant(id, restaurantDTO);
         return new ResponseEntity<>("Restaurant updated successfully", HttpStatus.OK);
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'MANAGER')")
     public ResponseEntity<RestaurantDTO> getRestaurantById(@PathVariable Long id) {
         RestaurantDTO restaurantDTO = restaurantService.getRestaurantById(id);
         return ResponseEntity.ok(restaurantDTO);
     }
 
     @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('MANAGER') and @restaurantAccessService.canManageRestaurant(authentication.name, #id))")
     public ResponseEntity<String> deleteRestaurant(@PathVariable Long id) {
         restaurantService.deleteRestaurant(id);
         return new ResponseEntity<>("Restaurant deleted successfully", HttpStatus.OK);
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'MANAGER')")
     public ResponseEntity<List<RestaurantDTO>> getAllRestaurants() {
         List<RestaurantDTO> restaurants = restaurantService.getAllRestaurants();
         return new ResponseEntity<>(restaurants, HttpStatus.OK);
     }
 
     @GetMapping("/paged")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'MANAGER')")
     public ResponseEntity<Page<RestaurantDTO>> getPagedRestaurants(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {
@@ -86,9 +86,18 @@ public class RestaurantController {
     }
 
     @GetMapping("/{restaurantId}/menus")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'MANAGER')")
     public ResponseEntity<List<MenuDTO>> getMenusByRestaurant(@PathVariable Long restaurantId) {
         List<MenuDTO> menus = restaurantService.getMenusByRestaurant(restaurantId);
         return ResponseEntity.ok(menus);
+    }
+    
+    @GetMapping("/managed")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<List<RestaurantDTO>> getManagedRestaurants(
+            @RequestHeader("Authorization") String token) {
+        String email = jwtTokenUtil.extractUsername(token.substring(7));
+        List<RestaurantDTO> restaurants = restaurantService.getRestaurantsManagedByUser(email);
+        return ResponseEntity.ok(restaurants);
     }
 }

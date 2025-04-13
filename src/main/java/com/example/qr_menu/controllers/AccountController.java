@@ -3,6 +3,7 @@ package com.example.qr_menu.controllers;
 import com.example.qr_menu.dto.AccountDTO;
 import com.example.qr_menu.dto.LoginDTO;
 import com.example.qr_menu.dto.ChangePasswordDTO;
+import com.example.qr_menu.entities.Account;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.services.AccountService;
 import com.example.qr_menu.utils.JwtTokenUtil;
@@ -251,6 +252,55 @@ public class AccountController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "An unexpected error occurred: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Update the role of an account. Only admin users can perform this operation.
+     *
+     * @param id the ID of the account to update
+     * @param requestBody a map containing the new role value
+     * @param token the authentication token
+     * @return a response indicating the outcome
+     */
+    @PutMapping("/{id}/update-role")
+    public ResponseEntity<?> updateUserRole(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> requestBody,
+            @RequestHeader("Authorization") String token) {
+        try {
+            // Extract role from request body
+            String roleStr = requestBody.get("role");
+            if (roleStr == null || roleStr.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Role must be specified"));
+            }
+            
+            // Convert string to enum
+            Account.AccountType newRole;
+            try {
+                newRole = Account.AccountType.valueOf(roleStr);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid role: " + roleStr));
+            }
+            
+            // Extract admin email from token
+            String jwtToken = token.substring(7); // Remove "Bearer " prefix
+            String adminEmail = jwtTokenUtil.extractUsername(jwtToken);
+            
+            // Call service to update role
+            AccountDTO updatedAccount = accountService.updateUserRole(id, newRole, adminEmail);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "User role updated successfully",
+                "account", updatedAccount
+            ));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to update role: " + e.getMessage()));
         }
     }
 

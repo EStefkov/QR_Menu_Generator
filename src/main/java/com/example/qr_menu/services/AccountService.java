@@ -252,7 +252,13 @@ public class AccountService {
         if (accountDTO.getLastName() != null)  account.setLastName(accountDTO.getLastName());
         if (accountDTO.getMailAddress() != null) account.setMailAddress(accountDTO.getMailAddress());
         if (accountDTO.getNumber() != null) account.setNumber(accountDTO.getNumber());
-        if (accountDTO.getAccountType() != null) account.setAccountType(accountDTO.getAccountType());
+        if (accountDTO.getAccountType() != null) {
+            account.setAccountType(accountDTO.getAccountType());
+            // Save which admin performed the role change
+            if (accountDTO.getUpdatedBy() != null) {
+                account.setUpdatedBy(accountDTO.getUpdatedBy());
+            }
+        }
 
         // Ако имаме нова снимка, я слагаме; иначе не пипаме старата
         if (accountDTO.getProfilePicture() != null) {
@@ -357,8 +363,52 @@ public class AccountService {
 
     @Transactional(readOnly = true)
     public Account getAccountByMailAddress(String mailAddress) {
-        return accountRepository.findByMailAddress(mailAddress)
+        return accountRepository.findByAccountNameOrMailAddress(null, mailAddress)
             .orElseThrow(() -> new ResourceNotFoundException("Account not found with email: " + mailAddress));
+    }
+
+    /**
+     * Updates a user's role. Only ROLE_ADMIN accounts can perform this operation.
+     * 
+     * @param accountId ID of the account to update
+     * @param newRole The new role to assign
+     * @param adminEmail Email of the admin performing the operation
+     * @return The updated AccountDTO
+     * @throws SecurityException if the user is not an admin
+     * @throws ResourceNotFoundException if accounts not found
+     */
+    @Transactional
+    public AccountDTO updateUserRole(Long accountId, Account.AccountType newRole, String adminEmail) {
+        // Check if admin user exists and has admin privileges
+        Account adminAccount = accountRepository.findByAccountNameOrMailAddress(null, adminEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin account not found"));
+        
+        if (adminAccount.getAccountType() != Account.AccountType.ROLE_ADMIN) {
+            throw new SecurityException("Only administrators can change user roles");
+        }
+        
+        // Find the target account
+        Account targetAccount = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Target account not found with id: " + accountId));
+        
+        // Update the role
+        targetAccount.setAccountType(newRole);
+        targetAccount.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+        targetAccount.setUpdatedBy(adminAccount.getId());
+        
+        Account updated = accountRepository.save(targetAccount);
+        return mapToDTO(updated);
+    }
+
+    /**
+     * Retrieves all accounts with a specific account type
+     * 
+     * @param accountType The account type to filter by
+     * @return List of accounts with the specified type
+     */
+    @Transactional(readOnly = true)
+    public List<Account> getAccountsByType(Account.AccountType accountType) {
+        return accountRepository.findByAccountType(accountType);
     }
 
     /**
@@ -374,6 +424,7 @@ public class AccountService {
                 .profilePicture(entity.getProfilePicture())
                 .number(entity.getNumber())
                 .accountType(entity.getAccountType())
+                .updatedBy(entity.getUpdatedBy())
                 .build();
     }
 }

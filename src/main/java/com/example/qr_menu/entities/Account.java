@@ -54,6 +54,8 @@ public class Account {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
+    @Column(name = "updated_by")
+    private Long updatedBy;
 
     // One Account can have many Restaurants
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
@@ -61,6 +63,10 @@ public class Account {
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Favorite> favorites = new HashSet<>();
+    
+    // Restaurants managed by this account (if it's a manager)
+    @OneToMany(mappedBy = "manager", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ManagerAssignment> managedRestaurants = new HashSet<>();
 
     // Add helper methods for favorites
     public void addFavorite(Product product) {
@@ -74,9 +80,28 @@ public class Account {
         favorites.removeIf(favorite -> favorite.getProduct().equals(product));
     }
 
+    // Helper methods for managers
+    public List<Restorant> getManagedRestaurants() {
+        if (accountType != AccountType.ROLE_MANAGER) {
+            return List.of();
+        }
+        return managedRestaurants.stream()
+                .map(ManagerAssignment::getRestorant)
+                .toList();
+    }
+    
+    public boolean managesRestaurant(Long restaurantId) {
+        if (accountType != AccountType.ROLE_MANAGER) {
+            return false;
+        }
+        return managedRestaurants.stream()
+                .anyMatch(assignment -> assignment.getRestorant().getId().equals(restaurantId));
+    }
+
     public enum AccountType {
         ROLE_USER,
         ROLE_ADMIN,
-        ROLE_WAITER
+        ROLE_WAITER,
+        ROLE_MANAGER
     }
 }

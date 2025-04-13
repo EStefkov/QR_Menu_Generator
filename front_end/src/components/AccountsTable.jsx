@@ -13,6 +13,7 @@ import {
 import { profileApi } from '../api/profileApi';
 import { uploadProfilePicture } from '../api/adminDashboard';
 import { useLanguage } from '../contexts/LanguageContext';
+import RoleUpdateModal from './admin/RoleUpdateModal';
 
 export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = true, showTitle = false }) => {
     const { t } = useLanguage();
@@ -30,6 +31,8 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
     const [accountToDelete, setAccountToDelete] = useState(null);
     const [sortField, setSortField] = useState('id');
     const [sortDirection, setSortDirection] = useState('asc');
+    const [showRoleUpdateModal, setShowRoleUpdateModal] = useState(false);
+    const [accountToUpdateRole, setAccountToUpdateRole] = useState(null);
 
     // Define itemsPerPage as a constant
     const itemsPerPage = 5;
@@ -220,32 +223,27 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
         }));
     };
 
-    const handleAccountTypeChange = (e) => {
-        setEditAccount(prev => ({
-            ...prev,
-            accountType: e.target.value
-        }));
-    };
-
     const handleSaveAccount = async (e) => {
         e.preventDefault();
         setLoading(true);
-        
-        try {
-            const accountToUpdate = {
-                id: editAccount.id,
-                firstName: editAccount.firstName,
-                lastName: editAccount.lastName,
-                mailAddress: editAccount.email,
-                accountType: editAccount.accountType
-            };
+        setMessage({ type: '', text: '' });
 
+        const updatedAccount = {
+            firstName: editAccount.firstName,
+            lastName: editAccount.lastName,
+            email: editAccount.email,
+            mailAddress: editAccount.email,
+        };
+
+        try {
+            const currentUserId = localStorage.getItem('id') || localStorage.getItem('userId');
+            
             // Make the API call to update the user profile
-            await profileApi.updateUserProfile(accountToUpdate);
+            await profileApi.updateUserProfile(updatedAccount);
             
             // Only update our component state through the callback
             if (onEdit) {
-                onEdit(accountToUpdate);
+                onEdit(updatedAccount);
             }
 
             // Show special message for own account edits
@@ -361,6 +359,26 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
     const cancelDeleteAccount = () => {
         setShowDeleteModal(false);
         setAccountToDelete(null);
+    };
+
+    // Function to handle role update button click
+    const handleRoleUpdateClick = (account) => {
+        setAccountToUpdateRole(account);
+        setShowRoleUpdateModal(true);
+    };
+    
+    // Handle role update complete
+    const handleRoleUpdated = (accountId, newRole) => {
+        // Update the local state with the new role
+        const updatedAccounts = accounts.map(acc => 
+            acc.id === accountId ? { ...acc, accountType: newRole } : acc
+        );
+        
+        // If there's an external update function provided by parent component, call it
+        if (onEdit) {
+            const updatedAccount = updatedAccounts.find(acc => acc.id === accountId);
+            onEdit(updatedAccount);
+        }
     };
 
     // Replace the existing PaginationControls component with the one that matches AdminProfileContent.jsx
@@ -631,6 +649,15 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
                                                     </svg>
                                                     {t('accounts.delete') || 'Delete'}
                                                 </button>
+                                                <button
+                                                    onClick={() => handleRoleUpdateClick(account)}
+                                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
+                                                    title={t('accounts.updateRole') || 'Update Role'}
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                                    </svg>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -821,25 +848,6 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
                                         required
                                     />
                                 </div>
-
-                                {/* Account Type */}
-                                <div>
-                                    <label 
-                                        htmlFor="accountType" 
-                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                                    >
-                                            {t('accounts.accountType') || 'Account Type'}
-                                    </label>
-                                    <select
-                                        id="accountType"
-                                        value={editAccount.accountType}
-                                        onChange={handleAccountTypeChange}
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                                    >
-                                            <option value="ROLE_USER">{t('accounts.user') || 'User'}</option>
-                                            <option value="ROLE_ADMIN">{t('accounts.admin') || 'Administrator'}</option>
-                                    </select>
-                                </div>
                             </div>
 
                             <div className="flex justify-end gap-3">
@@ -898,6 +906,14 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
                     </div>
                 </div>
             )}
+
+            {/* Role Update Modal */}
+            <RoleUpdateModal
+                isOpen={showRoleUpdateModal}
+                onClose={() => setShowRoleUpdateModal(false)}
+                account={accountToUpdateRole}
+                onRoleUpdated={handleRoleUpdated}
+            />
         </div>
     );
 }

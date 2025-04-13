@@ -639,3 +639,248 @@ export const fetchAllAccountsApi = async (token) => {
     }
     return response.json();
 };
+
+// Manager Assignment Management
+export const getManagerAssignments = async (token) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manager-assignments`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch manager assignments');
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching manager assignments:', error);
+      throw error;
+    }
+  };
+  
+  export const assignManagerToRestaurant = async (token, managerId, restaurantId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manager-assignments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          managerId,
+          restaurantId
+        })
+      });
+  
+      if (!response.ok) {
+        // Check the content type to determine how to parse the error
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to assign manager to restaurant');
+        } else {
+          // Handle text/plain or any other non-JSON response
+          const errorText = await response.text();
+          console.error('Server returned non-JSON error:', errorText);
+          throw new Error('Failed to assign manager to restaurant: ' + errorText);
+        }
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error('Error assigning manager to restaurant:', error);
+      throw error;
+    }
+  };
+  
+  export const removeManagerAssignment = async (token, assignmentId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manager-assignments/${assignmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to remove manager assignment');
+      }
+  
+      return true;
+    } catch (error) {
+      console.error('Error removing manager assignment:', error);
+      throw error;
+    }
+  };
+  
+  export const getRestaurantsByManager = async (token, managerId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manager-assignments/manager/${managerId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch restaurants for manager');
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching restaurants for manager:', error);
+      throw error;
+    }
+  };
+  
+  export const getManagersByRestaurant = async (token, restaurantId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manager-assignments/restaurant/${restaurantId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch managers for restaurant');
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching managers for restaurant:', error);
+      throw error;
+    }
+  };
+
+export const getAvailableManagers = async (token) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/manager-assignments/available-managers`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch available managers');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching available managers:', error);
+    throw error;
+  }
+};
+
+export const batchAssignRestaurantsToManager = async (token, managerId, restaurantIds) => {
+  try {
+    // Log the request payload for debugging
+    console.log('Batch assigning restaurants:', { managerId, restaurantIds });
+    
+    const response = await fetch(`${API_BASE_URL}/api/manager-assignments/batch-assign`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        managerId,
+        restaurantIds
+      })
+    });
+
+    // Get response content type to determine how to handle the response
+    const contentType = response.headers.get('content-type');
+
+    if (!response.ok) {
+      // Handle error response based on content type
+      if (contentType && contentType.includes('application/json')) {
+        // Parse JSON error
+        const errorData = await response.json();
+        console.error('Server returned JSON error:', errorData);
+        throw new Error(errorData.error || errorData.message || 'Failed to batch assign restaurants to manager');
+      } else {
+        // Handle text/plain or any other non-JSON response
+        const errorText = await response.text();
+        console.error('Server returned non-JSON error:', errorText);
+        throw new Error('Failed to batch assign restaurants to manager: ' + errorText);
+      }
+    }
+
+    // Handle success response
+    let responseData;
+    if (contentType && contentType.includes('application/json')) {
+      responseData = await response.json();
+    } else {
+      // Unexpected content type for success response
+      const responseText = await response.text();
+      console.warn('Unexpected content type for success response:', contentType, responseText);
+      responseData = { message: responseText };
+    }
+
+    console.log('Batch assignment successful:', responseData);
+    return responseData;
+  } catch (error) {
+    console.error('Error batch assigning restaurants to manager:', error);
+    throw error;
+  }
+};
+
+export const updateUserRole = async (token, userId, role) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/accounts/${userId}/update-role`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ role })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to update user role');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    throw error;
+  }
+};
+
+export const getManagedRestaurants = async (token) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/restaurants/managed`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch managed restaurants');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching managed restaurants:', error);
+    throw error;
+  }
+}; 

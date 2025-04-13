@@ -26,5 +26,6 @@ public class AccountDTO {
     private String password;
     private Account.AccountType accountType;
     private List<RestaurantDTO> restaurants;
+    private Long updatedBy; // Who performed the update
 }
 

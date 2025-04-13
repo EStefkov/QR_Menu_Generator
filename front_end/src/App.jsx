@@ -27,6 +27,7 @@ import {
   import ProfilePage from './pages/Profile/ProfilePage';
   import RestaurantMenus from './pages/Restaurants/RestaurantMenus';
   import { getStoredToken } from './api/account';
+  import ManagerDashboard from "./pages/ManagerDashboard.jsx";
   
   const Layout = ({ children }) => {
     const location = useLocation();
@@ -187,6 +188,20 @@ import {
               isAuthenticated && accountType === "ROLE_WAITER" ? (
                 <Layout>
                   <WaiterDashboard />
+                </Layout>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+  
+          {/* Manager Dashboard */}
+          <Route
+            path="/manager"
+            element={
+              isAuthenticated && (accountType === "ROLE_MANAGER" || localStorage.getItem("accountType") === "ROLE_MANAGER") ? (
+                <Layout>
+                  <ManagerDashboard />
                 </Layout>
               ) : (
                 <Navigate to="/" />

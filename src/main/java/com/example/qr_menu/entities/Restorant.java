@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 @Entity
 @Getter
@@ -41,4 +43,8 @@ public class Restorant {
     // One Restorant can have many Menus
     @OneToMany(mappedBy = "restorant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Menu> menus;
+    
+    // Managers assigned to this restaurant
+    @OneToMany(mappedBy = "restorant", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ManagerAssignment> managers = new HashSet<>();
 }

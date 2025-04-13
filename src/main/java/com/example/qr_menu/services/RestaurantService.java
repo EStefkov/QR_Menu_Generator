@@ -164,4 +164,29 @@ public class RestaurantService {
                 .build();
     }
 
+    /**
+     * Get all restaurants managed by a user (for ROLE_MANAGER users)
+     * 
+     * @param email Email of the manager
+     * @return List of RestaurantDTOs managed by the user
+     */
+    public List<RestaurantDTO> getRestaurantsManagedByUser(String email) {
+        // Get the account
+        Account account = accountRepository.findByAccountNameOrMailAddress(null, email)
+                .orElseThrow(() -> new ResourceNotFoundException("Account not found with email: " + email));
+        
+        // Check if the account is a manager
+        if (account.getAccountType() != Account.AccountType.ROLE_MANAGER) {
+            throw new IllegalArgumentException("Only managers can access managed restaurants");
+        }
+        
+        // Get the restaurants managed by this account
+        List<Restorant> restaurants = account.getManagedRestaurants();
+        
+        // Convert to DTOs
+        return restaurants.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
 }
