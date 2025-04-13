@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { getManagedRestaurants, getManagersByRestaurant } from '../api/adminDashboard';
-import { HiOutlineRefresh, HiOutlineExclamationCircle } from 'react-icons/hi';
+import { HiOutlineRefresh, HiOutlineExclamationCircle, HiArrowUp, HiArrowDown } from 'react-icons/hi';
 import { ImSpinner8 } from 'react-icons/im';
 import axios from 'axios';
 
@@ -21,6 +21,7 @@ const ManagerDashboard = () => {
   const [otherManagers, setOtherManagers] = useState([]);
   const [loadingManagers, setLoadingManagers] = useState(false);
   const [isAuthInitialized, setIsAuthInitialized] = useState(false);
+  const [restaurantOrder, setRestaurantOrder] = useState({});
 
   // First useEffect to ensure auth is properly initialized
   useEffect(() => {
@@ -59,10 +60,36 @@ const ManagerDashboard = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      setRestaurants(response.data);
-      if (response.data.length > 0) {
-        setSelectedRestaurant(response.data[0]);
-        fetchRestaurantManagers(response.data[0].id);
+      
+      // Get user ID for storing custom order
+      const userId = userData?.id || localStorage.getItem('userId');
+      const orderKey = `restaurant_order_${userId}`;
+      let storedOrder = {};
+      
+      try {
+        const savedOrder = localStorage.getItem(orderKey);
+        if (savedOrder) {
+          storedOrder = JSON.parse(savedOrder);
+          setRestaurantOrder(storedOrder);
+        }
+      } catch (e) {
+        console.error('Error loading saved restaurant order:', e);
+      }
+      
+      // Sort restaurants by order if order exists
+      let sortedRestaurants = [...response.data];
+      if (Object.keys(storedOrder).length > 0) {
+        sortedRestaurants.sort((a, b) => {
+          const orderA = storedOrder[a.id] !== undefined ? storedOrder[a.id] : 9999;
+          const orderB = storedOrder[b.id] !== undefined ? storedOrder[b.id] : 9999;
+          return orderA - orderB;
+        });
+      }
+      
+      setRestaurants(sortedRestaurants);
+      if (sortedRestaurants.length > 0) {
+        setSelectedRestaurant(sortedRestaurants[0]);
+        fetchRestaurantManagers(sortedRestaurants[0].id);
       }
     } catch (error) {
       console.error('Error fetching managed restaurants:', error);
@@ -82,9 +109,12 @@ const ManagerDashboard = () => {
         }
       });
       
+      // Check if response.data is an array before filtering
+      const managers = Array.isArray(response.data) ? response.data : [];
+      
       // Filter out the current user from the managers list
       const currentUserId = userData?.id || parseInt(localStorage.getItem('userId'));
-      const filteredManagers = response.data.filter(manager => manager.account.id !== currentUserId);
+      const filteredManagers = managers.filter(manager => manager.account && manager.account.id !== currentUserId);
       setOtherManagers(filteredManagers);
     } catch (error) {
       console.error('Error fetching restaurant managers:', error);
@@ -99,7 +129,56 @@ const ManagerDashboard = () => {
   };
 
   const handleEditMenu = (restaurantId) => {
-    navigate(`/admin/menus/${restaurantId}`);
+    navigate(`/manager/menus`);
+  };
+
+  const moveRestaurantUp = (index) => {
+    if (index === 0) return; // Already at the top
+    
+    const newRestaurants = [...restaurants];
+    // Swap with the restaurant above
+    [newRestaurants[index], newRestaurants[index - 1]] = 
+    [newRestaurants[index - 1], newRestaurants[index]];
+    
+    // Update the state
+    setRestaurants(newRestaurants);
+    
+    // Save order to localStorage
+    saveRestaurantOrder(newRestaurants);
+  };
+  
+  const moveRestaurantDown = (index) => {
+    if (index === restaurants.length - 1) return; // Already at the bottom
+    
+    const newRestaurants = [...restaurants];
+    // Swap with the restaurant below
+    [newRestaurants[index], newRestaurants[index + 1]] = 
+    [newRestaurants[index + 1], newRestaurants[index]];
+    
+    // Update the state
+    setRestaurants(newRestaurants);
+    
+    // Save order to localStorage
+    saveRestaurantOrder(newRestaurants);
+  };
+  
+  const saveRestaurantOrder = (restaurantList) => {
+    try {
+      const userId = userData?.id || localStorage.getItem('userId');
+      const orderKey = `restaurant_order_${userId}`;
+      
+      // Create an order object with restaurant IDs as keys and position as values
+      const newOrder = {};
+      restaurantList.forEach((restaurant, index) => {
+        newOrder[restaurant.id] = index;
+      });
+      
+      // Save to state and localStorage
+      setRestaurantOrder(newOrder);
+      localStorage.setItem(orderKey, JSON.stringify(newOrder));
+    } catch (e) {
+      console.error('Error saving restaurant order:', e);
+    }
   };
 
   if (loading) {
@@ -153,23 +232,51 @@ const ManagerDashboard = () => {
                   <h2 className="text-lg font-medium text-gray-800 dark:text-white">
                     {t('manager.yourRestaurants') || 'Your Restaurants'}
                   </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    {t('manager.dragToReorder') || 'Use arrows to change restaurant order'}
+                  </p>
                 </div>
                 <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {restaurants.map(restaurant => (
+                  {restaurants.map((restaurant, index) => (
                     <li 
                       key={restaurant.id}
-                      onClick={() => handleRestaurantSelect(restaurant)}
-                      className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition
+                      className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition
                         ${selectedRestaurant?.id === restaurant.id 
                           ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500' 
                           : ''}`}
                     >
-                      <h3 className="font-medium text-gray-800 dark:text-white">
-                        {restaurant.restorantName}
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {restaurant.address}
-                      </p>
+                      <div className="flex items-center">
+                        <div className="flex-grow cursor-pointer" onClick={() => handleRestaurantSelect(restaurant)}>
+                          <h3 className="font-medium text-gray-800 dark:text-white">
+                            {restaurant.restorantName}
+                          </h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            {restaurant.address}
+                          </p>
+                        </div>
+                        <div className="flex flex-col ml-2">
+                          <button 
+                            onClick={() => moveRestaurantUp(index)}
+                            disabled={index === 0}
+                            className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 mb-1 ${
+                              index === 0 ? 'opacity-30 cursor-not-allowed' : ''
+                            }`}
+                            title={t('manager.moveUp') || 'Move up'}
+                          >
+                            <HiArrowUp className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                          </button>
+                          <button 
+                            onClick={() => moveRestaurantDown(index)}
+                            disabled={index === restaurants.length - 1}
+                            className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                              index === restaurants.length - 1 ? 'opacity-30 cursor-not-allowed' : ''
+                            }`}
+                            title={t('manager.moveDown') || 'Move down'}
+                          >
+                            <HiArrowDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                          </button>
+                        </div>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -225,9 +332,11 @@ const ManagerDashboard = () => {
                           {otherManagers.map(manager => (
                             <li key={manager.id} className="flex items-center text-gray-700 dark:text-gray-300">
                               <span className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center mr-3 text-blue-600 dark:text-blue-300">
-                                {manager.firstName.charAt(0)}{manager.lastName.charAt(0)}
+                                {(manager.account?.firstName || manager.firstName || '?').charAt(0)}
+                                {(manager.account?.lastName || manager.lastName || '?').charAt(0)}
                               </span>
-                              {manager.firstName} {manager.lastName} - {manager.mailAddress}
+                              {manager.account?.firstName || manager.firstName || 'Unknown'} {manager.account?.lastName || manager.lastName || ''} 
+                              {manager.account?.mailAddress || manager.mailAddress ? ` - ${manager.account?.mailAddress || manager.mailAddress}` : ''}
                             </li>
                           ))}
                         </ul>

@@ -79,25 +79,22 @@ export const restaurantApi = {
     try {
       // Ensure restaurantId is a number
       const payload = {
-        category: menuData.category || menuData.name,
+        category: menuData.category,
         restaurantId: Number(restaurantId)
       };
       
-      // Add description if provided
-      if (menuData.description) {
-        payload.description = menuData.description;
-      }
-      
-      console.log("Creating menu with payload:", payload);
+      // Log the payload for debugging
+      console.log("Creating menu with payload:", JSON.stringify(payload, null, 2));
       
       // Use the /api/menus endpoint which is known to work
       const response = await axiosInstance.post(`/menus`, payload);
+      console.log("Menu created successfully:", response.data);
       return response.data;
     } catch (error) {
       console.error('Error creating menu:', error);
       if (error.response) {
         console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
+        console.error('Response data:', JSON.stringify(error.response.data, null, 2));
         
         // More specific error message based on the status code
         if (error.response.status === 403) {
@@ -123,6 +120,61 @@ export const restaurantApi = {
     }
   },
 
+  // Update a menu with images (using FormData)
+  updateMenuWithImages: async (menuId, menuData, bannerImage, defaultProductImage) => {
+    try {
+      const formData = new FormData();
+      
+      // Add basic menu data
+      formData.append('category', menuData.category || menuData.name);
+      if (menuData.name) formData.append('name', menuData.name);
+      if (menuData.restaurantId) formData.append('restaurantId', Number(menuData.restaurantId));
+      
+      // Add banner image if provided
+      if (bannerImage) {
+        formData.append('bannerImage', bannerImage);
+      }
+      
+      // Add default product image if provided
+      if (defaultProductImage) {
+        formData.append('defaultProductImage', defaultProductImage);
+      }
+      
+      // Try to use the special with-images endpoint first
+      try {
+        const response = await axios.put(`${API_BASE_URL}/api/menus/${menuId}/with-images`, formData, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            // Don't set Content-Type here, axios will set the correct one with boundary for FormData
+          }
+        });
+        return response.data;
+      } catch (withImagesError) {
+        console.warn('Failed to use with-images endpoint, trying standard update endpoint', withImagesError);
+        
+        // If there are no actual image files, use the standard endpoint as fallback
+        if (!bannerImage && !defaultProductImage) {
+          const standardResponse = await axiosInstance.put(`/menus/${menuId}`, {
+            category: menuData.category,
+            name: menuData.name,
+            restaurantId: menuData.restaurantId
+          });
+          return standardResponse.data;
+        } else {
+          // If we have images but the with-images endpoint failed, propagate the error
+          throw withImagesError;
+        }
+      }
+    } catch (error) {
+      console.error('Error updating menu with images:', error);
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
+      throw new Error(error.response?.data?.message || 'Failed to update menu with images');
+    }
+  },
+
   // Delete a menu
   deleteMenu: async (menuId) => {
     try {
@@ -131,6 +183,23 @@ export const restaurantApi = {
     } catch (error) {
       console.error('Error deleting menu:', error);
       throw new Error(error.response?.data?.message || 'Failed to delete menu');
+    }
+  },
+  
+  // Apply default product image from menu to a specific product
+  applyDefaultImageToProduct: async (productId, menuId) => {
+    try {
+      const response = await axiosInstance.post(`/products/${productId}/apply-default-image`, {
+        menuId: Number(menuId)
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error applying default image to product:', error);
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
+      throw new Error(error.response?.data?.message || 'Failed to apply default image to product');
     }
   }
 }; 

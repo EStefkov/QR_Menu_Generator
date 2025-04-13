@@ -209,6 +209,30 @@ import {
             }
           />
   
+          {/* Manager Menus - For viewing and editing restaurant menus */}
+          <Route
+            path="/manager/menus"
+            element={
+              <ProtectedRoute role="ROLE_MANAGER">
+                <Layout>
+                  <RestaurantMenus />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Manager Edit Menu - For editing a specific menu */}
+          <Route
+            path="/manager/menu/:menuId/edit"
+            element={
+              <ProtectedRoute role="ROLE_MANAGER">
+                <Layout>
+                  <EditMenuPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+  
           {/* Add new routes for cart functionality */}
           <Route path="/cart" element={<Cart />} />
           <Route path="/order-review" element={<OrderReview />} />

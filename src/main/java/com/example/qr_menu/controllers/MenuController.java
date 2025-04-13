@@ -95,8 +95,47 @@ public class MenuController {
 
     @PutMapping("/{id}")
     public ResponseEntity<String> updateMenu(@PathVariable Long id, @RequestBody MenuDTO menuDTO) {
+        System.out.println("Updating menu with standard endpoint: " + menuDTO);
         menuService.updateMenu(id, menuDTO);
         return new ResponseEntity<>("Menu updated successfully", HttpStatus.OK);
+    }
+
+    @PutMapping(value = "/{id}/with-images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> updateMenuWithImages(
+            @PathVariable Long id,
+            @RequestParam(value = "category", required = false) String category,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "restaurantId", required = false) Long restaurantId,
+            @RequestParam(value = "bannerImage", required = false) MultipartFile bannerImage,
+            @RequestParam(value = "defaultProductImage", required = false) MultipartFile defaultProductImage) {
+        
+        try {
+            MenuDTO menuDTO = new MenuDTO();
+            if (category != null) menuDTO.setCategory(category);
+            if (name != null) menuDTO.setCategory(name);
+            if (restaurantId != null) menuDTO.setRestaurantId(restaurantId);
+            
+            // Handle image uploads
+            if (bannerImage != null && !bannerImage.isEmpty()) {
+                String bannerImagePath = menuService.uploadMenuImage(id, bannerImage);
+                menuDTO.setMenuImage(bannerImagePath);
+            }
+            
+            if (defaultProductImage != null && !defaultProductImage.isEmpty()) {
+                MenuDTO updatedMenu = menuService.uploadDefaultProductImage(id, defaultProductImage);
+                menuDTO.setDefaultProductImage(updatedMenu.getDefaultProductImage());
+            }
+            
+            // Update the menu with all data
+            menuService.updateMenu(id, menuDTO);
+            
+            return new ResponseEntity<>("Menu updated successfully with images", HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update menu with images: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")

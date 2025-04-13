@@ -23,6 +23,7 @@ const AdminMenuPage = () => {
   const { saveRedirectUrl } = useContext(AuthContext);
   const token = localStorage.getItem("token");
   const accountType = localStorage.getItem("accountType");
+  const userId = localStorage.getItem("userId");
 
   const [menuData, setMenuData] = useState({
     name: "Меню",
@@ -30,8 +31,14 @@ const AdminMenuPage = () => {
     defaultProductImage: null,
     id: null,
     error: null,
-    textColor: 'text-white'
+    textColor: 'text-white',
+    restaurantId: null
   });
+  
+  const [isMenuManager, setIsMenuManager] = useState(false);
+  
+  // New state to track if the current user is a manager of this restaurant
+  const [isLoading, setIsLoading] = useState(true);
 
   const [categories, setCategories] = useState([]);
   const [expandedCategories, setExpandedCategories] = useState({});
@@ -50,6 +57,45 @@ const AdminMenuPage = () => {
       loadCategories();
     }
   }, [menuId, token, navigate, saveRedirectUrl]);
+  
+  // Add this new effect to check if user is a manager of this restaurant
+  useEffect(() => {
+    const checkIfUserIsManager = async () => {
+      if (menuData.restaurantId && accountType === "ROLE_MANAGER" && token && userId) {
+        try {
+          // Check if current user is a manager of this restaurant
+          const response = await fetch(
+            `${import.meta.env.VITE_API_URL}/api/manager-assignments/check?managerId=${userId}&restaurantId=${menuData.restaurantId}`, 
+            { 
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+              }
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            setIsMenuManager(data.isManager === true);
+          } else {
+            setIsMenuManager(false);
+          }
+        } catch (error) {
+          console.error("Error checking manager status:", error);
+          setIsMenuManager(false);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setIsMenuManager(false);
+        setIsLoading(false);
+      }
+    };
+    
+    if (menuData.restaurantId) {
+      checkIfUserIsManager();
+    }
+  }, [menuData.restaurantId, accountType, token, userId]);
 
   const loadMenuData = async () => {
     try {
@@ -75,7 +121,8 @@ const AdminMenuPage = () => {
         defaultProductImage: data.defaultProductImage || null,
         id: data.id,
         error: null,
-        textColor: data.textColor || 'text-white'
+        textColor: data.textColor || 'text-white',
+        restaurantId: data.restaurantId
       };
 
       setMenuData(updatedMenuData);
@@ -294,7 +341,7 @@ const AdminMenuPage = () => {
         onBannerUpload={handleBannerUpload}
         onDefaultProductImageUpload={handleDefaultProductImageUpload}
         defaultProductImage={menuData.defaultProductImage}
-        isAdmin={token && accountType === "ROLE_ADMIN"}
+        isAdmin={token && (accountType === "ROLE_ADMIN" || (accountType === "ROLE_MANAGER" && isMenuManager))}
         menuId={menuId}
         initialTextColor={menuData.textColor}
       />

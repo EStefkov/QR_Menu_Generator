@@ -176,6 +176,7 @@ const translations = {
   
   // Nav sections  
   "nav.managerDashboard": "Manager Dashboard",
+  "nav.editMenus": "Edit Menus",
   
   // Roles
   "roles.user": "User",
@@ -225,9 +226,9 @@ const translations = {
   // Common
   "common.error": "Error",
   "common.unknown": "Unknown",
-  "common.sortOldestFirst": "Oldest first",
-  "common.sortNewestFirst": "Newest first",
-  "loading": "Loading...",
+  "common.sortOldestFirst": "Oldest First",
+  "common.sortNewestFirst": "Newest First",
+  "common.loading": "Loading...",
   "common.retry": "Retry",
   "common.refresh": "Refresh",
   "common.view": "View",
@@ -236,10 +237,11 @@ const translations = {
   "common.cancel": "Cancel",
   "common.save": "Save",
   "common.saving": "Saving...",
+  "common.saveSuccess": "Changes saved successfully",
+  "common.close": "Close",
+  "common.clickToUpload": "Click to upload",
+  "common.imageTypes": "PNG, JPG or GIF (max. 5MB)",
   "common.of": "of",
-  "common.to": "to",
-  "common.qr": "QR",
-  "common.generateQrCode": "Generate QR Code",
   
   // Pagination
   "pagination.showing": "Showing",
@@ -409,7 +411,7 @@ const translations = {
   "restaurants.status": "Status",
   
   // Menus
-  "menus.availableMenus": "Available Menus",
+  "menus.availableMenus": "Restaurant Menus",
   "menus.createNew": "Create New Menu",
   "menus.createNewMenu": "Create New Menu",
   "menus.name": "Menu Name",
@@ -448,7 +450,7 @@ const translations = {
   "restaurants.restaurantMenus": "Restaurant Menus",
 
   // Menus management
-  "menus.availableMenus": "Available Menus",
+  "menus.availableMenus": "Restaurant Menus",
   "menus.createNewMenu": "Create New Menu",
   "menus.name": "Menu Name",
   "menus.namePlaceholder": "Enter menu name",
@@ -472,6 +474,14 @@ const translations = {
   
   // Products management
   "products.title": "Products",
+  "products.titleWithCategory": "Products in {{category}}",
+  "products.in": "in",
+  "products.add": "Add Product",
+  "products.selectCategory": "Select a category to manage products",
+  "products.noProducts": "No products in this category",
+  "products.addFirst": "Add your first product",
+  "products.addNew": "Add New Product",
+  "products.id": "ID",
   "products.name": "Product Name",
   "products.namePlaceholder": "Enter product name",
   "products.price": "Price",
@@ -479,22 +489,23 @@ const translations = {
   "products.description": "Description",
   "products.descriptionPlaceholder": "Enter product description",
   "products.image": "Product Image",
-  "products.addNew": "Add New Product",
+  "products.noImage": "No image available",
   "products.createSuccess": "Product created successfully!",
-  "products.noProducts": "No products in this category",
-  "products.selectCategory": "Select a category to manage products",
-  "products.addFirst": "Add your first product",
-  "products.selectRestaurant": "Select Restaurant",
-  "products.selectMenu": "Select Menu",
-  "products.selectCategory": "Select Category",
-  "products.allergens": "Allergens (optional)",
-  "products.noAllergensAvailable": "No allergens available or failed to load.",
-  "products.uploadImage": "Upload Image",
-  "products.validImageFormats": "Please select a valid image format (JPG, PNG, JPEG)",
-  "products.fillRequiredFields": "Please fill in all required fields.",
-  "products.create": "Create Product",
+  "products.editMessage": "Edit product: {{name}}",
   "products.confirmDelete": "Are you sure you want to delete this product?",
   "products.deleteSuccess": "Product deleted successfully!",
+  "products.applyDefaultImage": "Apply default menu image to this product",
+  "products.confirmDefaultImage": "Are you sure you want to replace this product's image with the default image?",
+  "products.defaultImageApplied": "Default image applied successfully",
+  "products.allergens": "Allergens (optional)",
+  "products.noAllergensAvailable": "No allergens available or failed to load.",
+  "products.toggleAllergen": "Toggle {{allergen}} allergen",
+  "products.selectRestaurant": "Select restaurant",
+  "products.selectMenu": "Select menu",
+  "products.uploadImage": "Upload image",
+  "products.validImageFormats": "Please select a valid image format (JPG, PNG, JPEG)",
+  "products.fillRequiredFields": "Please fill in all required fields.",
+  "products.create": "Create product",
   
   // Validation
   "validation.nameRequired": "Menu name is required",
@@ -583,6 +594,65 @@ const translations = {
   "common.email": "Email",
   "common.notProvided": "Not provided",
   "common.errorFetchingData": "Failed to load data",
+
+  // New UI elements
+  "menus.bannerImage": "Banner Image",
+  "menus.noBanner": "No banner image",
+  "menus.uploadBanner": "Upload Banner Image",
+  "menus.defaultProductImage": "Default Product Image",
+  "menus.defaultImageInfo": "This image will be used for products without their own image",
+  "menus.noDefaultImage": "No default image",
+  "menus.uploadDefaultImage": "Upload Default Product Image",
+  "menus.noDefaultImageToApply": "No default image available to apply",
+  
+  // Products translations
+  "products.noImage": "No image available",
+  "products.confirmDefaultImage": "Are you sure you want to replace this product's image with the default image?",
+  "products.defaultImageApplied": "Default image applied successfully",
+  "products.applyDefaultImage": "Apply default menu image to this product",
+  "products.useDefaultImage": "Use Default Image",
+  
+  // Images translations
+  "images.requirements": "JPG, PNG or GIF (max. 5MB)",
+  "images.sizeLimit": "Image size should be less than 5MB",
+  "images.formatError": "Please select an image file",
+
+  // Categories
+  "categories.newPlaceholder": "New category name",
+  "categories.add": "Add",
+  "categories.empty": "No categories yet. Create your first category.",
+  "categories.delete": "Delete category",
+  "categories.confirmDelete": "Are you sure you want to delete this category?",
+  
+  // Menus
+  "menus.editMenu": "Edit Menu",
+  "menus.details": "Menu Details",
+  "menus.products": "Products",
+  "menus.menuDetails": "Menu Details",
+  "menus.name": "Menu Name",
+  "menus.namePlaceholder": "Enter menu name",
+  "menus.bannerImage": "Banner Image",
+  "menus.defaultProductImage": "Default Product Image",
+  "menus.noDefaultImageToApply": "No default image available to apply",
+  "menus.setDefaultProductImage": "Set Default Product Image",
+  "menus.productImageSetAsDefault": "Product image set as default template!",
+  "menus.productNotFoundOrNoImage": "Product not found or has no image.",
+  
+  // Images
+  "images.sizeLimit": "Image size should be less than 5MB",
+  "images.formatError": "Please select an image file",
+  
+  // Errors
+  "errors.loadFailed": "Failed to load data",
+  "errors.failedToDeleteProduct": "Failed to delete product. Please try again.",
+  "errors.failedToApplyImage": "Failed to apply default image",
+  "errors.failedToFetchAllergens": "Failed to fetch allergens",
+  "errors.failedToCreateProduct": "Failed to create product ({{status}})",
+  "errors.productCreationFailed": "Failed to create product",
+  
+  // Products
+  "products.selectProductForDefaultImage": "Enter product ID to set as default image template:",
+  "products.title": "Products",
 };
 
 export default translations; 

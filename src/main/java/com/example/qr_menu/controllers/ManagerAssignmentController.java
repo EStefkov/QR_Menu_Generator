@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/manager-assignments")
@@ -253,5 +254,15 @@ public class ManagerAssignmentController {
         }
         
         return dto;
+    }
+
+    @GetMapping("/check")
+    public ResponseEntity<Map<String, Boolean>> checkManagerAssignment(
+            @RequestParam Long managerId,
+            @RequestParam Long restaurantId) {
+        boolean isManager = managerAssignmentService.isManagerOfRestaurant(managerId, restaurantId);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("isManager", isManager);
+        return ResponseEntity.ok(response);
     }
 } 
