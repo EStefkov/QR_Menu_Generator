@@ -89,6 +89,7 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
       
       // Use paginated accounts API instead of fetchAllAccountsApi
       const accountsData = await fetchAccountsApi(token, 0, 100);
+      console.log('Loaded accounts:', accountsData.content);
       setAccounts(accountsData.content || []);
     } catch (error) {
       console.error('Error fetching accounts:', error);
@@ -519,7 +520,16 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
             </h3>
             <div className="flex space-x-2">
               <button
-                onClick={() => setShowManagerAssignmentModal(true)}
+                onClick={() => {
+                  // Reload manager assignments and account data
+                  loadAccounts();
+                  loadManagerAssignments();
+                  
+                  // After reloading, show the modal
+                  setTimeout(() => {
+                    setShowManagerAssignmentModal(true);
+                  }, 500); // Wait for data to load
+                }}
                 className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition"
               >
                 <HiUserGroup className="mr-1 h-4 w-4" />
@@ -680,7 +690,36 @@ const AdminProfileContent = ({ adminStats, loading, error, onRetry }) => {
       <ManagerAssignmentModal
         isOpen={showManagerAssignmentModal}
         onClose={() => setShowManagerAssignmentModal(false)}
-        managers={accounts.filter(a => a.accountType === 'ROLE_MANAGER')}
+        managers={accounts.filter(a => 
+          // Check account type/role as string
+          a.accountType === 'ROLE_MANAGER' || 
+          a.role === 'ROLE_MANAGER' ||
+          a.accountType === 'MANAGER' ||
+          a.role === 'MANAGER' ||
+          
+          // Check roles array (string format)
+          (a.roles && typeof a.roles === 'string' && 
+            (a.roles.includes('MANAGER') || a.roles.includes('ROLE_MANAGER'))) ||
+          
+          // Check roles array (array format)
+          (a.roles && Array.isArray(a.roles) && 
+            a.roles.some(r => 
+              typeof r === 'string' && 
+              (r.includes('MANAGER') || r.includes('ROLE_MANAGER'))
+            )) ||
+          
+          // Check authorities array with authority property
+          (a.authorities && Array.isArray(a.authorities) && 
+            a.authorities.some(auth => 
+              (typeof auth === 'string' && 
+                (auth.includes('MANAGER') || auth.includes('ROLE_MANAGER'))) ||
+              (auth && auth.authority && 
+                (auth.authority.includes('MANAGER') || auth.authority.includes('ROLE_MANAGER')))
+            )) ||
+            
+          // Check if account has any manager assignments
+          managerAssignments.some(assignment => assignment.managerId === a.id)
+        )}
         restaurants={adminStats.restaurantStats || []}
         existingAssignments={managerAssignments}
       />

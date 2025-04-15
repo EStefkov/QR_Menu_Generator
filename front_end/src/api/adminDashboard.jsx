@@ -766,22 +766,65 @@ export const getManagerAssignments = async (token) => {
 
 export const getAvailableManagers = async (token) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/manager-assignments/available-managers`, {
+    console.log('Fetching available managers from API');
+    
+    // First try to get all accounts with ROLE_MANAGER
+    const response = await fetch(`${API_BASE_URL}/api/accounts/managers`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
-
+    
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to fetch available managers');
+      throw new Error(`Failed to fetch managers: ${response.status}`);
     }
-
-    return await response.json();
+    
+    const data = await response.json();
+    console.log('API returned manager accounts:', data);
+    
+    // If we don't get any managers, try to get all accounts and filter
+    if (!data || data.length === 0) {
+      console.log('No managers returned by API, trying to fetch all accounts');
+      const allAccountsResponse = await fetch(`${API_BASE_URL}/api/accounts/all`, {
+        headers: { 
+          'Authorization': `Bearer ${token}` 
+        }
+      });
+      
+      if (!allAccountsResponse.ok) {
+        throw new Error('Failed to fetch all accounts');
+      }
+      
+      const allAccounts = await allAccountsResponse.json();
+      console.log('All accounts:', allAccounts);
+      
+      // Filter for anything that might be related to managers
+      const potentialManagers = allAccounts.filter(account => {
+        return (
+          account.accountType === 'ROLE_MANAGER' || 
+          account.role === 'ROLE_MANAGER' ||
+          (account.roles && (
+            typeof account.roles === 'string' 
+              ? account.roles.includes('MANAGER') 
+              : Array.isArray(account.roles) && account.roles.some(r => String(r).includes('MANAGER'))
+          )) ||
+          (account.authorities && account.authorities.some(auth => 
+            typeof auth === 'string' 
+              ? auth.includes('MANAGER') 
+              : auth.authority && auth.authority.includes('MANAGER')
+          ))
+        );
+      });
+      
+      console.log('Potential managers filtered from all accounts:', potentialManagers);
+      return potentialManagers;
+    }
+    
+    return data;
   } catch (error) {
-    console.error('Error fetching available managers:', error);
+    console.error('Error in getAvailableManagers:', error);
     throw error;
   }
 };

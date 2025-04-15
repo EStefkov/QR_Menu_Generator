@@ -5,7 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 // Import the manager assignment functions from the .jsx file
 import { 
   assignManagerToRestaurant, 
-  getManagerAssignments, 
+  getManagerAssignments,          
   removeManagerAssignment,
   batchAssignRestaurantsToManager,
   getAvailableManagers
@@ -29,6 +29,8 @@ const ManagerAssignmentModal = ({
   const [selectedRestaurants, setSelectedRestaurants] = useState([]);
   const [availableManagers, setAvailableManagers] = useState([]);
   const [loadingManagers, setLoadingManagers] = useState(false);
+  const [managerSearchTerm, setManagerSearchTerm] = useState('');
+  const [isManagerDropdownOpen, setIsManagerDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -51,9 +53,26 @@ const ManagerAssignmentModal = ({
     try {
       const token = localStorage.getItem('token');
       const managersData = await getAvailableManagers(token);
-      setAvailableManagers(managersData);
+      console.log('Fetched available managers from API:', managersData);
+      
+      // Combine with passed-in managers to ensure we have all possible managers
+      const allManagers = [...managersData];
+      
+      // Add any managers from props that aren't in the API response
+      if (managers && managers.length > 0) {
+        managers.forEach(propManager => {
+          if (!allManagers.some(apiManager => apiManager.id === propManager.id)) {
+            allManagers.push(propManager);
+          }
+        });
+      }
+      
+      console.log('Combined manager list:', allManagers);
+      setAvailableManagers(allManagers);
     } catch (err) {
       console.error('Error fetching available managers:', err);
+      // Fallback to using passed-in managers prop if API call fails
+      setAvailableManagers(managers || []);
     } finally {
       setLoadingManagers(false);
     }
@@ -233,6 +252,28 @@ const ManagerAssignmentModal = ({
     }
   };
 
+  // Filter managers based on search term
+  const filteredManagers = () => {
+    const managersToFilter = availableManagers.length > 0 ? availableManagers : managers;
+    if (!managerSearchTerm.trim()) {
+      return managersToFilter;
+    }
+    
+    const lowerCaseSearch = managerSearchTerm.toLowerCase();
+    return managersToFilter.filter(manager => 
+      (manager.firstName && manager.firstName.toLowerCase().includes(lowerCaseSearch)) || 
+      (manager.lastName && manager.lastName.toLowerCase().includes(lowerCaseSearch)) ||
+      (manager.email && manager.email.toLowerCase().includes(lowerCaseSearch)) ||
+      (manager.id && manager.id.toString().includes(lowerCaseSearch))
+    );
+  };
+
+  // Get selected manager details
+  const getSelectedManagerDetails = () => {
+    const managersList = availableManagers.length > 0 ? availableManagers : managers;
+    return managersList.find(m => m.id.toString() === selectedManager);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -284,35 +325,119 @@ const ManagerAssignmentModal = ({
             
             <div className="grid grid-cols-1 gap-4 mb-4">
               {/* Manager selection */}
-              <div>
-                <label htmlFor="manager" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <div className="mb-4">
+                <label htmlFor="manager-search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('admin.selectManager') || 'Select Manager'}
                 </label>
-                <select
-                  id="manager"
-                  value={selectedManager}
-                  onChange={(e) => setSelectedManager(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                  disabled={loading || loadingManagers}
-                >
-                  <option value="">{t('admin.selectManager') || 'Select Manager'}</option>
+                <div className="relative">
                   {loadingManagers ? (
-                    <option disabled>{t('admin.loadingManagers') || 'Loading managers...'}</option>
-                  ) : availableManagers.length > 0 ? (
-                    availableManagers.map(manager => (
-                      <option key={manager.id} value={manager.id}>
-                        {manager.firstName} {manager.lastName} ({manager.mailAddress})
-                      </option>
-                    ))
+                    <div className="py-2">
+                      <div className="animate-pulse flex space-x-4">
+                        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                      </div>
+                    </div>
                   ) : (
-                    <option disabled>{t('admin.noManagersAvailable') || 'No managers available'}</option>
+                    <>
+                      {/* Search input */}
+                      <div className="relative mb-2">
+                        <input
+                          id="manager-search"
+                          type="text"
+                          placeholder="Search managers by name, email, or ID..."
+                          value={managerSearchTerm}
+                          onChange={(e) => setManagerSearchTerm(e.target.value)}
+                          onFocus={() => setIsManagerDropdownOpen(true)}
+                          className="block w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 pl-10 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        />
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* Selected manager display */}
+                      {selectedManager ? (
+                        <div className="mb-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <div className="font-medium text-blue-800 dark:text-blue-300">
+                                {getSelectedManagerDetails()?.firstName} {getSelectedManagerDetails()?.lastName}
+                              </div>
+                              <div className="text-xs text-blue-600 dark:text-blue-400">
+                                ID: {selectedManager} | {getSelectedManagerDetails()?.email || 'No email'}
+                              </div>
+                            </div>
+                            <button 
+                              type="button"
+                              onClick={() => setSelectedManager('')}
+                              className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                            >
+                              <HiX className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : isManagerDropdownOpen && (
+                        <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-md text-base overflow-auto focus:outline-none sm:text-sm">
+                          <div className="sticky top-0 z-10 bg-white dark:bg-gray-800 px-3 py-1.5 border-b border-gray-200 dark:border-gray-700">
+                            <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                              {filteredManagers().length} manager{filteredManagers().length !== 1 ? 's' : ''} found
+                            </div>
+                          </div>
+                          {filteredManagers().length === 0 ? (
+                            <div className="py-2 px-3 text-sm text-gray-500 dark:text-gray-400">
+                              No managers match your search
+                            </div>
+                          ) : (
+                            <ul className="py-1" role="listbox">
+                              {filteredManagers().map(manager => (
+                                <li 
+                                  key={manager.id}
+                                  onClick={() => {
+                                    setSelectedManager(manager.id.toString());
+                                    setIsManagerDropdownOpen(false);
+                                  }}
+                                  className="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                  role="option"
+                                >
+                                  <div className="flex items-center">
+                                    <div className="flex-shrink-0 h-6 w-6 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full flex items-center justify-center text-xs font-medium">
+                                      {manager.firstName?.[0] || 'M'}
+                                    </div>
+                                    <div className="ml-3 flex-1 truncate">
+                                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                        {manager.firstName} {manager.lastName}
+                                      </div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                        ID: {manager.id} | {manager.email || 'No email'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Click away handler */}
+                      {isManagerDropdownOpen && (
+                        <div 
+                          className="fixed inset-0 z-0" 
+                          onClick={() => setIsManagerDropdownOpen(false)}
+                        ></div>
+                      )}
+
+                      <div className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+                        {availableManagers.length > 0 
+                          ? `${availableManagers.length} manager(s) available` 
+                          : managers.length > 0 
+                            ? `${managers.length} manager(s) from props` 
+                            : 'No managers available'}
+                      </div>
+                    </>
                   )}
-                </select>
-                {availableManagers.length === 0 && !loadingManagers && (
-                  <p className="mt-1 text-sm text-orange-600 dark:text-orange-400">
-                    {t('admin.createManagersFirst') || 'Create accounts with Manager role first'}
-                  </p>
-                )}
+                </div>
               </div>
             </div>
             
@@ -451,8 +576,15 @@ const ManagerAssignmentModal = ({
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {assignments.map((assignment) => (
                       <tr key={assignment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                          {assignment.managerName}
+                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                          <div className="flex items-center">
+                            <div className="ml-0">
+                              <div className="font-medium">{assignment.managerName}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                ID: {assignment.managerId}
+                              </div>
+                            </div>
+                          </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                           {assignment.restaurantName}
