@@ -5,7 +5,7 @@ import {
     Navigate,
     useLocation,
   } from "react-router-dom";
-  import { useContext, useEffect, useState } from "react";
+  import { useContext, useEffect, useState, useRef } from "react";
   import NavBar from "./components/NavBar";
   import Login from "./pages/Login.jsx";
   import RegisterPage from "./pages/Register.jsx";
@@ -36,6 +36,12 @@ import {
     // Don't show NavBar on login and register pages
     const hideNavBar = location.pathname === "/login" || location.pathname === "/register";
   
+    // Add state to track if language reload is needed
+    const [shouldReload, setShouldReload] = useState(false);
+    
+    // Track previous language for change detection
+    const prevLanguageRef = useRef(language);
+  
     // Make sure language is correctly set
     useEffect(() => {
       // Get stored language preference
@@ -58,6 +64,21 @@ import {
         document.documentElement.classList.remove('dark');
       }
     }, []);
+  
+    // Watch for language changes and force a reload if needed
+    useEffect(() => {
+      // Check if language has changed since last render
+      if (prevLanguageRef.current !== language) {
+        console.log(`Language changed from ${prevLanguageRef.current} to ${language}`);
+        
+        // Alternative approach: enable this line to force reload on language change
+        // Uncomment if translations still don't update:
+        // window.location.reload();
+        
+        // Update ref for next change
+        prevLanguageRef.current = language;
+      }
+    }, [language]);
   
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">

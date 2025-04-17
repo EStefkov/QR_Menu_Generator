@@ -129,7 +129,13 @@ const ManagerDashboard = () => {
   };
 
   const handleEditMenu = (restaurantId) => {
-    navigate(`/manager/menus`);
+    navigate(`/manager/menus`, {
+      state: {
+        restaurantId: selectedRestaurant.id,
+        restaurantName: selectedRestaurant.restorantName || selectedRestaurant.name,
+        fromManager: true
+      }
+    });
   };
 
   const moveRestaurantUp = (index) => {

@@ -653,6 +653,23 @@ const translations = {
   // Products
   "products.selectProductForDefaultImage": "Enter product ID to set as default image template:",
   "products.title": "Products",
+
+  // Common translations
+  "common": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "view": "View",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "notProvided": "Not provided",
+    "errorFetchingData": "Failed to load data",
+    "backToManagerDashboard": "Back to Manager Dashboard", 
+    "qr": "QR Code",
+    "test": "Test",
+  },
 };
 
 export default translations; 

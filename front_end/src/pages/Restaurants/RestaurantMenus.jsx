@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { restaurantApi } from '../../api/restaurantApi';
 import { HiArrowLeft, HiExclamationCircle, HiEye, HiPencil, HiTrash, HiRefresh, HiPlusCircle, HiX, HiLocationMarker, HiQrcode } from 'react-icons/hi';
@@ -126,9 +126,14 @@ const CreateMenuForm = ({ restaurantId, onSuccess, onCancel }) => {
 };
 
 const RestaurantMenus = () => {
-  const { restaurantId } = useParams();
+  const { restaurantId: routeRestaurantId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
+  
+  // Get restaurantId from either route params or location state
+  const restaurantId = routeRestaurantId || location.state?.restaurantId;
+  const restaurantName = location.state?.restaurantName;
   
   const [restaurant, setRestaurant] = useState(null);
   const [menus, setMenus] = useState([]);
@@ -136,9 +141,16 @@ const RestaurantMenus = () => {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   
+  // Log where we're getting the restaurantId from for debugging
   useEffect(() => {
+    console.log('RestaurantMenus - restaurantId source:', {
+      'From Route Params': routeRestaurantId,
+      'From Location State': location.state?.restaurantId,
+      'Using Value': restaurantId
+    });
+    
     fetchRestaurantData();
-  }, [restaurantId]);
+  }, [restaurantId, routeRestaurantId, location.state]);
   
   // Helper function to get value from multiple possible field names
   const getFieldValue = (obj, fieldNames, defaultValue = '-') => {
@@ -476,12 +488,23 @@ const RestaurantMenus = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
-          <button
-            onClick={() => navigate(-1)}
-            className="mr-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-          </button>
+          {location.state?.fromManager ? (
+            <button
+              onClick={() => navigate('/manager')}
+              className="mr-4 flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title={t('common.backToManagerDashboard') || t('backToManagerDashboard') || 'Back to Manager Dashboard'}
+            >
+              <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300 mr-1" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{t('common.backToManagerDashboard') || t('backToManagerDashboard') || 'Back to Manager Dashboard'}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate(-1)}
+              className="mr-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            </button>
+          )}
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
             {restaurant ? getFieldValue(restaurant, ['name', 'restorantName', 'restaurantName']) : t('restaurants.restaurantMenus') || 'Restaurant Menus'}
           </h1>
@@ -746,7 +769,7 @@ const RestaurantMenus = () => {
                           className="inline-flex items-center px-3 py-2 border border-green-300 dark:border-green-600 rounded-md shadow-sm text-sm font-medium text-green-700 dark:text-green-300 bg-white dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                         >
                           <HiQrcode className="mr-2 -ml-1 h-5 w-5 text-green-500 dark:text-green-400" />
-                          {t('common.qr') || 'QR'}
+                          {t('common.qr')|| 'QR'}
                         </button>
                         <button
                           onClick={() => handleDeleteMenu(menu.id)}

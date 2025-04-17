@@ -661,7 +661,10 @@ const translations = {
   "common.phone": "Телефон",
   "common.email": "Имейл",
   "common.notProvided": "Не е посочено",
-  "common.errorFetchingData": "Грешка при зареждане на данните"
+  "common.errorFetchingData": "Грешка при зареждане на данните",
+  "common.backToManagerDashboard": "Обратно към Мениджър Табло",
+  "common.qr": "QR Код",
+  "common.test": "Тест"
 };
 
 export default translations; 

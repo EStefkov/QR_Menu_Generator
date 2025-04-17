@@ -140,12 +140,12 @@ const ProductForm = ({ categoryId, onSuccess, onCancel, editProduct }) => {
       } else {
         // Create new product
         response = await fetch(`${import.meta.env.VITE_API_URL}/api/products`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: submitData
-        });
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: submitData
+      });
       }
       
       if (!response.ok) {
@@ -565,8 +565,8 @@ const EditMenuPage = () => {
       setProducts(prev => prev.map(p => p.id === newProduct.id ? newProduct : p));
       setProductToEdit(null);
     } else {
-      // Add the new product to our products list
-      setProducts(prev => [...prev, newProduct]);
+    // Add the new product to our products list
+    setProducts(prev => [...prev, newProduct]);
     }
     
     // Close the form
@@ -1056,7 +1056,7 @@ const EditMenuPage = () => {
       </div>
     );
   };
-
+  
   const handleGoBack = () => {
     // Use returnPath if provided, otherwise try backUrl or default paths
     if (returnPath) {
@@ -1160,4 +1160,4 @@ const EditMenuPage = () => {
   );
 }
 
-export default EditMenuPage;
+export default EditMenuPage; 
