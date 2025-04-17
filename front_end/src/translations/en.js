@@ -581,12 +581,20 @@ const translations = {
   // Manager Dashboard
   "manager.dashboard": "Manager Dashboard",
   "manager.yourRestaurants": "Your Restaurants",
+  "manager.createdRestaurants": "Created by you",
+  "manager.assignedRestaurants": "Assigned to you",
+  "manager.owner": "Owner",
+  "manager.assigned": "Assigned",
+  "manager.createRestaurant": "Create Restaurant",
   "manager.noRestaurantsAssigned": "You are not assigned to any restaurants yet.",
   "manager.contactAdmin": "Please contact an administrator to get assigned to restaurants.",
   "manager.selectRestaurant": "Select a restaurant to view details",
   "manager.otherManagers": "Other Managers",
   "manager.noOtherManagers": "No other managers assigned to this restaurant",
   "manager.manageMenus": "Manage Menus",
+  "manager.moveUp": "Move up",
+  "manager.moveDown": "Move down",
+  "manager.dragToReorder": "Use arrows to change restaurant order",
   
   // Common elements
   "common.address": "Address",

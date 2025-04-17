@@ -647,14 +647,22 @@ const translations = {
   // Add manager dashboard translations
   
   // Manager Dashboard
-  "manager.dashboard": "Табло на Мениджъра",
-  "manager.yourRestaurants": "Вашите Ресторанти",
-  "manager.noRestaurantsAssigned": "Все още не сте назначени към ресторанти.",
-  "manager.contactAdmin": "Моля, свържете се с администратор, за да бъдете назначени към ресторанти.",
+  "manager.dashboard": "Табло на мениджъра",
+  "manager.yourRestaurants": "Вашите ресторанти",
+  "manager.createdRestaurants": "Създадени от вас",
+  "manager.assignedRestaurants": "Възложени на вас",
+  "manager.owner": "Собственик",
+  "manager.assigned": "Възложен",
+  "manager.createRestaurant": "Създай ресторант",
+  "manager.noRestaurantsAssigned": "Все още нямате възложени ресторанти.",
+  "manager.contactAdmin": "Моля, свържете се с администратор, за да ви бъдат възложени ресторанти.",
   "manager.selectRestaurant": "Изберете ресторант, за да видите детайли",
-  "manager.otherManagers": "Други Мениджъри",
-  "manager.noOtherManagers": "Няма други мениджъри, назначени към този ресторант",
+  "manager.otherManagers": "Други мениджъри",
+  "manager.noOtherManagers": "Няма други мениджъри, възложени на този ресторант",
   "manager.manageMenus": "Управление на менюта",
+  "manager.moveUp": "Премести нагоре",
+  "manager.moveDown": "Премести надолу",
+  "manager.dragToReorder": "Използвайте стрелките за промяна на реда на ресторантите",
   
   // Common elements
   "common.address": "Адрес",
@@ -664,7 +672,13 @@ const translations = {
   "common.errorFetchingData": "Грешка при зареждане на данните",
   "common.backToManagerDashboard": "Обратно към Мениджър Табло",
   "common.qr": "QR Код",
-  "common.test": "Тест"
+  "common.test": "Тест",
+  "common.errorOccurred": "Възникна грешка",
+  "common.create": "Създай",
+  "common.creating": "Създаване...",
+  "common.restaurantName": "Име на ресторанта",
+  "common.hideEditPanel": "Скрий панела за редактиране",
+  "common.toggleEditPanel": "Покажи/скрий панела за редактиране"
 };
 
 export default translations; 

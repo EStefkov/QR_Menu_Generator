@@ -5,10 +5,12 @@ import com.example.qr_menu.dto.RestaurantDTO;
 import com.example.qr_menu.entities.Account;
 import com.example.qr_menu.entities.Menu;
 import com.example.qr_menu.entities.Restorant;
+import com.example.qr_menu.entities.ManagerAssignment;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.repositories.AccountRepository;
 import com.example.qr_menu.repositories.MenuRepository;
 import com.example.qr_menu.repositories.RestaurantRepository;
+import com.example.qr_menu.repositories.ManagerAssignmentRepository;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,14 +30,17 @@ public class RestaurantService {
     private final AccountRepository accountRepository; // Inject AccountRepository to find accounts
 
     private final MenuRepository menuRepository;
+    private final ManagerAssignmentRepository managerAssignmentRepository;
 
     @Autowired
     public RestaurantService(RestaurantRepository restaurantRepository,
                              AccountRepository accountRepository,
-                             MenuRepository menuRepository) {
+                             MenuRepository menuRepository,
+                             ManagerAssignmentRepository managerAssignmentRepository) {
         this.menuRepository = menuRepository;
         this.restaurantRepository = restaurantRepository;
         this.accountRepository = accountRepository;
+        this.managerAssignmentRepository = managerAssignmentRepository;
     }
 
     public void createRestaurant(RestaurantDTO restaurantDTO, String identifier) {
@@ -75,7 +81,28 @@ public class RestaurantService {
         // Log the restaurant object before saving
         System.out.println("Restaurant object before saving: " + restaurant);
 
-        restaurantRepository.save(restaurant);
+        // Save the restaurant to get its ID
+        restaurant = restaurantRepository.save(restaurant);
+        
+        // If the account is a manager, automatically assign them as manager to this restaurant
+        if (account.getAccountType() == Account.AccountType.ROLE_MANAGER) {
+            // Create manager assignment
+            ManagerAssignment managerAssignment = ManagerAssignment.builder()
+                    .manager(account)
+                    .restorant(restaurant)
+                    .assignedAt(new Timestamp(System.currentTimeMillis()))
+                    .assignedBy(account.getId()) // Self-assigned
+                    .build();
+                    
+            // Get the ManagerAssignmentRepository or use a service
+            try {
+                managerAssignmentRepository.save(managerAssignment);
+                System.out.println("Auto-assigned manager (creator) to restaurant: " + restaurant.getId());
+            } catch (Exception e) {
+                System.err.println("Failed to auto-assign manager to restaurant: " + e.getMessage());
+                // Continue without failing the whole operation
+            }
+        }
     }
 
     public void updateRestaurant(Long id, RestaurantDTO restaurantDTO) {
@@ -180,11 +207,24 @@ public class RestaurantService {
             throw new IllegalArgumentException("Only managers can access managed restaurants");
         }
         
-        // Get the restaurants managed by this account
-        List<Restorant> restaurants = account.getManagedRestaurants();
+        // Get the restaurants created by this account
+        List<Restorant> createdRestaurants = restaurantRepository.findByAccount(account);
+        
+        // Get the restaurants managed by this account through ManagerAssignment
+        List<Restorant> assignedRestaurants = account.getManagedRestaurants();
+        
+        // Combine both lists, avoiding duplicates
+        List<Restorant> allManagedRestaurants = new java.util.ArrayList<>(createdRestaurants);
+        
+        // Add restaurants that were assigned but not created by this manager
+        for (Restorant restaurant : assignedRestaurants) {
+            if (!allManagedRestaurants.contains(restaurant)) {
+                allManagedRestaurants.add(restaurant);
+            }
+        }
         
         // Convert to DTOs
-        return restaurants.stream()
+        return allManagedRestaurants.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }

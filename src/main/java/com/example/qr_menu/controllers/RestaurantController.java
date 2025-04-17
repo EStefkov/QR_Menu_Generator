@@ -92,10 +92,19 @@ public class RestaurantController {
         return ResponseEntity.ok(menus);
     }
     
+    /**
+     * Get all restaurants managed by the authenticated manager.
+     * This includes both restaurants created by the manager and 
+     * restaurants they have been assigned to manage.
+     * 
+     * @param token JWT authorization token
+     * @return List of restaurants managed by the user
+     */
     @GetMapping("/managed")
     @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<List<RestaurantDTO>> getManagedRestaurants(
             @RequestHeader("Authorization") String token) {
+        System.out.println("Getting restaurants managed by user from token");
         String email = jwtTokenUtil.extractUsername(token.substring(7));
         List<RestaurantDTO> restaurants = restaurantService.getRestaurantsManagedByUser(email);
         return ResponseEntity.ok(restaurants);

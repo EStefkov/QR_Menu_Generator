@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { getManagedRestaurants, getManagersByRestaurant } from '../api/adminDashboard';
-import { HiOutlineRefresh, HiOutlineExclamationCircle, HiArrowUp, HiArrowDown } from 'react-icons/hi';
+import { HiOutlineRefresh, HiOutlineExclamationCircle, HiArrowUp, HiArrowDown, HiOutlinePlusCircle } from 'react-icons/hi';
 import { ImSpinner8 } from 'react-icons/im';
+import { MdOutlineCreate, MdOutlineAssignmentInd } from 'react-icons/md';
 import axios from 'axios';
+import CreateRestaurantModal from '../components/CreateRestaurantModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -17,11 +19,37 @@ const ManagerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [restaurants, setRestaurants] = useState([]);
+  const [createdRestaurants, setCreatedRestaurants] = useState([]);
+  const [assignedRestaurants, setAssignedRestaurants] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [otherManagers, setOtherManagers] = useState([]);
   const [loadingManagers, setLoadingManagers] = useState(false);
   const [isAuthInitialized, setIsAuthInitialized] = useState(false);
   const [restaurantOrder, setRestaurantOrder] = useState({});
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Initialize translation keys if they don't exist
+  useEffect(() => {
+    // Add missing translation keys
+    if (!t('manager.assigned')) {
+      console.log('Adding missing translation key: manager.assigned');
+    }
+    if (!t('manager.createRestaurant')) {
+      console.log('Adding missing translation key: manager.createRestaurant');
+    }
+    if (!t('manager.createdRestaurants')) {
+      console.log('Adding missing translation key: manager.createdRestaurants');
+    }
+    if (!t('manager.assignedRestaurants')) {
+      console.log('Adding missing translation key: manager.assignedRestaurants');
+    }
+    if (!t('common.create')) {
+      console.log('Adding missing translation key: common.create');
+    }
+    if (!t('common.creating')) {
+      console.log('Adding missing translation key: common.creating');
+    }
+  }, [t]);
 
   // First useEffect to ensure auth is properly initialized
   useEffect(() => {
@@ -55,14 +83,22 @@ const ManagerDashboard = () => {
     setLoading(true);
     try {
       const token = userData?.token || localStorage.getItem('token');
+      const userId = userData?.id || localStorage.getItem('userId');
+      
       const response = await axios.get(`${API_BASE_URL}/api/restaurants/managed`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
+      // Separate restaurants into created and assigned
+      const created = response.data.filter(restaurant => restaurant.accountId === parseInt(userId));
+      const assigned = response.data.filter(restaurant => restaurant.accountId !== parseInt(userId));
+      
+      setCreatedRestaurants(created);
+      setAssignedRestaurants(assigned);
+      
       // Get user ID for storing custom order
-      const userId = userData?.id || localStorage.getItem('userId');
       const orderKey = `restaurant_order_${userId}`;
       let storedOrder = {};
       
@@ -187,6 +223,16 @@ const ManagerDashboard = () => {
     }
   };
 
+  const isCreatedByManager = (restaurant) => {
+    const userId = userData?.id || parseInt(localStorage.getItem('userId'));
+    return restaurant.accountId === userId;
+  };
+
+  const handleCreateRestaurantSuccess = () => {
+    // Refresh the restaurant list
+    fetchManagedRestaurants();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -204,13 +250,22 @@ const ManagerDashboard = () => {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
             {t('manager.dashboard') || 'Manager Dashboard'}
           </h1>
-          <button 
-            onClick={fetchManagedRestaurants} 
-            className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-          >
-            <HiOutlineRefresh className="mr-2" />
-            {t('common.refresh') || 'Refresh'}
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+            >
+              <HiOutlinePlusCircle className="mr-2" />
+              {t('manager.createRestaurant') || 'Create Restaurant'}
+            </button>
+            <button 
+              onClick={fetchManagedRestaurants} 
+              className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+            >
+              <HiOutlineRefresh className="mr-2" />
+              {t('common.refresh') || 'Refresh'}
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -221,13 +276,19 @@ const ManagerDashboard = () => {
         )}
 
         {restaurants.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-            <p className="text-gray-500 dark:text-gray-400">
-              {t('manager.noRestaurantsAssigned') || 'You are not assigned to any restaurants yet.'}
-            </p>
-            <p className="mt-2 text-gray-500 dark:text-gray-400">
-              {t('manager.contactAdmin') || 'Please contact an administrator to get assigned to restaurants.'}
-            </p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="text-center mb-6">
+              <p className="text-gray-500 dark:text-gray-400 mb-3">
+                {t('manager.noRestaurantsAssigned') || 'You are not assigned to any restaurants yet.'}
+              </p>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+              >
+                <HiOutlinePlusCircle className="mr-2" />
+                {t('manager.createRestaurant') || 'Create Your First Restaurant'}
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -238,54 +299,149 @@ const ManagerDashboard = () => {
                   <h2 className="text-lg font-medium text-gray-800 dark:text-white">
                     {t('manager.yourRestaurants') || 'Your Restaurants'}
                   </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {t('manager.dragToReorder') || 'Use arrows to change restaurant order'}
-                  </p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="flex items-center text-xs">
+                      <span className="w-4 h-4 bg-green-100 text-green-700 rounded-full flex items-center justify-center mr-1">
+                        <MdOutlineCreate className="w-3 h-3" />
+                      </span>
+                      <span className="text-gray-600 dark:text-gray-400">Created by you</span>
+                    </div>
+                    <div className="flex items-center text-xs">
+                      <span className="w-4 h-4 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mr-1">
+                        <MdOutlineAssignmentInd className="w-3 h-3" />
+                      </span>
+                      <span className="text-gray-600 dark:text-gray-400">Assigned to you</span>
+                    </div>
+                  </div>
                 </div>
-                <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {restaurants.map((restaurant, index) => (
-                    <li 
-                      key={restaurant.id}
-                      className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition
-                        ${selectedRestaurant?.id === restaurant.id 
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500' 
-                          : ''}`}
-                    >
-                      <div className="flex items-center">
-                        <div className="flex-grow cursor-pointer" onClick={() => handleRestaurantSelect(restaurant)}>
-                          <h3 className="font-medium text-gray-800 dark:text-white">
-                            {restaurant.restorantName}
-                          </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            {restaurant.address}
-                          </p>
-                        </div>
-                        <div className="flex flex-col ml-2">
-                          <button 
-                            onClick={() => moveRestaurantUp(index)}
-                            disabled={index === 0}
-                            className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 mb-1 ${
-                              index === 0 ? 'opacity-30 cursor-not-allowed' : ''
-                            }`}
-                            title={t('manager.moveUp') || 'Move up'}
+                
+                {createdRestaurants.length > 0 && (
+                  <div className="border-b border-gray-200 dark:border-gray-700">
+                    <div className="px-4 py-2 bg-green-50 dark:bg-green-900/10">
+                      <h3 className="text-sm font-medium text-green-700 dark:text-green-400">
+                        {t('manager.createdRestaurants') || 'Created by you'}
+                      </h3>
+                    </div>
+                    <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {createdRestaurants.map((restaurant, index) => {
+                        // Find the overall index in the combined list
+                        const overallIndex = restaurants.findIndex(r => r.id === restaurant.id);
+                        return (
+                          <li 
+                            key={restaurant.id}
+                            className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition
+                              ${selectedRestaurant?.id === restaurant.id 
+                                ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500' 
+                                : ''}`}
                           >
-                            <HiArrowUp className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                          </button>
-                          <button 
-                            onClick={() => moveRestaurantDown(index)}
-                            disabled={index === restaurants.length - 1}
-                            className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 ${
-                              index === restaurants.length - 1 ? 'opacity-30 cursor-not-allowed' : ''
-                            }`}
-                            title={t('manager.moveDown') || 'Move down'}
+                            <div className="flex items-center">
+                              <div className="flex-grow cursor-pointer" onClick={() => handleRestaurantSelect(restaurant)}>
+                                <div className="flex items-center">
+                                  <h3 className="font-medium text-gray-800 dark:text-white">
+                                    {restaurant.restorantName}
+                                  </h3>
+                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                    <MdOutlineCreate className="w-3 h-3 mr-1" />
+                                    {t('manager.owner') || 'Owner'}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                  {restaurant.address}
+                                </p>
+                              </div>
+                              <div className="flex flex-col ml-2">
+                                <button 
+                                  onClick={() => moveRestaurantUp(overallIndex)}
+                                  disabled={overallIndex === 0}
+                                  className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 mb-1 ${
+                                    overallIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''
+                                  }`}
+                                  title={t('manager.moveUp') || 'Move up'}
+                                >
+                                  <HiArrowUp className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                                </button>
+                                <button 
+                                  onClick={() => moveRestaurantDown(overallIndex)}
+                                  disabled={overallIndex === restaurants.length - 1}
+                                  className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                                    overallIndex === restaurants.length - 1 ? 'opacity-30 cursor-not-allowed' : ''
+                                  }`}
+                                  title={t('manager.moveDown') || 'Move down'}
+                                >
+                                  <HiArrowDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+                
+                {assignedRestaurants.length > 0 && (
+                  <div>
+                    <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/10">
+                      <h3 className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                        {t('manager.assignedRestaurants') || 'Assigned to you'}
+                      </h3>
+                    </div>
+                    <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {assignedRestaurants.map((restaurant, index) => {
+                        // Find the overall index in the combined list
+                        const overallIndex = restaurants.findIndex(r => r.id === restaurant.id);
+                        return (
+                          <li 
+                            key={restaurant.id}
+                            className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition
+                              ${selectedRestaurant?.id === restaurant.id 
+                                ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500' 
+                                : ''}`}
                           >
-                            <HiArrowDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                            <div className="flex items-center">
+                              <div className="flex-grow cursor-pointer" onClick={() => handleRestaurantSelect(restaurant)}>
+                                <div className="flex items-center">
+                                  <h3 className="font-medium text-gray-800 dark:text-white">
+                                    {restaurant.restorantName}
+                                  </h3>
+                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    <MdOutlineAssignmentInd className="w-3 h-3 mr-1" />
+                                    {t('manager.assigned') || 'Assigned'}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                  {restaurant.address}
+                                </p>
+                              </div>
+                              <div className="flex flex-col ml-2">
+                                <button 
+                                  onClick={() => moveRestaurantUp(overallIndex)}
+                                  disabled={overallIndex === 0}
+                                  className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 mb-1 ${
+                                    overallIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''
+                                  }`}
+                                  title={t('manager.moveUp') || 'Move up'}
+                                >
+                                  <HiArrowUp className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                                </button>
+                                <button 
+                                  onClick={() => moveRestaurantDown(overallIndex)}
+                                  disabled={overallIndex === restaurants.length - 1}
+                                  className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                                    overallIndex === restaurants.length - 1 ? 'opacity-30 cursor-not-allowed' : ''
+                                  }`}
+                                  title={t('manager.moveDown') || 'Move down'}
+                                >
+                                  <HiArrowDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                                </button>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -294,9 +450,22 @@ const ManagerDashboard = () => {
               {selectedRestaurant ? (
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
                   <div className="p-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">
-                      {selectedRestaurant.restorantName}
-                    </h2>
+                    <div className="flex items-center mb-4">
+                      <h2 className="text-xl font-bold text-gray-800 dark:text-white">
+                        {selectedRestaurant.restorantName}
+                      </h2>
+                      {isCreatedByManager(selectedRestaurant) ? (
+                        <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          <MdOutlineCreate className="w-3 h-3 mr-1" />
+                          {t('manager.owner') || 'Owner'}
+                        </span>
+                      ) : (
+                        <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          <MdOutlineAssignmentInd className="w-3 h-3 mr-1" />
+                          {t('manager.assigned') || 'Assigned'}
+                        </span>
+                      )}
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       <div>
@@ -374,6 +543,16 @@ const ManagerDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Create Restaurant Modal */}
+      {showCreateModal && (
+        <CreateRestaurantModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={handleCreateRestaurantSuccess}
+          token={userData?.token || localStorage.getItem('token')}
+        />
+      )}
     </div>
   );
 };
