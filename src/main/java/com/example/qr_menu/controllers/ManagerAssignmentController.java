@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.HashMap;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/manager-assignments")
@@ -131,7 +132,9 @@ public class ManagerAssignmentController {
     @GetMapping("/available-managers")
     public ResponseEntity<?> getAvailableManagers() {
         try {
-            List<Account> managers = accountService.getAccountsByType(Account.AccountType.ROLE_MANAGER);
+            List<Account> managers = new ArrayList<>();
+            managers.addAll(accountService.getAccountsByType(Account.AccountType.ROLE_MANAGER));
+            managers.addAll(accountService.getAccountsByType(Account.AccountType.ROLE_COMANAGER));
             return ResponseEntity.ok(managers);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

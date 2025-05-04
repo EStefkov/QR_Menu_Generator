@@ -354,7 +354,8 @@ export const createRestaurantApi = async (token, restaurantData) => {
     console.log("Creating restaurant with data:", JSON.stringify(enhancedData, null, 2));
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/restaurants`, {
+        // First try using the regular endpoint
+        let response = await fetch(`${API_BASE_URL}/api/restaurants`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -362,6 +363,21 @@ export const createRestaurantApi = async (token, restaurantData) => {
             },
             body: JSON.stringify(enhancedData),
         });
+
+        // If we get a 403 Forbidden, try the manager-specific endpoint
+        if (response.status === 403) {
+            console.log("Regular endpoint returned 403, trying manager-specific endpoint");
+            
+            // Try the manager-specific endpoint
+            response = await fetch(`${API_BASE_URL}/api/restaurants/create-as-manager`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(enhancedData),
+            });
+        }
 
         const contentType = response.headers.get("content-type");
         let responseData;
@@ -623,21 +639,29 @@ export const fetchAllOrdersApi = async (token, page = 0, size = 10, sortBy = 'or
 };
 
 /**
- * Извлича всички акаунти (без пагинация).
- * @param {string} token - JWT токен за автентикация.
- * @returns {Promise<any[]>} Масив с всички акаунти.
+ * Fetches all accounts from the API.
+ * @param {string} token - JWT token for authentication
+ * @returns {Promise<Array>} Array of account objects
  */
 export const fetchAllAccountsApi = async (token) => {
-    const response = await fetch(
-        `${API_BASE_URL}/api/accounts/all`,
-        {
-            headers: { Authorization: `Bearer ${token}` },
-        }
-    );
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/accounts`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
     if (!response.ok) {
-        throw new Error("Failed to fetch all accounts");
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch accounts');
     }
-    return response.json();
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching accounts:', error);
+    throw error;
+  }
 };
 
 // Manager Assignment Management
@@ -883,29 +907,84 @@ export const batchAssignRestaurantsToManager = async (token, managerId, restaura
   }
 };
 
+/**
+ * Updates a user's role (admin only).
+ * @param {string} token - JWT token for authentication
+ * @param {number} userId - ID of the user to update
+ * @param {string} role - New role to assign
+ * @returns {Promise<any>} Response containing the updated account
+ */
 export const updateUserRole = async (token, userId, role) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/accounts/${userId}/update-role`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ role })
-    });
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/accounts/${userId}/update-role`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ role })
+        });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to update user role');
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update user role');
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error('Error updating user role:', error);
+        throw error;
     }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error updating user role:', error);
-    throw error;
-  }
 };
 
+/**
+ * Updates a user's role by a manager (to COMANAGER or USER only).
+ * This is a special function for managers to promote users to COMANAGER for their restaurants.
+ * 
+ * @param {string} token - JWT token for authentication
+ * @param {number} userId - ID of the user to update
+ * @param {string} role - New role to assign (must be ROLE_USER or ROLE_COMANAGER)
+ * @param {number} restaurantId - ID of the restaurant (required when role is COMANAGER)
+ * @returns {Promise<any>} Response containing the updated account
+ */
+export const updateUserRoleByManager = async (token, userId, role, restaurantId = null) => {
+    try {
+        const requestBody = { role };
+        
+        // Add restaurant ID if role is COMANAGER
+        if (role === 'ROLE_COMANAGER') {
+            if (!restaurantId) {
+                throw new Error('Restaurant ID is required when setting COMANAGER role');
+            }
+            requestBody.restaurantId = restaurantId;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/api/accounts/${userId}/manager-update-role`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update user role');
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error('Error updating user role by manager:', error);
+        throw error;
+    }
+};
+
+/**
+ * Fetches restaurants managed by the current user.
+ * @param {string} token - JWT token for authentication
+ * @returns {Promise<any[]>} List of managed restaurants
+ */
 export const getManagedRestaurants = async (token) => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/restaurants/managed`, {
@@ -924,6 +1003,32 @@ export const getManagedRestaurants = async (token) => {
     return await response.json();
   } catch (error) {
     console.error('Error fetching managed restaurants:', error);
+    throw error;
+  }
+};
+
+/**
+ * Checks the current user's account details and permissions
+ * @param {string} token - JWT token for authentication
+ * @returns {Promise<any>} User account details
+ */
+export const checkAccountPermissions = async (token) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/accounts/current`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch account permissions');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error checking account permissions:', error);
     throw error;
   }
 }; 

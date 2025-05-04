@@ -37,12 +37,13 @@ public class ManagerAssignmentService {
 
     @Transactional
     public ManagerAssignment assignManagerToRestaurant(Long managerId, Long restaurantId, Long adminId) {
-        // Verify the manager exists and is a ROLE_MANAGER
+        // Verify the manager exists and is a ROLE_MANAGER or ROLE_COMANAGER
         Account manager = accountRepository.findById(managerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Manager not found with id: " + managerId));
         
-        if (manager.getAccountType() != Account.AccountType.ROLE_MANAGER) {
-            throw new IllegalArgumentException("Account must have ROLE_MANAGER to be assigned as a manager");
+        if (manager.getAccountType() != Account.AccountType.ROLE_MANAGER && 
+            manager.getAccountType() != Account.AccountType.ROLE_COMANAGER) {
+            throw new IllegalArgumentException("Account must have ROLE_MANAGER or ROLE_COMANAGER to be assigned as a manager");
         }
         
         // Verify the restaurant exists
@@ -127,12 +128,13 @@ public class ManagerAssignmentService {
      */
     @Transactional
     public List<ManagerAssignment> assignMultipleRestaurantsToManager(Long managerId, List<Long> restaurantIds, Long adminId) {
-        // Verify the manager exists and is a ROLE_MANAGER
+        // Verify the manager exists and is a ROLE_MANAGER or ROLE_COMANAGER
         Account manager = accountRepository.findById(managerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Manager not found with id: " + managerId));
         
-        if (manager.getAccountType() != Account.AccountType.ROLE_MANAGER) {
-            throw new IllegalArgumentException("Account must have ROLE_MANAGER to be assigned as a manager");
+        if (manager.getAccountType() != Account.AccountType.ROLE_MANAGER && 
+            manager.getAccountType() != Account.AccountType.ROLE_COMANAGER) {
+            throw new IllegalArgumentException("Account must have ROLE_MANAGER or ROLE_COMANAGER to be assigned as a manager");
         }
         
         List<ManagerAssignment> assignments = new ArrayList<>();

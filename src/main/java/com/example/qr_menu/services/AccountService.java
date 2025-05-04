@@ -5,8 +5,12 @@ import com.example.qr_menu.dto.ChangePasswordDTO;
 import com.example.qr_menu.dto.LoginDTO;
 import com.example.qr_menu.dto.RestaurantDTO;
 import com.example.qr_menu.entities.Account;
+import com.example.qr_menu.entities.ManagerAssignment;
+import com.example.qr_menu.entities.Restorant;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.repositories.AccountRepository;
+import com.example.qr_menu.repositories.RestaurantRepository;
+import com.example.qr_menu.repositories.ManagerAssignmentRepository;
 import com.example.qr_menu.utils.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -32,14 +36,20 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtil jwtTokenUtil;
+    private final RestaurantRepository restaurantRepository;
+    private final ManagerAssignmentRepository managerAssignmentRepository;
 
     @Autowired
     public AccountService(AccountRepository accountRepository,
                           PasswordEncoder passwordEncoder,
-                          JwtTokenUtil jwtTokenUtil) {
+                          JwtTokenUtil jwtTokenUtil,
+                          RestaurantRepository restaurantRepository,
+                          ManagerAssignmentRepository managerAssignmentRepository) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenUtil = jwtTokenUtil;
+        this.restaurantRepository = restaurantRepository;
+        this.managerAssignmentRepository = managerAssignmentRepository;
     }
 
     /**
@@ -395,6 +405,84 @@ public class AccountService {
         targetAccount.setAccountType(newRole);
         targetAccount.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         targetAccount.setUpdatedBy(adminAccount.getId());
+        
+        Account updated = accountRepository.save(targetAccount);
+        return mapToDTO(updated);
+    }
+
+    /**
+     * Updates a user's role to COMANAGER by a MANAGER account.
+     * Only ROLE_MANAGER accounts can promote users to COMANAGER.
+     * The manager can only update users to ROLE_USER or ROLE_COMANAGER.
+     * 
+     * @param accountId ID of the account to update
+     * @param newRole The new role to assign (must be ROLE_USER or ROLE_COMANAGER)
+     * @param managerEmail Email of the manager performing the operation
+     * @param restaurantId ID of the restaurant for which the user will be a COMANAGER (required for ROLE_COMANAGER)
+     * @return The updated AccountDTO
+     * @throws SecurityException if the user doesn't have manager rights
+     * @throws ResourceNotFoundException if accounts not found
+     * @throws IllegalArgumentException if invalid role assignment is attempted
+     */
+    @Transactional
+    public AccountDTO updateUserRoleByManager(Long accountId, Account.AccountType newRole, String managerEmail, Long restaurantId) {
+        // Check if manager user exists and has manager privileges
+        Account managerAccount = accountRepository.findByAccountNameOrMailAddress(null, managerEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Manager account not found"));
+        
+        if (managerAccount.getAccountType() != Account.AccountType.ROLE_MANAGER) {
+            throw new SecurityException("Only managers can assign COMANAGER roles");
+        }
+        
+        // Find the target account
+        Account targetAccount = accountRepository.findById(accountId)
+                .orElseThrow(() -> new ResourceNotFoundException("Target account not found with id: " + accountId));
+        
+        // Validate role - managers can only set users to ROLE_USER or ROLE_COMANAGER
+        if (newRole != Account.AccountType.ROLE_USER && newRole != Account.AccountType.ROLE_COMANAGER) {
+            throw new IllegalArgumentException("Managers can only set accounts to USER or COMANAGER roles");
+        }
+        
+        // For COMANAGER role, we need a restaurant ID and to verify manager has access to it
+        if (newRole == Account.AccountType.ROLE_COMANAGER) {
+            if (restaurantId == null) {
+                throw new IllegalArgumentException("Restaurant ID is required when setting COMANAGER role");
+            }
+            
+            // Check if manager is associated with this restaurant
+            boolean canManageRestaurant = managerAccount.managesRestaurant(restaurantId);
+            if (!canManageRestaurant) {
+                throw new SecurityException("Manager does not have rights to this restaurant");
+            }
+            
+            // Auto-create a manager assignment for the new COMANAGER
+            // This would typically be in the ManagerAssignmentService, but calling it here for simplicity
+            if (newRole == Account.AccountType.ROLE_COMANAGER) {
+                // Check if assignment already exists
+                boolean assignmentExists = managerAssignmentRepository
+                    .existsByManagerIdAndRestorantId(targetAccount.getId(), restaurantId);
+                
+                if (!assignmentExists) {
+                    // Create manager assignment
+                    Restorant restaurant = restaurantRepository.findById(restaurantId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
+                    
+                    ManagerAssignment assignment = ManagerAssignment.builder()
+                        .manager(targetAccount)
+                        .restorant(restaurant)
+                        .assignedAt(new Timestamp(System.currentTimeMillis()))
+                        .assignedBy(managerAccount.getId())
+                        .build();
+                    
+                    managerAssignmentRepository.save(assignment);
+                }
+            }
+        }
+        
+        // Update the role
+        targetAccount.setAccountType(newRole);
+        targetAccount.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+        targetAccount.setUpdatedBy(managerAccount.getId());
         
         Account updated = accountRepository.save(targetAccount);
         return mapToDTO(updated);

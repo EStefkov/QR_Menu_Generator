@@ -30,7 +30,15 @@ const CreateRestaurantModal = ({ isOpen, onClose, onSuccess, token }) => {
     setError(null);
     
     try {
-      await createRestaurantApi(token, restaurantData);
+      // Use token from props or get from localStorage if not provided
+      const authToken = token || localStorage.getItem('token');
+      
+      if (!authToken) {
+        throw new Error('Authentication token is missing');
+      }
+      
+      console.log("Submitting restaurant creation with token:", authToken ? 'Token exists' : 'No token');
+      await createRestaurantApi(authToken, restaurantData);
       setLoading(false);
       onSuccess();
       onClose();

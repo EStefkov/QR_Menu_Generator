@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { getManagedRestaurants, getManagersByRestaurant } from '../api/adminDashboard';
-import { HiOutlineRefresh, HiOutlineExclamationCircle, HiArrowUp, HiArrowDown, HiOutlinePlusCircle } from 'react-icons/hi';
+import { getManagedRestaurants, getManagersByRestaurant, fetchAllAccountsApi } from '../api/adminDashboard';
+import { HiOutlineRefresh, HiOutlineExclamationCircle, HiArrowUp, HiArrowDown, HiOutlinePlusCircle, HiUserGroup } from 'react-icons/hi';
 import { ImSpinner8 } from 'react-icons/im';
 import { MdOutlineCreate, MdOutlineAssignmentInd } from 'react-icons/md';
 import axios from 'axios';
 import CreateRestaurantModal from '../components/CreateRestaurantModal';
+import ManagerAccountsTable from '../components/manager/ManagerAccountsTable';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -27,6 +28,9 @@ const ManagerDashboard = () => {
   const [isAuthInitialized, setIsAuthInitialized] = useState(false);
   const [restaurantOrder, setRestaurantOrder] = useState({});
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [accounts, setAccounts] = useState([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
+  const [activeTab, setActiveTab] = useState('restaurants'); // 'restaurants' or 'managers'
 
   // Initialize translation keys if they don't exist
   useEffect(() => {
@@ -150,7 +154,13 @@ const ManagerDashboard = () => {
       
       // Filter out the current user from the managers list
       const currentUserId = userData?.id || parseInt(localStorage.getItem('userId'));
-      const filteredManagers = managers.filter(manager => manager.account && manager.account.id !== currentUserId);
+      const filteredManagers = managers.filter(manager => 
+        manager.account && 
+        manager.account.id !== currentUserId &&
+        (manager.account.accountType === 'ROLE_MANAGER' || manager.account.accountType === 'ROLE_COMANAGER')
+      );
+      
+      console.log('Team members for this restaurant:', filteredManagers);
       setOtherManagers(filteredManagers);
     } catch (error) {
       console.error('Error fetching restaurant managers:', error);
@@ -165,10 +175,14 @@ const ManagerDashboard = () => {
   };
 
   const handleEditMenu = (restaurantId) => {
+    // Make sure selected restaurant is available
+    if (!selectedRestaurant) return;
+    
+    // Navigate to the menus route (without ID parameter in the URL)
     navigate(`/manager/menus`, {
       state: {
         restaurantId: selectedRestaurant.id,
-        restaurantName: selectedRestaurant.restorantName || selectedRestaurant.name,
+        restaurantName: selectedRestaurant.name || selectedRestaurant.restorantName,
         fromManager: true
       }
     });
@@ -233,49 +247,120 @@ const ManagerDashboard = () => {
     fetchManagedRestaurants();
   };
 
+  // Add a function to fetch all accounts
+  const fetchAccounts = async () => {
+    setLoadingAccounts(true);
+    try {
+      const token = userData?.token || localStorage.getItem('token');
+      // Use the existing API function to get all accounts
+      const accountsData = await fetchAllAccountsApi(token);
+      setAccounts(accountsData);
+    } catch (error) {
+      console.error('Error fetching accounts:', error);
+      setError(t('common.errorFetchingData') || 'Failed to load accounts data');
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  // Modify the useEffect to also fetch accounts when switching to the managers tab
+  useEffect(() => {
+    if (activeTab === 'managers' && accounts.length === 0) {
+      fetchAccounts();
+    }
+  }, [activeTab]);
+
+  // Add a handler for updating account roles
+  const handleAccountRoleUpdate = (updatedAccount) => {
+    // Update the accounts list with the new role
+    setAccounts(prev => 
+      prev.map(account => 
+        account.id === updatedAccount.id 
+          ? { ...account, accountType: updatedAccount.accountType }
+          : account
+      )
+    );
+  };
+
+  // Fix: We'll check if loading state first, then render content
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-          <ImSpinner8 className="w-10 h-10 text-blue-500 animate-spin" />
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <ImSpinner8 className="animate-spin h-12 w-12 text-blue-600 dark:text-blue-400" />
+          <span className="ml-3 text-lg text-gray-700 dark:text-gray-300">
+            {t('common.loading') || 'Loading...'}
+          </span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {t('manager.dashboard') || 'Manager Dashboard'}
           </h1>
-          <div className="flex space-x-3">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-            >
-              <HiOutlinePlusCircle className="mr-2" />
-              {t('manager.createRestaurant') || 'Create Restaurant'}
-            </button>
-            <button 
-              onClick={fetchManagedRestaurants} 
-              className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-            >
-              <HiOutlineRefresh className="mr-2" />
-              {t('common.refresh') || 'Refresh'}
-            </button>
-          </div>
+          <p className="text-gray-600 dark:text-gray-400">
+            {t('manager.welcomeMessage') || 'Welcome to your restaurant management dashboard.'}
+          </p>
         </div>
+        <div>
+          <button 
+            onClick={fetchManagedRestaurants} 
+            className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+          >
+            <HiOutlineRefresh className="mr-2" />
+            {t('common.refresh') || 'Refresh'}
+          </button>
+        </div>
+      </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg flex items-center">
-            <HiOutlineExclamationCircle className="w-5 h-5 mr-2" />
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded-lg flex items-center">
+          <HiOutlineExclamationCircle className="w-5 h-5 mr-2" />
+          {error}
+        </div>
+      )}
 
-        {restaurants.length === 0 ? (
+      {/* Tabs for switching between restaurants and managers */}
+      <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
+        <ul className="flex flex-wrap -mb-px">
+          <li className="mr-2">
+            <button
+              onClick={() => setActiveTab('restaurants')}
+              className={`inline-flex items-center px-4 py-2 rounded-t-lg ${
+                activeTab === 'restaurants'
+                  ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <MdOutlineCreate className="w-5 h-5 mr-2" />
+              {t('manager.restaurants') || 'My Restaurants'}
+            </button>
+          </li>
+          <li className="mr-2">
+            <button
+              onClick={() => setActiveTab('managers')}
+              className={`inline-flex items-center px-4 py-2 rounded-t-lg ${
+                activeTab === 'managers'
+                  ? 'text-blue-600 border-b-2 border-blue-600 dark:text-blue-400 dark:border-blue-400'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+              }`}
+            >
+              <HiUserGroup className="w-5 h-5 mr-2" />
+              {t('manager.manageCoManagers') || 'Manage Co-Managers'}
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      {/* Content based on active tab */}
+      {activeTab === 'restaurants' ? (
+        /* Restaurant tab content */
+        restaurants.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <div className="text-center mb-6">
               <p className="text-gray-500 dark:text-gray-400 mb-3">
@@ -292,31 +377,24 @@ const ManagerDashboard = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Restaurant List */}
-            <div className="lg:col-span-1">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h2 className="text-lg font-medium text-gray-800 dark:text-white">
-                    {t('manager.yourRestaurants') || 'Your Restaurants'}
-                  </h2>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <div className="flex items-center text-xs">
-                      <span className="w-4 h-4 bg-green-100 text-green-700 rounded-full flex items-center justify-center mr-1">
-                        <MdOutlineCreate className="w-3 h-3" />
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-400">Created by you</span>
-                    </div>
-                    <div className="flex items-center text-xs">
-                      <span className="w-4 h-4 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mr-1">
-                        <MdOutlineAssignmentInd className="w-3 h-3" />
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-400">Assigned to you</span>
-                    </div>
-                  </div>
-                </div>
-                
+            {/* Left column: List of restaurants */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {t('manager.yourRestaurants') || 'Your Restaurants'}
+                </h2>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-green-500 hover:bg-green-600 focus:outline-none"
+                >
+                  <HiOutlinePlusCircle className="h-6 w-6" />
+                </button>
+              </div>
+              
+              <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                {/* Created restaurants section */}
                 {createdRestaurants.length > 0 && (
-                  <div className="border-b border-gray-200 dark:border-gray-700">
+                  <div>
                     <div className="px-4 py-2 bg-green-50 dark:bg-green-900/10">
                       <h3 className="text-sm font-medium text-green-700 dark:text-green-400">
                         {t('manager.createdRestaurants') || 'Created by you'}
@@ -334,42 +412,41 @@ const ManagerDashboard = () => {
                                 ? 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500' 
                                 : ''}`}
                           >
-                            <div className="flex items-center">
-                              <div className="flex-grow cursor-pointer" onClick={() => handleRestaurantSelect(restaurant)}>
-                                <div className="flex items-center">
-                                  <h3 className="font-medium text-gray-800 dark:text-white">
-                                    {restaurant.restorantName}
-                                  </h3>
-                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                    <MdOutlineCreate className="w-3 h-3 mr-1" />
-                                    {t('manager.owner') || 'Owner'}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                  {restaurant.address}
-                                </p>
+                            <div className="flex justify-between cursor-pointer" onClick={() => handleRestaurantSelect(restaurant)}>
+                              <div>
+                                <h4 className="font-medium text-gray-900 dark:text-white">{restaurant.name || restaurant.restorantName}</h4>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{restaurant.address || t('common.notProvided')}</p>
                               </div>
-                              <div className="flex flex-col ml-2">
-                                <button 
-                                  onClick={() => moveRestaurantUp(overallIndex)}
-                                  disabled={overallIndex === 0}
-                                  className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 mb-1 ${
-                                    overallIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''
-                                  }`}
-                                  title={t('manager.moveUp') || 'Move up'}
-                                >
-                                  <HiArrowUp className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                                </button>
-                                <button 
-                                  onClick={() => moveRestaurantDown(overallIndex)}
-                                  disabled={overallIndex === restaurants.length - 1}
-                                  className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 ${
-                                    overallIndex === restaurants.length - 1 ? 'opacity-30 cursor-not-allowed' : ''
-                                  }`}
-                                  title={t('manager.moveDown') || 'Move down'}
-                                >
-                                  <HiArrowDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                                </button>
+                              <div className="flex items-center space-x-1">
+                                {/* Reordering buttons - only show for created restaurants */}
+                                <div className="flex flex-col">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      moveRestaurantUp(overallIndex);
+                                    }}
+                                    disabled={overallIndex === 0}
+                                    className={`p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                                      overallIndex === 0 ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-500 dark:text-gray-400'
+                                    }`}
+                                    title={t('manager.moveUp') || 'Move up'}
+                                  >
+                                    <HiArrowUp className="h-4 w-4" />
+                                  </button>
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      moveRestaurantDown(overallIndex);
+                                    }}
+                                    disabled={overallIndex === restaurants.length - 1}
+                                    className={`p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                                      overallIndex === restaurants.length - 1 ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-500 dark:text-gray-400'
+                                    }`}
+                                    title={t('manager.moveDown') || 'Move down'}
+                                  >
+                                    <HiArrowDown className="h-4 w-4" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </li>
@@ -379,6 +456,7 @@ const ManagerDashboard = () => {
                   </div>
                 )}
                 
+                {/* Assigned restaurants section */}
                 {assignedRestaurants.length > 0 && (
                   <div>
                     <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/10">
@@ -398,42 +476,13 @@ const ManagerDashboard = () => {
                                 ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500' 
                                 : ''}`}
                           >
-                            <div className="flex items-center">
-                              <div className="flex-grow cursor-pointer" onClick={() => handleRestaurantSelect(restaurant)}>
-                                <div className="flex items-center">
-                                  <h3 className="font-medium text-gray-800 dark:text-white">
-                                    {restaurant.restorantName}
-                                  </h3>
-                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                    <MdOutlineAssignmentInd className="w-3 h-3 mr-1" />
-                                    {t('manager.assigned') || 'Assigned'}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                  {restaurant.address}
-                                </p>
+                            <div className="flex justify-between cursor-pointer" onClick={() => handleRestaurantSelect(restaurant)}>
+                              <div>
+                                <h4 className="font-medium text-gray-900 dark:text-white">{restaurant.name || restaurant.restorantName}</h4>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">{restaurant.address || t('common.notProvided')}</p>
                               </div>
-                              <div className="flex flex-col ml-2">
-                                <button 
-                                  onClick={() => moveRestaurantUp(overallIndex)}
-                                  disabled={overallIndex === 0}
-                                  className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 mb-1 ${
-                                    overallIndex === 0 ? 'opacity-30 cursor-not-allowed' : ''
-                                  }`}
-                                  title={t('manager.moveUp') || 'Move up'}
-                                >
-                                  <HiArrowUp className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                                </button>
-                                <button 
-                                  onClick={() => moveRestaurantDown(overallIndex)}
-                                  disabled={overallIndex === restaurants.length - 1}
-                                  className={`p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 ${
-                                    overallIndex === restaurants.length - 1 ? 'opacity-30 cursor-not-allowed' : ''
-                                  }`}
-                                  title={t('manager.moveDown') || 'Move down'}
-                                >
-                                  <HiArrowDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                                </button>
+                              <div className="self-center text-xs font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                {t('manager.assigned') || 'Assigned'}
                               </div>
                             </div>
                           </li>
@@ -443,116 +492,145 @@ const ManagerDashboard = () => {
                   </div>
                 )}
               </div>
+              
+              {/* No restaurants message */}
+              {restaurants.length === 0 && (
+                <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                  {t('manager.noRestaurants') || 'No Restaurants Found'}
+                </div>
+              )}
             </div>
-
-            {/* Restaurant Details */}
-            <div className="lg:col-span-2">
-              {selectedRestaurant ? (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
-                  <div className="p-6">
-                    <div className="flex items-center mb-4">
-                      <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-                        {selectedRestaurant.restorantName}
-                      </h2>
-                      {isCreatedByManager(selectedRestaurant) ? (
-                        <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          <MdOutlineCreate className="w-3 h-3 mr-1" />
-                          {t('manager.owner') || 'Owner'}
-                        </span>
-                      ) : (
-                        <span className="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                          <MdOutlineAssignmentInd className="w-3 h-3 mr-1" />
-                          {t('manager.assigned') || 'Assigned'}
-                        </span>
-                      )}
+            
+            {/* Middle and right columns: Selected restaurant details */}
+            {selectedRestaurant ? (
+              <>
+                {/* Restaurant details - now spans full width */}
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 lg:col-span-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                    {selectedRestaurant.name || selectedRestaurant.restorantName}
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        {t('common.address') || 'Address'}
+                      </p>
+                      <p className="text-gray-900 dark:text-white">
+                        {selectedRestaurant.address || t('common.notProvided')}
+                      </p>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          {t('common.address') || 'Address'}
-                        </h3>
-                        <p className="mt-1 text-gray-800 dark:text-white">
-                          {selectedRestaurant.address || t('common.notProvided') || 'Not provided'}
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          {t('common.phone') || 'Phone'}
-                        </h3>
-                        <p className="mt-1 text-gray-800 dark:text-white">
-                          {selectedRestaurant.phoneNumber || t('common.notProvided') || 'Not provided'}
-                        </p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                          {t('common.email') || 'Email'}
-                        </h3>
-                        <p className="mt-1 text-gray-800 dark:text-white">
-                          {selectedRestaurant.email || t('common.notProvided') || 'Not provided'}
-                        </p>
-                      </div>
+                    
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        {t('common.phone') || 'Phone'}
+                      </p>
+                      <p className="text-gray-900 dark:text-white">
+                        {selectedRestaurant.phone || t('common.notProvided')}
+                      </p>
                     </div>
-
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mb-6">
-                      <h3 className="text-md font-medium text-gray-800 dark:text-white mb-3">
-                        {t('manager.otherManagers') || 'Other Managers'}
-                      </h3>
-                      {loadingManagers ? (
-                        <div className="flex justify-center py-4">
-                          <ImSpinner8 className="w-6 h-6 text-blue-500 animate-spin" />
-                        </div>
-                      ) : otherManagers.length > 0 ? (
-                        <ul className="space-y-2">
-                          {otherManagers.map(manager => (
-                            <li key={manager.id} className="flex items-center text-gray-700 dark:text-gray-300">
-                              <span className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center mr-3 text-blue-600 dark:text-blue-300">
-                                {(manager.account?.firstName || manager.firstName || '?').charAt(0)}
-                                {(manager.account?.lastName || manager.lastName || '?').charAt(0)}
-                              </span>
-                              {manager.account?.firstName || manager.firstName || 'Unknown'} {manager.account?.lastName || manager.lastName || ''} 
-                              {manager.account?.mailAddress || manager.mailAddress ? ` - ${manager.account?.mailAddress || manager.mailAddress}` : ''}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-gray-500 dark:text-gray-400">
-                          {t('manager.noOtherManagers') || 'No other managers assigned to this restaurant'}
-                        </p>
-                      )}
+                    
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        {t('common.email') || 'Email'}
+                      </p>
+                      <p className="text-gray-900 dark:text-white">
+                        {selectedRestaurant.email || t('common.notProvided')}
+                      </p>
                     </div>
-
-                    <div className="flex justify-end mt-6 space-x-3">
+                    
+                    <div className="pt-4">
                       <button
                         onClick={() => handleEditMenu(selectedRestaurant.id)}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                        className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
                       >
+                        <MdOutlineAssignmentInd className="mr-2 h-5 w-5" />
                         {t('manager.manageMenus') || 'Manage Menus'}
                       </button>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 text-center">
-                  <p className="text-gray-500 dark:text-gray-400">
-                    {t('manager.selectRestaurant') || 'Select a restaurant to view details'}
-                  </p>
-                </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 lg:col-span-2 flex items-center justify-center">
+                <p className="text-gray-500 dark:text-gray-400">
+                  {t('manager.selectRestaurant') || 'Select a restaurant to view details'}
+                </p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        )
+      ) : (
+        /* Co-Managers tab content */
+        <div>
+          {restaurants.length === 0 ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="text-center py-8">
+                <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-yellow-400" />
+                <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">
+                  {t('manager.createRestaurantFirst') || 'You need to create a restaurant first before you can assign co-managers.'}
+                </h3>
+                <div className="mt-6">
+                  <button
+                    onClick={() => {
+                      setActiveTab('restaurants');
+                      setShowCreateModal(true);
+                    }}
+                    className="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+                  >
+                    <HiOutlinePlusCircle className="mr-2" />
+                    {t('manager.createRestaurant') || 'Create Restaurant'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : !selectedRestaurant ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="text-center py-8">
+                <HiOutlineExclamationCircle className="mx-auto h-12 w-12 text-yellow-400" />
+                <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">
+                  {t('manager.selectRestaurantFirst') || 'Please select a restaurant first to manage its co-managers.'}
+                </h3>
+                <div className="mt-6">
+                  <button
+                    onClick={() => setActiveTab('restaurants')}
+                    className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                  >
+                    <MdOutlineCreate className="mr-2" />
+                    {t('manager.restaurants') || 'My Restaurants'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : loadingAccounts ? (
+            <div className="flex justify-center items-center py-20">
+              <ImSpinner8 className="animate-spin h-8 w-8 text-blue-600 dark:text-blue-400" />
+              <span className="ml-2 text-gray-600 dark:text-gray-400">
+                {t('common.loading') || 'Loading...'}
+              </span>
+            </div>
+          ) : (
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                {t('manager.coManagersFor') || 'Co-Managers for'}: {selectedRestaurant.name || selectedRestaurant.restorantName}
+              </h2>
+              <ManagerAccountsTable 
+                accounts={accounts} 
+                onEdit={handleAccountRoleUpdate}
+                restaurantId={selectedRestaurant.id}
+                selectedRestaurant={selectedRestaurant}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Create Restaurant Modal */}
-      {showCreateModal && (
-        <CreateRestaurantModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={handleCreateRestaurantSuccess}
-          token={userData?.token || localStorage.getItem('token')}
-        />
-      )}
+      <CreateRestaurantModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleCreateRestaurantSuccess}
+        token={userData?.token || localStorage.getItem('token')}
+      />
     </div>
   );
 };

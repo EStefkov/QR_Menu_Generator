@@ -242,6 +242,18 @@ import {
             }
           />
           
+          {/* Additional route for manager menus with restaurantId parameter */}
+          <Route
+            path="/manager/menus/:restaurantId"
+            element={
+              <ProtectedRoute role="ROLE_MANAGER">
+                <Layout>
+                  <RestaurantMenus />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
           {/* Manager Edit Menu - For editing a specific menu */}
           <Route
             path="/manager/menu/:menuId/edit"

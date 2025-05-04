@@ -101,7 +101,7 @@ public class Account {
     public enum AccountType {
         ROLE_USER,
         ROLE_ADMIN,
-        ROLE_WAITER,
-        ROLE_MANAGER
+        ROLE_MANAGER,
+        ROLE_COMANAGER
     }
 }

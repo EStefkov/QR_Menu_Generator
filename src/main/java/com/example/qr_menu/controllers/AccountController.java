@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -301,6 +302,84 @@ public class AccountController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to update role: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Update the role of an account to COMANAGER. Only MANAGER users can perform this operation.
+     * Managers can only set users to ROLE_USER or ROLE_COMANAGER roles.
+     *
+     * @param id the ID of the account to update
+     * @param requestBody a map containing the new role value and restaurantId
+     * @param token the authentication token
+     * @return a response indicating the outcome
+     */
+    @PutMapping("/{id}/manager-update-role")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<?> updateUserRoleByManager(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> requestBody,
+            @RequestHeader("Authorization") String token) {
+        try {
+            // Extract role from request body
+            String roleStr = (String) requestBody.get("role");
+            if (roleStr == null || roleStr.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Role must be specified"));
+            }
+            
+            // Convert string to enum
+            Account.AccountType newRole;
+            try {
+                newRole = Account.AccountType.valueOf(roleStr);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid role: " + roleStr));
+            }
+            
+            // Get restaurant ID if role is COMANAGER
+            Long restaurantId = null;
+            if (newRole == Account.AccountType.ROLE_COMANAGER) {
+                try {
+                    // Handle different types of restaurantId (Integer, Long, String)
+                    Object restaurantIdObj = requestBody.get("restaurantId");
+                    if (restaurantIdObj == null) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "Restaurant ID is required for COMANAGER role"));
+                    }
+                    
+                    if (restaurantIdObj instanceof Integer) {
+                        restaurantId = ((Integer) restaurantIdObj).longValue();
+                    } else if (restaurantIdObj instanceof Long) {
+                        restaurantId = (Long) restaurantIdObj;
+                    } else if (restaurantIdObj instanceof String) {
+                        restaurantId = Long.parseLong((String) restaurantIdObj);
+                    } else {
+                        return ResponseEntity.badRequest().body(Map.of("error", "Invalid restaurant ID format"));
+                    }
+                } catch (Exception e) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Invalid restaurant ID: " + e.getMessage()));
+                }
+            }
+            
+            // Extract manager email from token
+            String jwtToken = token.substring(7); // Remove "Bearer " prefix
+            String managerEmail = jwtTokenUtil.extractUsername(jwtToken);
+            
+            // Call service to update role
+            AccountDTO updatedAccount = accountService.updateUserRoleByManager(id, newRole, managerEmail, restaurantId);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "User role updated successfully by manager",
+                "account", updatedAccount
+            ));
+            
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to update user role: " + e.getMessage()));
         }
     }
 

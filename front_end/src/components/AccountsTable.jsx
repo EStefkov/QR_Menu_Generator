@@ -14,9 +14,12 @@ import { profileApi } from '../api/profileApi';
 import { uploadProfilePicture } from '../api/adminDashboard';
 import { useLanguage } from '../contexts/LanguageContext';
 import RoleUpdateModal from './admin/RoleUpdateModal';
+import ManagerRoleUpdateModal from './admin/ManagerRoleUpdateModal';
+import { useAuth } from '../AuthContext';
 
 export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = true, showTitle = false }) => {
     const { t } = useLanguage();
+    const { user } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [accountTypeFilter, setAccountTypeFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
@@ -33,6 +36,8 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
     const [sortDirection, setSortDirection] = useState('asc');
     const [showRoleUpdateModal, setShowRoleUpdateModal] = useState(false);
     const [accountToUpdateRole, setAccountToUpdateRole] = useState(null);
+    const [showManagerRoleUpdateModal, setShowManagerRoleUpdateModal] = useState(false);
+    const [accountToUpdateRoleByManager, setAccountToUpdateRoleByManager] = useState(null);
 
     // Define itemsPerPage as a constant
     const itemsPerPage = 5;
@@ -363,8 +368,14 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
 
     // Function to handle role update button click
     const handleRoleUpdateClick = (account) => {
-        setAccountToUpdateRole(account);
-        setShowRoleUpdateModal(true);
+        // If the user is a manager, show the manager role update modal instead
+        if (user?.userData?.accountType === 'ROLE_MANAGER') {
+            setAccountToUpdateRoleByManager(account);
+            setShowManagerRoleUpdateModal(true);
+        } else {
+            setAccountToUpdateRole(account);
+            setShowRoleUpdateModal(true);
+        }
     };
     
     // Handle role update complete
@@ -907,11 +918,19 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
                 </div>
             )}
 
-            {/* Role Update Modal */}
+            {/* Standard RoleUpdateModal for admins */}
             <RoleUpdateModal
                 isOpen={showRoleUpdateModal}
                 onClose={() => setShowRoleUpdateModal(false)}
                 account={accountToUpdateRole}
+                onRoleUpdated={handleRoleUpdated}
+            />
+            
+            {/* ManagerRoleUpdateModal for managers */}
+            <ManagerRoleUpdateModal
+                isOpen={showManagerRoleUpdateModal}
+                onClose={() => setShowManagerRoleUpdateModal(false)}
+                account={accountToUpdateRoleByManager}
                 onRoleUpdated={handleRoleUpdated}
             />
         </div>
