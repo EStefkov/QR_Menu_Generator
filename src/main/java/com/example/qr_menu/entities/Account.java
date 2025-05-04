@@ -91,7 +91,8 @@ public class Account {
     }
     
     public boolean managesRestaurant(Long restaurantId) {
-        if (accountType != AccountType.ROLE_MANAGER) {
+        // Both ROLE_MANAGER and ROLE_COMANAGER can manage their assigned restaurants
+        if (accountType != AccountType.ROLE_MANAGER && accountType != AccountType.ROLE_COMANAGER) {
             return false;
         }
         return managedRestaurants.stream()

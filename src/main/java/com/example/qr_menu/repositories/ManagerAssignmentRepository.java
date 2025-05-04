@@ -4,6 +4,7 @@ import com.example.qr_menu.entities.Account;
 import com.example.qr_menu.entities.ManagerAssignment;
 import com.example.qr_menu.entities.Restorant;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -28,4 +29,8 @@ public interface ManagerAssignmentRepository extends JpaRepository<ManagerAssign
     
     @Query("SELECT ma FROM ManagerAssignment ma JOIN FETCH ma.restorant WHERE ma.manager.id = :managerId")
     List<ManagerAssignment> findByManagerIdWithRestorant(@Param("managerId") Long managerId);
+    
+    @Modifying
+    @Query("DELETE FROM ManagerAssignment ma WHERE ma.manager.id = :managerId")
+    void deleteByManagerId(@Param("managerId") Long managerId);
 } 

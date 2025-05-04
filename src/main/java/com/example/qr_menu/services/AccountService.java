@@ -455,15 +455,15 @@ public class AccountService {
                 throw new SecurityException("Manager does not have rights to this restaurant");
             }
             
-            // Auto-create a manager assignment for the new COMANAGER
-            // This would typically be in the ManagerAssignmentService, but calling it here for simplicity
-            if (newRole == Account.AccountType.ROLE_COMANAGER) {
-                // Check if assignment already exists
+            // If user is already a COMANAGER for other restaurants, keep that status
+            // Just add the new restaurant assignment
+            if (targetAccount.getAccountType() == Account.AccountType.ROLE_COMANAGER) {
+                // We don't need to change the role, just add a new assignment if it doesn't exist
                 boolean assignmentExists = managerAssignmentRepository
                     .existsByManagerIdAndRestorantId(targetAccount.getId(), restaurantId);
                 
                 if (!assignmentExists) {
-                    // Create manager assignment
+                    // Create manager assignment for the new restaurant
                     Restorant restaurant = restaurantRepository.findById(restaurantId)
                         .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
                     
@@ -476,11 +476,106 @@ public class AccountService {
                     
                     managerAssignmentRepository.save(assignment);
                 }
+                
+                // Since the user is already a COMANAGER, we don't need to update the role
+                // Just return the current account
+                return mapToDTO(targetAccount);
+            } 
+            else {
+                // User is not a COMANAGER yet, so set the role and create assignment
+                targetAccount.setAccountType(Account.AccountType.ROLE_COMANAGER);
+                
+                // Create manager assignment
+                Restorant restaurant = restaurantRepository.findById(restaurantId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Restaurant not found"));
+                
+                ManagerAssignment assignment = ManagerAssignment.builder()
+                    .manager(targetAccount)
+                    .restorant(restaurant)
+                    .assignedAt(new Timestamp(System.currentTimeMillis()))
+                    .assignedBy(managerAccount.getId())
+                    .build();
+                
+                managerAssignmentRepository.save(assignment);
+            }
+        } 
+        else if (newRole == Account.AccountType.ROLE_USER && targetAccount.getAccountType() == Account.AccountType.ROLE_COMANAGER) {
+            // When changing from COMANAGER to USER, we only remove the association for the restaurants
+            // that this manager has rights to
+            
+            // Get all restaurant assignments for this co-manager
+            List<ManagerAssignment> coManagerAssignments = managerAssignmentRepository.findByManagerId(targetAccount.getId());
+            
+            if (restaurantId == null) {
+                // No specific restaurant ID provided, check if manager has rights to any of the co-manager's restaurants
+                boolean hasRightsToAny = coManagerAssignments.stream()
+                    .anyMatch(assignment -> managerAccount.managesRestaurant(assignment.getRestorant().getId()));
+                    
+                if (!hasRightsToAny) {
+                    throw new SecurityException("You do not have permission to modify this co-manager's role");
+                }
+                
+                // Remove only the assignments that this manager has rights to
+                List<ManagerAssignment> assignmentsToRemove = coManagerAssignments.stream()
+                    .filter(assignment -> managerAccount.managesRestaurant(assignment.getRestorant().getId()))
+                    .toList();
+                    
+                for (ManagerAssignment assignment : assignmentsToRemove) {
+                    managerAssignmentRepository.delete(assignment);
+                }
+                
+                // Check if user still has other co-manager assignments
+                List<ManagerAssignment> remainingAssignments = managerAssignmentRepository
+                    .findByManagerId(targetAccount.getId());
+                    
+                // If no more assignments, change role to USER
+                if (remainingAssignments.isEmpty()) {
+                    targetAccount.setAccountType(Account.AccountType.ROLE_USER);
+                } else {
+                    // User still has other co-manager assignments, don't change the role
+                    // Just return current account
+                    return mapToDTO(targetAccount);
+                }
+            } else {
+                // Specific restaurant ID provided
+                // Check if manager has rights to this restaurant
+                boolean canManageRestaurant = managerAccount.managesRestaurant(restaurantId);
+                if (!canManageRestaurant) {
+                    throw new SecurityException("Manager does not have rights to this restaurant");
+                }
+                
+                // Check if target account is a co-manager for this specific restaurant
+                boolean isCoManagerForThisRestaurant = managerAssignmentRepository
+                    .existsByManagerIdAndRestorantId(targetAccount.getId(), restaurantId);
+                    
+                if (!isCoManagerForThisRestaurant) {
+                    throw new IllegalArgumentException("This user is not a co-manager for the specified restaurant");
+                }
+                
+                // Only remove the co-manager assignment for this specific restaurant
+                Optional<ManagerAssignment> assignment = managerAssignmentRepository
+                    .findByManagerIdAndRestorantId(targetAccount.getId(), restaurantId);
+                    
+                if (assignment.isPresent()) {
+                    managerAssignmentRepository.delete(assignment.get());
+                }
+                
+                // Check if user still has other co-manager assignments
+                List<ManagerAssignment> remainingAssignments = managerAssignmentRepository
+                    .findByManagerId(targetAccount.getId());
+                    
+                // If no more assignments, change role to USER
+                if (remainingAssignments.isEmpty()) {
+                    targetAccount.setAccountType(Account.AccountType.ROLE_USER);
+                } else {
+                    // User still has other co-manager assignments, don't change the role
+                    // Just return current account
+                    return mapToDTO(targetAccount);
+                }
             }
         }
         
-        // Update the role
-        targetAccount.setAccountType(newRole);
+        // Save changes to the account (role changes, etc.)
         targetAccount.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
         targetAccount.setUpdatedBy(managerAccount.getId());
         

@@ -9,6 +9,7 @@ import com.example.qr_menu.repositories.RestaurantRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -45,6 +46,12 @@ public class RestaurantAccessService {
         
         Account account = accountOpt.get();
         
+        // If the account is not a manager or co-manager, they can't manage any restaurant
+        if (account.getAccountType() != Account.AccountType.ROLE_MANAGER && 
+            account.getAccountType() != Account.AccountType.ROLE_COMANAGER) {
+            return false;
+        }
+        
         // Check if the user is the one who created the restaurant
         Optional<Restorant> restorantOpt = restorantRepository.findById(restaurantId);
         if (restorantOpt.isEmpty()) {
@@ -52,6 +59,7 @@ public class RestaurantAccessService {
         }
         
         Restorant restorant = restorantOpt.get();
+        // The creator of the restaurant can always manage it
         if (restorant.getAccount() != null && restorant.getAccount().getId().equals(account.getId())) {
             return true;
         }
