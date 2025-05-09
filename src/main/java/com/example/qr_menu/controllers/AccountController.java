@@ -383,6 +383,94 @@ public class AccountController {
         }
     }
 
+    /**
+     * Get orders for a specific user account
+     * @param accountId The account ID
+     * @param page Page number
+     * @param size Page size
+     * @param sortBy Sort field
+     * @param direction Sort direction
+     * @param token JWT token
+     * @return Paginated list of orders
+     */
+    @GetMapping("/{accountId}/orders")
+    public ResponseEntity<?> getUserOrders(
+            @PathVariable Long accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "orderTime") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            @RequestHeader("Authorization") String token) {
+        
+        try {
+            // Validate token and extract claims
+            String jwtToken = token.replace("Bearer ", "");
+            
+            if (!jwtTokenUtil.validateToken(jwtToken)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+            }
+            
+            // Get claims to verify ownership
+            String username = jwtTokenUtil.extractUsername(jwtToken);
+            Long tokenAccountId = jwtTokenUtil.extractClaim(jwtToken, claims -> claims.get("accountId", Long.class));
+            String role = jwtTokenUtil.extractClaim(jwtToken, claims -> claims.get("role", String.class));
+            
+            // Security check: Only admin users or the owner of the account can access these orders
+            boolean isAdmin = "ROLE_ADMIN".equals(role);
+            boolean isAccountOwner = tokenAccountId != null && tokenAccountId.equals(accountId);
+            
+            if (!isAdmin && !isAccountOwner) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: You can only view your own orders");
+            }
+            
+            // Create pageable object for pagination
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                    "asc".equalsIgnoreCase(direction) 
+                        ? org.springframework.data.domain.Sort.by(sortBy).ascending() 
+                        : org.springframework.data.domain.Sort.by(sortBy).descending());
+            
+            // Call the OrderRepository directly to get the orders
+            Page<com.example.qr_menu.entities.Order> orders = accountService.getOrdersByAccountId(accountId, pageable);
+            
+            // Convert to DTOs
+            Page<com.example.qr_menu.dto.OrderDTO> orderDTOs = orders.map(order -> {
+                com.example.qr_menu.dto.OrderDTO orderDTO = com.example.qr_menu.dto.OrderDTO.builder()
+                        .id(order.getId())
+                        .accountId(order.getAccount().getId())
+                        .restorantId(order.getRestorant().getId())
+                        .restorantName(order.getRestorant().getRestorantName())
+                        .orderStatus(order.getOrderStatus())
+                        .orderTime(order.getOrderTime())
+                        .totalPrice(order.getTotalPrice())
+                        .build();
+                
+                // Get order products - you'll need to inject the OrderProductRepository
+                List<com.example.qr_menu.entities.OrderProduct> orderProducts = 
+                    accountService.getOrderProductsByOrderId(order.getId());
+                    
+                List<com.example.qr_menu.dto.OrderDTO.ProductOrderDTO> productDTOs = orderProducts.stream()
+                        .map(op -> com.example.qr_menu.dto.OrderDTO.ProductOrderDTO.builder()
+                                .productId(op.getProduct().getId())
+                                .productName(op.getProduct().getProductName())
+                                .productImage(op.getProduct().getProductImage())
+                                .quantity(op.getQuantity())
+                                .productPriceAtOrder(op.getProduct().getProductPrice())
+                                .build())
+                        .collect(java.util.stream.Collectors.toList());
+                
+                orderDTO.setProducts(productDTOs);
+                return orderDTO;
+            });
+            
+            return ResponseEntity.ok(orderDTOs);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving orders: " + e.getMessage());
+        }
+    }
+
 }
 
 

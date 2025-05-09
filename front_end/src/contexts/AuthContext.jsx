@@ -154,6 +154,7 @@ export function AuthProvider({ children }) {
       if (storedToken) {
         // Има токен - зареждаме данните от localStorage
         const id = localStorage.getItem("id") || localStorage.getItem("userId");
+        const mailAddress = localStorage.getItem("mailAddress");
         setUserData({
           id: id,
           token: storedToken,
@@ -161,7 +162,8 @@ export function AuthProvider({ children }) {
           lastName: localStorage.getItem("lastName"),
           profilePicture: localStorage.getItem("profilePicture"),
           accountType: localStorage.getItem("accountType"),
-          mailAddress: localStorage.getItem("mailAddress"),
+          mailAddress: mailAddress,
+          email: mailAddress // Add email field as an alias for mailAddress
         });
         
         // На профил страница никога не правим валидация на токена

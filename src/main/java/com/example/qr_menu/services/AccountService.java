@@ -38,18 +38,24 @@ public class AccountService {
     private final JwtTokenUtil jwtTokenUtil;
     private final RestaurantRepository restaurantRepository;
     private final ManagerAssignmentRepository managerAssignmentRepository;
+    private final com.example.qr_menu.repositories.OrderRepository orderRepository;
+    private final com.example.qr_menu.repositories.OrderProductRepository orderProductRepository;
 
     @Autowired
     public AccountService(AccountRepository accountRepository,
                           PasswordEncoder passwordEncoder,
                           JwtTokenUtil jwtTokenUtil,
                           RestaurantRepository restaurantRepository,
-                          ManagerAssignmentRepository managerAssignmentRepository) {
+                          ManagerAssignmentRepository managerAssignmentRepository,
+                          com.example.qr_menu.repositories.OrderRepository orderRepository,
+                          com.example.qr_menu.repositories.OrderProductRepository orderProductRepository) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenUtil = jwtTokenUtil;
         this.restaurantRepository = restaurantRepository;
         this.managerAssignmentRepository = managerAssignmentRepository;
+        this.orderRepository = orderRepository;
+        this.orderProductRepository = orderProductRepository;
     }
 
     /**
@@ -592,6 +598,25 @@ public class AccountService {
     @Transactional(readOnly = true)
     public List<Account> getAccountsByType(Account.AccountType accountType) {
         return accountRepository.findByAccountType(accountType);
+    }
+
+    /**
+     * Get orders for an account with pagination
+     * @param accountId The account ID
+     * @param pageable Pagination and sorting information
+     * @return Page of orders
+     */
+    public org.springframework.data.domain.Page<com.example.qr_menu.entities.Order> getOrdersByAccountId(Long accountId, org.springframework.data.domain.Pageable pageable) {
+        return orderRepository.findByAccountId(accountId, pageable);
+    }
+    
+    /**
+     * Get order products for an order
+     * @param orderId The order ID
+     * @return List of order products
+     */
+    public List<com.example.qr_menu.entities.OrderProduct> getOrderProductsByOrderId(Long orderId) {
+        return orderProductRepository.findByOrderId(orderId);
     }
 
     /**

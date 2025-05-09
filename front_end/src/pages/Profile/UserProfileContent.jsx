@@ -1,210 +1,148 @@
 import React, { useState, useEffect } from 'react';
-import { useLanguage } from '../../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../contexts/AuthContext';
 import { profileApi } from '../../api/profileApi';
-import { HiUser, HiMail, HiPhone, HiCalendar, HiShoppingCart, HiHeart, HiClock, HiExclamationCircle, HiInformationCircle, HiRefresh, HiChevronUp, HiChevronDown } from 'react-icons/hi';
+import {
+  HiUser,
+  HiMail,
+  HiPhone,
+  HiCalendar,
+  HiShoppingCart,
+  HiHeart,
+  HiExclamationCircle,
+  HiRefresh,
+  HiChevronUp
+} from 'react-icons/hi';
+import OrderHistory from '../../components/profile/OrderHistory';
 
 const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
-  const { t } = useLanguage();
-  const [orderCount, setOrderCount] = useState(0);
-  const [favoritesCount, setFavoritesCount] = useState(0);
+  const { t } = useTranslation();
+  const { currentUser } = useAuth();
+  
+  // State for stats
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState(null);
-  const [isFeaturesExpanded, setIsFeaturesExpanded] = useState(false);
-
+  const [orderCount, setOrderCount] = useState(0);
+  const [favoritesCount, setFavoritesCount] = useState(0);
+  
+  // Fetch user stats
   useEffect(() => {
-    // Only fetch data if we have a valid profile
-    if (profileData && !loading) {
-      // Ensure userId/accountId is set in localStorage before fetching stats
-      if (profileData.id) {
-        localStorage.setItem('userId', profileData.id);
-        localStorage.setItem('accountId', profileData.id);
-      }
+    if (currentUser) {
       fetchUserStats();
     }
-  }, [profileData, loading]);
-
+  }, [currentUser]);
+  
   const fetchUserStats = async () => {
+    if (!currentUser) return;
+    
     setStatsLoading(true);
     setStatsError(null);
     
-    console.log('Starting to fetch user stats...');
-    console.log('localStorage userId:', localStorage.getItem('userId'));
-    console.log('localStorage accountId:', localStorage.getItem('accountId'));
-    console.log('Profile data id:', profileData?.id);
-    
     try {
-      // Fetch orders count and favorites count in parallel
-      console.log('Fetching stats in parallel...');
-      const [ordersCountResult, favoritesCountResult] = await Promise.all([
-        profileApi.getUserOrdersCount(),
-        profileApi.getUserFavoritesCount()
-      ]);
+      const stats = await profileApi.getUserStats();
       
-      console.log('Stats fetched successfully:', {orders: ordersCountResult, favorites: favoritesCountResult});
-      setOrderCount(ordersCountResult);
-      setFavoritesCount(favoritesCountResult);
-    } catch (err) {
-      console.error('Error fetching user statistics:', err);
-      setStatsError(err.message || 'Failed to load user statistics');
+      if (stats) {
+        setOrderCount(stats.orderCount || 0);
+        setFavoritesCount(stats.favoritesCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      setStatsError(t('errors.general') || 'Failed to load statistics');
     } finally {
       setStatsLoading(false);
     }
   };
-
-  const toggleFeatures = () => {
-    setIsFeaturesExpanded(!isFeaturesExpanded);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-5 rounded-lg flex flex-col items-start">
-        <div className="flex items-start mb-4">
-          <HiExclamationCircle className="w-6 h-6 mr-3 mt-0.5 flex-shrink-0" />
-          <div>
-            <h3 className="font-bold text-lg mb-1">{t('errors.loadFailed') || 'Failed to load profile data'}</h3>
-            <p>{error}</p>
-            <p className="mt-3 text-sm">{t('errors.tryAgainLater') || 'Please try again later or contact support if the problem persists.'}</p>
-          </div>
-        </div>
-        
-        {onRetry && (
-          <button
-            onClick={onRetry}
-            className="flex items-center self-center mt-4 bg-red-100 hover:bg-red-200 dark:bg-red-800/30 dark:hover:bg-red-700/30 text-red-800 dark:text-red-300 font-medium py-2 px-4 rounded-lg transition"
-          >
-            <HiRefresh className="w-5 h-5 mr-2" />
-            {t('common.retry') || 'Retry'}
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  if (!profileData) {
-    return (
-      <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-5 rounded-lg flex flex-col items-center">
-        <div className="flex items-center mb-4">
-          <HiInformationCircle className="w-6 h-6 mr-3 flex-shrink-0" />
-          <p>{t('profile.noProfileData') || 'No profile data available'}</p>
-        </div>
-        
-        {onRetry && (
-          <button
-            onClick={onRetry}
-            className="flex items-center mt-4 bg-blue-100 hover:bg-blue-200 dark:bg-blue-800/30 dark:hover:bg-blue-700/30 text-blue-800 dark:text-blue-300 font-medium py-2 px-4 rounded-lg transition"
-          >
-            <HiRefresh className="w-5 h-5 mr-2" />
-            {t('common.refresh') || 'Refresh'}
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  // Format date
+  
+  // Format date helper
   const formatDate = (dateString) => {
-    if (!dateString) return t('profile.notAvailable') || 'Не е налично';
+    if (!dateString) return t('profile.notAvailable') || 'Not available';
     
     try {
-      const dateOptions = {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat(document.documentElement.lang || 'en', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
-      };
-      
-      // Use the current language to format the date
-      const locale = localStorage.getItem('language') === 'bg' ? 'bg-BG' : 'en-US';
-      return new Date(dateString).toLocaleDateString(locale, dateOptions);
-    } catch (e) {
-      console.error('Date formatting error:', e);
-      return t('profile.notAvailable') || 'Не е налично';
+      }).format(date);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return t('profile.notAvailable') || 'Not available';
     }
   };
   
-  // Get the email address from the correct field
+  // Get email helper
   const getEmail = () => {
-    // First try to get from profileData
-    if (profileData) {
-      if (profileData.mailAddress) {
-        return profileData.mailAddress;
-      }
-      if (profileData.email) {
-        return profileData.email;
-      }
+    if (profileData && profileData.email) {
+      return profileData.email;
+    } else if (currentUser && currentUser.email) {
+      return currentUser.email;
+    } else {
+      return t('profile.notProvided') || 'Not provided';
     }
-    
-    // Then try to get from localStorage
-    const storedEmail = localStorage.getItem('mailAddress');
-    if (storedEmail) {
-      return storedEmail;
-    }
-    
-    // Finally, try to get from userData
-    if (userData && userData.mailAddress) {
-      return userData.mailAddress;
-    }
-    
-    return t('profile.notProvided') || 'Not provided';
   };
-
-  // Function to calculate how long ago a date was
+  
+  // Get time ago helper
   const getTimeAgo = (dateString) => {
     if (!dateString) return '';
     
     try {
       const date = new Date(dateString);
       const now = new Date();
-      const diffInMs = now - date;
+      const diffInMonths = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
       
-      // Get difference in days, months, years
-      const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-      const diffInMonths = Math.floor(diffInDays / 30);
-      const diffInYears = Math.floor(diffInDays / 365);
-      
-      // Current language
-      const isBulgarian = localStorage.getItem('language') === 'bg';
-      
-      let timeText = '';
-      
-      if (diffInYears > 0) {
-        timeText = isBulgarian 
-          ? `${diffInYears} ${diffInYears === 1 ? 'година' : diffInYears < 5 ? 'години' : 'години'}`
-          : `${diffInYears} ${diffInYears === 1 ? 'year' : 'years'}`;
-      } else if (diffInMonths > 0) {
-        timeText = isBulgarian 
-          ? `${diffInMonths} ${diffInMonths === 1 ? 'месец' : diffInMonths < 5 ? 'месеца' : 'месеца'}`
-          : `${diffInMonths} ${diffInMonths === 1 ? 'month' : 'months'}`;
+      if (diffInMonths < 1) {
+        return t('profile.memberSince') + ' ' + t('common.thisMonth') || 'Member since this month';
+      } else if (diffInMonths === 1) {
+        return t('profile.memberSince') + ' 1 ' + t('common.monthAgo') || 'Member since 1 month ago';
       } else {
-        timeText = isBulgarian 
-          ? `${diffInDays} ${diffInDays === 1 ? 'ден' : 'дни'}`
-          : `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'}`;
+        return t('profile.memberSince') + ' ' + diffInMonths + ' ' + t('common.monthsAgo') || `Member since ${diffInMonths} months ago`;
       }
-      
-      // Add prefix
-      return isBulgarian ? `Преди ${timeText}` : `${timeText} ago`;
-    } catch (e) {
-      console.error('Error calculating time ago:', e);
+    } catch (error) {
+      console.error('Error calculating time ago:', error);
       return '';
     }
   };
-
+  
+  if (loading) {
+    return (
+      <div className="p-4 md:p-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-6"></div>
+          <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded mb-6"></div>
+          <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded mb-6"></div>
+          <div className="h-48 bg-gray-200 dark:bg-gray-700 rounded mb-6"></div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="p-4 md:p-8">
+        <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-4 md:p-6 rounded-xl mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center">
+              <HiExclamationCircle className="w-5 h-5 md:w-6 md:h-6 mr-2 flex-shrink-0" />
+              <p className="text-sm md:text-base">{error}</p>
+            </div>
+            <button 
+              onClick={onRetry}
+              className="bg-red-100 hover:bg-red-200 dark:bg-red-800/30 dark:hover:bg-red-700/30 text-red-800 dark:text-red-300 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center md:justify-start"
+            >
+              <HiRefresh className="w-4 h-4 mr-2" />
+              {t('common.retry') || 'Retry'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-4 md:mb-6">
-          {t('profile.userProfile') || 'User Profile'}
-        </h2>
-        
-        {/* User Info Cards - Responsive Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+    <div className="p-4 md:p-8">
+      <div className="space-y-6 md:space-y-8">
+        {/* User Information - Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-800/30 shadow rounded-xl p-4 md:p-6 flex items-start hover:shadow-md transition">
             <div className="bg-blue-100 dark:bg-blue-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4 flex-shrink-0">
               <HiUser className="w-6 h-6 md:w-8 md:h-8 text-blue-600 dark:text-blue-300" />
@@ -340,40 +278,16 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
           </div>
         </div>
         
-        {/* Placeholder for Future Features - Collapsible on mobile */}
+        {/* Order History Section */}
         <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-700 dark:to-blue-900/20 shadow rounded-xl hover:shadow-md transition">
           <div className="p-4 md:p-6">
             <div className="flex justify-between items-center mb-2 md:mb-4">
               <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white">
-                {t('profile.comingSoon') || 'Coming Soon'}
+                {t('profile.orderHistory') || 'Order History'}
               </h3>
-              
-              {/* Mobile Toggle Button */}
-              <button 
-                onClick={toggleFeatures} 
-                className="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
-                aria-expanded={isFeaturesExpanded}
-                aria-label={isFeaturesExpanded ? t('responsive.collapse') : t('responsive.expand')}
-              >
-                {isFeaturesExpanded ? (
-                  <HiChevronUp className="w-5 h-5" />
-                ) : (
-                  <HiChevronDown className="w-5 h-5" />
-                )}
-              </button>
             </div>
             
-            {/* Mobile Collapsible Content */}
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isFeaturesExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 md:max-h-none md:opacity-100'}`}>
-              <div className="text-center py-4 md:py-8">
-                <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 md:p-8 inline-block">
-                  <HiClock className="w-12 h-12 md:w-16 md:h-16 text-gray-400 dark:text-gray-500 mx-auto" />
-                  <p className="mt-3 md:mt-4 text-sm md:text-base text-gray-600 dark:text-gray-300">
-                    {t('profile.moreFeaturesSoon') || 'More features coming soon!'}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <OrderHistory />
           </div>
         </div>
         

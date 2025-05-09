@@ -15,11 +15,11 @@ import { uploadProfilePicture } from '../api/adminDashboard';
 import { useLanguage } from '../contexts/LanguageContext';
 import RoleUpdateModal from './admin/RoleUpdateModal';
 import ManagerRoleUpdateModal from './admin/ManagerRoleUpdateModal';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = true, showTitle = false }) => {
     const { t } = useLanguage();
-    const { user } = useAuth();
+    const { userData } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [accountTypeFilter, setAccountTypeFilter] = useState('all');
     const [currentPage, setCurrentPage] = useState(1);
@@ -369,7 +369,7 @@ export const AccountsTable = ({ accounts = [], onEdit, onDelete, showSearch = tr
     // Function to handle role update button click
     const handleRoleUpdateClick = (account) => {
         // If the user is a manager, show the manager role update modal instead
-        if (user?.userData?.accountType === 'ROLE_MANAGER') {
+        if (userData?.accountType === 'ROLE_MANAGER') {
             setAccountToUpdateRoleByManager(account);
             setShowManagerRoleUpdateModal(true);
         } else {

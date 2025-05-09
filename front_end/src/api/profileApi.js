@@ -359,6 +359,35 @@ export const profileApi = {
     }
   },
 
+  // Get user orders directly
+  getUserOrders: async (page = 0, size = 10) => {
+    try {
+      // Try to get accountId from various sources
+      let accountId = localStorage.getItem('accountId');
+      if (!accountId) {
+        accountId = localStorage.getItem('userId');
+      }
+      
+      if (!accountId) {
+        console.error('No accountId or userId found or retrievable');
+        throw new Error('User ID not found');
+      }
+      
+      console.log(`Fetching orders for user ${accountId}, page: ${page}, size: ${size}`);
+      
+      // Call the backend API endpoint to get orders for this account
+      const response = await axiosInstance.get(`/accounts/${accountId}/orders`, {
+        params: { page, size }
+      });
+      
+      console.log('Orders response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user orders:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch your orders');
+    }
+  },
+
   // Get user favorites count
   getUserFavoritesCount: async () => {
     try {

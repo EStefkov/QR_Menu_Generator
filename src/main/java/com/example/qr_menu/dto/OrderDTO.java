@@ -17,6 +17,7 @@ public class OrderDTO {
     private Long id;
     private Long accountId;
     private Long restorantId;
+    private String restorantName;
     private Order.OrderStatus orderStatus;
     private List<ProductOrderDTO> products;
     private Date orderTime;

@@ -140,6 +140,32 @@ const translations = {
   "order_details": "Детайли на поръчката",
   "order_empty": "Няма намерени поръчки",
   
+  // Orders
+  "orders.order": "Поръчка",
+  "orders.orders": "Поръчки",
+  "orders.noOrders": "Няма намерени поръчки",
+  "orders.fetchError": "Проблем при зареждане на историята на поръчките",
+  "orders.restaurant": "Ресторант",
+  "orders.unknownRestaurant": "Неизвестен ресторант",
+  "orders.total": "Обща сума",
+  "orders.items": "Продукти",
+  "orders.orderItems": "Продукти в поръчката",
+  "orders.orderInfo": "Информация за поръчката",
+  "orders.restaurantInfo": "Информация за ресторанта",
+  "orders.restaurantId": "ИД на ресторанта",
+  "orders.item": "Продукт",
+  "orders.quantity": "Количество",
+  "orders.price": "Цена",
+  "orders.subtotal": "Междинна сума",
+  "orders.status": "Статус",
+  "orders.statusDate": "Дата на статуса",
+  "orders.id": "ИД",
+  "orders.date": "Дата",
+  "orders.customer": "Клиент",
+  "orders.product": "Продукт",
+  "orders.restaurant": "Ресторант",
+  "orders.restorantName": "Име на ресторанта",
+  
   // Admin dashboard
   "admin.ordersHistory": "История на поръчките",
   
@@ -208,6 +234,7 @@ const translations = {
   "common.email": "Имейл",
   "common.notProvided": "Не е предоставено",
   "common.of": "от",
+  "common.loadMore": "Зареди още",
   
   // Pagination
   "pagination.showing": "Показване на",
@@ -246,8 +273,8 @@ const translations = {
   "profile.activitySummary": "Обобщение на активността",
   "profile.totalOrders": "Общо поръчки",
   "profile.favoriteProducts": "Любими продукти",
-  "profile.comingSoon": "Очаквайте скоро",
-  "profile.moreFeaturesSoon": "Повече функции очаквайте скоро!",
+  "profile.orderHistory": "История на поръчките",
+  
   "profile.personalInfo": "Лична информация",
   "profile.changePicture": "Смяна на снимка",
   "profile.pictureRequirements": "JPG, PNG или GIF (макс. 2MB)",
@@ -296,7 +323,6 @@ const translations = {
   "admin.revenue": "Приходи",
   "admin.avgOrder": "Средна поръчка",
   "admin.actions": "Действия",
-  "admin.orderCount": "Поръчки",
   "admin.viewMenus": "Преглед на менюта",
   "admin.viewDetails": "Преглед",
   "admin.manageMenus": "Управление на менюта",

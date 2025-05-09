@@ -17,4 +17,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Count orders by account ID
     @Query("SELECT COUNT(o) FROM Order o WHERE o.account.id = :accountId")
     long countByAccountId(@Param("accountId") Long accountId);
+    
+    // Find orders by account ID with pagination
+    @Query("SELECT o FROM Order o WHERE o.account.id = :accountId")
+    Page<Order> findByAccountId(@Param("accountId") Long accountId, Pageable pageable);
 }

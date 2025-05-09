@@ -103,6 +103,7 @@ public class OrderService {
                 .id(order.getId())
                 .accountId(order.getAccount().getId())
                 .restorantId(order.getRestorant().getId())
+                .restorantName(order.getRestorant().getRestorantName())
                 .orderStatus(order.getOrderStatus())
                 .orderTime(order.getOrderTime())
                 .totalPrice(order.getTotalPrice()) // Now Double instead of Long
