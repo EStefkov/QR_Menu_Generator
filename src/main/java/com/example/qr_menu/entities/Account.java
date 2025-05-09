@@ -82,7 +82,7 @@ public class Account {
 
     // Helper methods for managers
     public List<Restorant> getManagedRestaurants() {
-        if (accountType != AccountType.ROLE_MANAGER) {
+        if (accountType != AccountType.ROLE_MANAGER && accountType != AccountType.ROLE_COMANAGER) {
             return List.of();
         }
         return managedRestaurants.stream()

@@ -56,7 +56,7 @@ public class RestaurantController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER', 'MANAGER', 'COMANAGER')")
     public ResponseEntity<RestaurantDTO> getRestaurantById(@PathVariable Long id) {
         RestaurantDTO restaurantDTO = restaurantService.getRestaurantById(id);
         return ResponseEntity.ok(restaurantDTO);
@@ -101,7 +101,7 @@ public class RestaurantController {
      * @return List of restaurants managed by the user
      */
     @GetMapping("/managed")
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'COMANAGER')")
     public ResponseEntity<List<RestaurantDTO>> getManagedRestaurants(
             @RequestHeader("Authorization") String token) {
         System.out.println("Getting restaurants managed by user from token");

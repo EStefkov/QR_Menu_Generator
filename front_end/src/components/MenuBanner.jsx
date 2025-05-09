@@ -1,6 +1,7 @@
 // MenuBanner.jsx
 import React, { useState, useEffect } from 'react';
 import { getFullImageUrl } from "../api/adminDashboard";
+import { useAuth } from "../contexts/AuthContext";
 
 const MenuBanner = ({ bannerImage, menuName, onBannerUpload, onDefaultProductImageUpload, isAdmin, menuId, initialTextColor = 'text-white' }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,6 +11,10 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, onDefaultProductIma
   const [textColor, setTextColor] = useState(initialTextColor?.replace(/['"]/g, '') || 'text-white');
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(menuName?.replace(/['"]/g, ''));
+  const { userData } = useAuth();
+
+  // Check if user is admin, manager, or co-manager
+  const canEdit = isAdmin || userData?.accountType === 'ROLE_COMANAGER';
 
   useEffect(() => {
     setEditedName(menuName?.replace(/['"]/g, ''));
@@ -177,7 +182,7 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, onDefaultProductIma
 
         {/* Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {isEditingName && isAdmin ? (
+          {isEditingName && canEdit ? (
             <div className="relative">
               <input
                 type="text"
@@ -198,7 +203,7 @@ const MenuBanner = ({ bannerImage, menuName, onBannerUpload, onDefaultProductIma
               <h1 className={`text-4xl font-bold ${textColor} drop-shadow-lg z-10`}>
                 {editedName}
               </h1>
-              {isAdmin && (
+              {canEdit && (
                 <button
                   onClick={() => setIsEditingName(true)}
                   className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"

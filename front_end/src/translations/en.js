@@ -176,6 +176,7 @@ const translations = {
   
   // Nav sections  
   "nav.managerDashboard": "Manager Dashboard",
+  "nav.coManagerDashboard": "Co-Manager Dashboard",
   "nav.editMenus": "Edit Menus",
   
   // Roles
@@ -620,6 +621,15 @@ const translations = {
   "manager.status": "Status",
   "manager.isCoManager": "Is Co-Manager",
   "manager.notCoManager": "Not Co-Manager",
+  
+  // Co-Manager Dashboard
+  "comanager.dashboard": "Co-Manager Dashboard",
+  "comanager.welcomeMessage": "Welcome to your co-manager dashboard. Manage restaurants you have been assigned to.",
+  "comanager.assignedRestaurants": "Assigned Restaurants",
+  "comanager.noRestaurantsAssigned": "You are not assigned to any restaurants yet.",
+  "comanager.selectRestaurant": "Select a restaurant to view details",
+  "comanager.manageMenus": "Manage Menus",
+  "common.backToCoManagerDashboard": "Back to Co-Manager Dashboard",
   
   // Common elements
   "common.address": "Address",

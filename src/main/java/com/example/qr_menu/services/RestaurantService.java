@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Service
 public class RestaurantService {
@@ -202,13 +203,17 @@ public class RestaurantService {
         Account account = accountRepository.findByAccountNameOrMailAddress(null, email)
                 .orElseThrow(() -> new ResourceNotFoundException("Account not found with email: " + email));
         
-        // Check if the account is a manager
-        if (account.getAccountType() != Account.AccountType.ROLE_MANAGER) {
-            throw new IllegalArgumentException("Only managers can access managed restaurants");
+        // Check if the account is a manager or co-manager
+        if (account.getAccountType() != Account.AccountType.ROLE_MANAGER && 
+            account.getAccountType() != Account.AccountType.ROLE_COMANAGER) {
+            throw new IllegalArgumentException("Only managers and co-managers can access managed restaurants");
         }
         
-        // Get the restaurants created by this account
-        List<Restorant> createdRestaurants = restaurantRepository.findByAccount(account);
+        // Get the restaurants created by this account (only for ROLE_MANAGER)
+        List<Restorant> createdRestaurants = new ArrayList<>();
+        if (account.getAccountType() == Account.AccountType.ROLE_MANAGER) {
+            createdRestaurants = restaurantRepository.findByAccount(account);
+        }
         
         // Get the restaurants managed by this account through ManagerAssignment
         List<Restorant> assignedRestaurants = account.getManagedRestaurants();

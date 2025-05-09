@@ -87,13 +87,75 @@ public class ManagerAssignmentService {
         Account manager = accountRepository.findById(managerId)
                 .orElseThrow(() -> new ResourceNotFoundException("Manager not found with id: " + managerId));
         
-        if (manager.getAccountType() != Account.AccountType.ROLE_MANAGER) {
-            throw new AccessDeniedException("Account must have ROLE_MANAGER to access managed restaurants");
+        if (manager.getAccountType() != Account.AccountType.ROLE_MANAGER && 
+            manager.getAccountType() != Account.AccountType.ROLE_COMANAGER) {
+            throw new AccessDeniedException("Account must have ROLE_MANAGER or ROLE_COMANAGER to access managed restaurants");
         }
         
         return managerAssignmentRepository.findByManagerIdWithRestorant(managerId).stream()
                 .map(ManagerAssignment::getRestorant)
                 .collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
+    public List<ManagerAssignment> getAssignmentsByManager(Account manager) {
+        // This works for both ROLE_MANAGER and ROLE_COMANAGER accounts
+        if (manager.getAccountType() != Account.AccountType.ROLE_MANAGER &&
+            manager.getAccountType() != Account.AccountType.ROLE_COMANAGER) {
+            throw new AccessDeniedException("Account must have ROLE_MANAGER or ROLE_COMANAGER to access managed restaurants");
+        }
+        
+        // Use the repository method to find assignments by manager with eagerly fetched restaurants
+        return managerAssignmentRepository.findByManagerWithRestorant(manager);
+    }
+    
+    @Transactional(readOnly = true)
+    public List<ManagerAssignment> getAssignmentsByManagerId(Long managerId) {
+        // Add debugging to check if the method is called and with what parameters
+        System.out.println("getAssignmentsByManagerId called with managerId: " + managerId);
+        
+        // Debug: Count all assignments in the system
+        long totalAssignments = managerAssignmentRepository.count();
+        System.out.println("Total manager assignments in the system: " + totalAssignments);
+        
+        // Check if the account exists
+        boolean accountExists = accountRepository.existsById(managerId);
+        if (!accountExists) {
+            System.out.println("Account with ID " + managerId + " does not exist");
+            throw new ResourceNotFoundException("Account not found with id: " + managerId);
+        }
+        
+        // Check account type (for debugging only)
+        accountRepository.findById(managerId).ifPresent(account -> {
+            System.out.println("Account found with ID " + managerId + ", type: " + account.getAccountType());
+            
+            // Debug: Print all assignments for this manager
+            if (account.getAccountType() == Account.AccountType.ROLE_COMANAGER) {
+                System.out.println("Co-Manager found, dumping all assignments:");
+                List<ManagerAssignment> allAssignments = managerAssignmentRepository.findAll();
+                allAssignments.forEach(assignment -> {
+                    System.out.println("Assignment ID: " + assignment.getId() + 
+                                     ", Manager ID: " + assignment.getManager().getId() + 
+                                     ", Manager type: " + assignment.getManager().getAccountType() + 
+                                     ", Restaurant ID: " + assignment.getRestorant().getId());
+                });
+            }
+        });
+        
+        // This is a more direct approach that doesn't check the account type
+        // It just retrieves all assignments for the given manager ID
+        List<ManagerAssignment> assignments = managerAssignmentRepository.findByManagerIdWithRestorant(managerId);
+        System.out.println("Found " + assignments.size() + " assignments for manager ID: " + managerId);
+        
+        if (assignments.isEmpty()) {
+            System.out.println("No assignments found. Directly checking database...");
+            
+            // Debug: Direct SQL check (log only)
+            String sql = "SELECT * FROM manager_assignment WHERE manager_id = " + managerId;
+            System.out.println("SQL query that would be executed: " + sql);
+        }
+        
+        return assignments;
     }
     
     @Transactional(readOnly = true)

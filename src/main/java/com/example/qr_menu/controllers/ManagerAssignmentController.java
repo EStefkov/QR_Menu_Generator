@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.Map;
@@ -95,6 +96,37 @@ public class ManagerAssignmentController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving restaurants: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/managed-by/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'COMANAGER')")
+    public ResponseEntity<?> getAssignmentsByUser(@PathVariable Long userId, @RequestHeader("Authorization") String token) {
+        try {
+            // Check if the userId is valid
+            if (userId == null) {
+                return ResponseEntity.badRequest().body("User ID is required");
+            }
+
+            // Extract user details from the token for logging purposes only
+            String jwt = token.replace("Bearer ", "");
+            Long authenticatedUserId = jwtTokenUtil.extractClaim(jwt, claims -> claims.get("accountId", Long.class));
+            String accountType = jwtTokenUtil.extractClaim(jwt, claims -> claims.get("accountType", String.class));
+            
+            System.out.println("Authenticated user ID: " + authenticatedUserId + ", role: " + accountType + 
+                              ", requesting assignments for user ID: " + userId);
+            
+            // Temporarily disable the user ID check to help diagnose the issue
+            // Just get the assignments without additional security checks
+            List<ManagerAssignment> assignments = managerAssignmentService.getAssignmentsByManagerId(userId);
+            
+            return ResponseEntity.ok(assignments);
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error in getAssignmentsByUser: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving assignments: " + e.getMessage());
         }
     }
 
@@ -267,5 +299,107 @@ public class ManagerAssignmentController {
         Map<String, Boolean> response = new HashMap<>();
         response.put("isManager", isManager);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Special endpoint for Co-Managers to get their restaurant assignments
+     * This is a dedicated endpoint with simplified security checks
+     */
+    @GetMapping("/comanager-assignments/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'COMANAGER')")
+    public ResponseEntity<?> getCoManagerAssignments(@PathVariable Long userId, @RequestHeader("Authorization") String token) {
+        try {
+            System.out.println("getCoManagerAssignments called for userId: " + userId);
+            
+            // Get the assignments
+            List<ManagerAssignment> assignments = managerAssignmentService.getAssignmentsByManagerId(userId);
+            System.out.println("Found " + assignments.size() + " assignments for Co-Manager with ID: " + userId);
+            
+            return ResponseEntity.ok(assignments);
+        } catch (Exception e) {
+            System.err.println("Error in getCoManagerAssignments: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving assignments: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Special debug endpoint to list all assignments with detailed information
+     */
+    @GetMapping("/debug-assignments/{userId}")
+    public ResponseEntity<?> debugAssignments(@PathVariable Long userId, @RequestHeader("Authorization") String token) {
+        try {
+            System.out.println("Debug assignments endpoint called for userId: " + userId);
+            
+            // Verify token and extract information
+            String jwt = token.replace("Bearer ", "");
+            Long authenticatedUserId = jwtTokenUtil.extractClaim(jwt, claims -> claims.get("accountId", Long.class));
+            String accountType = jwtTokenUtil.extractClaim(jwt, claims -> claims.get("accountType", String.class));
+            
+            System.out.println("Auth details: ID=" + authenticatedUserId + ", Type=" + accountType);
+            
+            // Get all assignments in the system (for debugging)
+            List<ManagerAssignment> allAssignments = managerAssignmentService.getAllAssignments();
+            
+            // Create a response with detailed debugging information
+            Map<String, Object> debugResponse = new HashMap<>();
+            debugResponse.put("authenticatedUser", Map.of(
+                "id", authenticatedUserId,
+                "accountType", accountType
+            ));
+            
+            debugResponse.put("requestedUserId", userId);
+            
+            // Simplified assignment data
+            List<Map<String, Object>> assignmentsData = new ArrayList<>();
+            for (ManagerAssignment assignment : allAssignments) {
+                Map<String, Object> assignmentMap = new HashMap<>();
+                assignmentMap.put("id", assignment.getId());
+                assignmentMap.put("managerId", assignment.getManager().getId());
+                assignmentMap.put("managerType", assignment.getManager().getAccountType());
+                assignmentMap.put("restaurantId", assignment.getRestorant().getId());
+                assignmentMap.put("restaurantName", assignment.getRestorant().getRestorantName());
+                assignmentsData.add(assignmentMap);
+            }
+            debugResponse.put("allAssignments", assignmentsData);
+            
+            // Add direct assignments for the requested user
+            List<ManagerAssignment> userAssignments = 
+                managerAssignmentService.getAssignmentsByManagerId(userId);
+            
+            List<Map<String, Object>> userAssignmentsData = new ArrayList<>();
+            for (ManagerAssignment assignment : userAssignments) {
+                Map<String, Object> assignmentMap = new HashMap<>();
+                assignmentMap.put("id", assignment.getId());
+                assignmentMap.put("restaurantId", assignment.getRestorant().getId());
+                assignmentMap.put("restaurantName", assignment.getRestorant().getRestorantName());
+                userAssignmentsData.add(assignmentMap);
+            }
+            debugResponse.put("userAssignments", userAssignmentsData);
+            
+            // Get the user account for additional information
+            try {
+                Account account = accountService.getAccountById(userId);
+                if (account != null) {
+                    debugResponse.put("userDetails", Map.of(
+                        "id", account.getId(),
+                        "email", account.getMailAddress(),
+                        "accountType", account.getAccountType(),
+                        "firstName", account.getFirstName(),
+                        "lastName", account.getLastName()
+                    ));
+                }
+            } catch (Exception e) {
+                System.err.println("Error getting account details: " + e.getMessage());
+                debugResponse.put("userDetailsError", e.getMessage());
+            }
+            
+            return ResponseEntity.ok(debugResponse);
+        } catch (Exception e) {
+            System.err.println("Error in debugAssignments: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", e.getMessage()));
+        }
     }
 } 

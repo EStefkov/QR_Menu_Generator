@@ -30,6 +30,9 @@ public interface ManagerAssignmentRepository extends JpaRepository<ManagerAssign
     @Query("SELECT ma FROM ManagerAssignment ma JOIN FETCH ma.restorant WHERE ma.manager.id = :managerId")
     List<ManagerAssignment> findByManagerIdWithRestorant(@Param("managerId") Long managerId);
     
+    @Query("SELECT ma FROM ManagerAssignment ma JOIN FETCH ma.restorant WHERE ma.manager = :manager")
+    List<ManagerAssignment> findByManagerWithRestorant(@Param("manager") Account manager);
+    
     @Modifying
     @Query("DELETE FROM ManagerAssignment ma WHERE ma.manager.id = :managerId")
     void deleteByManagerId(@Param("managerId") Long managerId);

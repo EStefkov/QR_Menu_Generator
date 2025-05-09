@@ -1065,6 +1065,8 @@ const EditMenuPage = () => {
       navigate(backUrl);
     } else if (fromManager) {
       navigate('/manager/menus'); 
+    } else if (location.state?.fromCoManager) {
+      navigate('/comanager/menus');
     } else if (restaurantId) {
       navigate(`/admin/restaurants/${restaurantId}/menus`);
     } else {

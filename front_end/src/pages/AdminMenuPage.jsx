@@ -58,12 +58,12 @@ const AdminMenuPage = () => {
     }
   }, [menuId, token, navigate, saveRedirectUrl]);
   
-  // Add this new effect to check if user is a manager of this restaurant
+  // Add this new effect to check if user is a manager or co-manager of this restaurant
   useEffect(() => {
     const checkIfUserIsManager = async () => {
-      if (menuData.restaurantId && accountType === "ROLE_MANAGER" && token && userId) {
+      if (menuData.restaurantId && (accountType === "ROLE_MANAGER" || accountType === "ROLE_COMANAGER") && token && userId) {
         try {
-          // Check if current user is a manager of this restaurant
+          // Check if current user is a manager or co-manager of this restaurant
           const response = await fetch(
             `${import.meta.env.VITE_API_URL}/api/manager-assignments/check?managerId=${userId}&restaurantId=${menuData.restaurantId}`, 
             { 
@@ -341,7 +341,7 @@ const AdminMenuPage = () => {
         onBannerUpload={handleBannerUpload}
         onDefaultProductImageUpload={handleDefaultProductImageUpload}
         defaultProductImage={menuData.defaultProductImage}
-        isAdmin={token && (accountType === "ROLE_ADMIN" || (accountType === "ROLE_MANAGER" && isMenuManager))}
+        isAdmin={token && (accountType === "ROLE_ADMIN" || accountType === "ROLE_MANAGER" || accountType === "ROLE_COMANAGER")}
         menuId={menuId}
         initialTextColor={menuData.textColor}
       />

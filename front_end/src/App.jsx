@@ -28,6 +28,7 @@ import {
   import RestaurantMenus from './pages/Restaurants/RestaurantMenus';
   import { getStoredToken } from './api/account';
   import ManagerDashboard from "./pages/ManagerDashboard.jsx";
+  import CoManagerDashboard from "./pages/CoManagerDashboard.jsx";
   
   const Layout = ({ children }) => {
     const location = useLocation();
@@ -227,6 +228,44 @@ import {
               ) : (
                 <Navigate to="/" />
               )
+            }
+          />
+  
+          {/* Co-Manager Dashboard */}
+          <Route
+            path="/comanager"
+            element={
+              isAuthenticated && (accountType === "ROLE_COMANAGER" || localStorage.getItem("accountType") === "ROLE_COMANAGER") ? (
+                <Layout>
+                  <CoManagerDashboard />
+                </Layout>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+  
+          {/* Co-Manager Menus */}
+          <Route
+            path="/comanager/menus"
+            element={
+              <ProtectedRoute role="ROLE_COMANAGER">
+                <Layout>
+                  <RestaurantMenus />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+  
+          {/* Co-Manager Edit Menu */}
+          <Route
+            path="/comanager/menu/:menuId/edit"
+            element={
+              <ProtectedRoute role="ROLE_COMANAGER">
+                <Layout>
+                  <EditMenuPage />
+                </Layout>
+              </ProtectedRoute>
             }
           />
   

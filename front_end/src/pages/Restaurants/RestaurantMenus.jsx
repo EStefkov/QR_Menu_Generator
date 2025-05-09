@@ -244,10 +244,11 @@ const RestaurantMenus = () => {
     setError(null);
     
     try {
-      // Check if the user is a manager
+      // Check if the user is a manager or co-manager
       const token = localStorage.getItem('token');
       const accountType = localStorage.getItem('accountType');
       const isManager = accountType === 'ROLE_MANAGER';
+      const isCoManager = accountType === 'ROLE_COMANAGER';
       
       // If we have a specific restaurantId parameter, fetch that restaurant
       if (restaurantId) {
@@ -261,9 +262,9 @@ const RestaurantMenus = () => {
         setRestaurant(restaurantData);
         setMenus(menusData || []);
       } 
-      // If no specific restaurantId and user is a manager, fetch assigned restaurants
-      else if (isManager) {
-        // Fetch restaurants managed by this manager
+      // If no specific restaurantId and user is a manager or co-manager, fetch assigned restaurants
+      else if (isManager || isCoManager) {
+        // Fetch restaurants managed by this manager or co-manager
         const response = await axios.get(`${API_BASE_URL}/api/restaurants/managed`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -303,6 +304,7 @@ const RestaurantMenus = () => {
     // Get current user role
     const accountType = localStorage.getItem('accountType');
     const isManager = accountType === 'ROLE_MANAGER';
+    const isCoManager = accountType === 'ROLE_COMANAGER';
     
     // Use the restaurantId from URL params, not from the restaurant object
     const restaurantIdToUse = restaurantId || restaurant?.id;
@@ -316,6 +318,16 @@ const RestaurantMenus = () => {
           menuId: menuId,
           fromManager: true,
           returnPath: `/manager/menus`
+        }
+      });
+    } else if (isCoManager) {
+      navigate(`/comanager/menu/${menuId}/edit`, { 
+        state: { 
+          restaurantId: restaurantIdToUse,
+          restaurantName: restaurant?.restorantName || restaurant?.name,
+          menuId: menuId,
+          fromCoManager: true,
+          returnPath: `/comanager/menus`
         }
       });
     } else {
@@ -335,6 +347,7 @@ const RestaurantMenus = () => {
     // Get current user role
     const accountType = localStorage.getItem('accountType');
     const isManager = accountType === 'ROLE_MANAGER';
+    const isCoManager = accountType === 'ROLE_COMANAGER';
     
     // Use the restaurantId from URL params, not from the restaurant object
     const restaurantIdToUse = restaurantId || restaurant?.id;
@@ -347,6 +360,17 @@ const RestaurantMenus = () => {
           menuId: menuId,
           fromManager: true,
           returnPath: `/manager/menus`,
+          activeTab: 'categories' // Start on categories tab
+        }
+      });
+    } else if (isCoManager) {
+      navigate(`/comanager/menu/${menuId}/edit`, {
+        state: {
+          restaurantId: restaurantIdToUse,
+          restaurantName: restaurant?.restorantName || restaurant?.name,
+          menuId: menuId,
+          fromCoManager: true,
+          returnPath: `/comanager/menus`,
           activeTab: 'categories' // Start on categories tab
         }
       });
@@ -496,6 +520,15 @@ const RestaurantMenus = () => {
             >
               <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300 mr-1" />
               <span className="text-sm text-gray-700 dark:text-gray-300">{t('common.backToManagerDashboard') || t('backToManagerDashboard') || 'Back to Manager Dashboard'}</span>
+            </button>
+          ) : location.state?.fromCoManager ? (
+            <button
+              onClick={() => navigate('/comanager')}
+              className="mr-4 flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title={t('common.backToCoManagerDashboard') || t('backToCoManagerDashboard') || 'Back to Co-Manager Dashboard'}
+            >
+              <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300 mr-1" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{t('common.backToCoManagerDashboard') || t('backToCoManagerDashboard') || 'Back to Co-Manager Dashboard'}</span>
             </button>
           ) : (
             <button

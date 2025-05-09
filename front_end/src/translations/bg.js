@@ -15,6 +15,9 @@ const translations = {
   "nav_admin": "Администрация",
   "nav_about": "За нас",
   "nav_demo": "Демо",
+  "nav.managerDashboard": "Табло на Мениджъра",
+  "nav.coManagerDashboard": "Табло на Ко-Мениджъра",
+  "nav.editMenus": "Редактиране на Менюта",
   
   // Home page
   "home_hero_title_1": "Създайте красиви",
@@ -505,6 +508,15 @@ const translations = {
   "manager.isCoManager": "Е Ко-Мениджър",
   "manager.notCoManager": "Не е Ко-Мениджър",
   
+  // Co-Manager Dashboard
+  "comanager.dashboard": "Табло на ко-мениджъра",
+  "comanager.welcomeMessage": "Добре дошли във вашето табло за ко-управление на ресторанта. Управлявайте ресторантите, към които сте били присвоени.",
+  "comanager.assignedRestaurants": "Присвоени ресторанти",
+  "comanager.noRestaurantsAssigned": "Все още не сте присвоени към ресторанти.",
+  "comanager.selectRestaurant": "Изберете ресторант за преглед",
+  "comanager.manageMenus": "Управление на менюта",
+  "common.backToCoManagerDashboard": "Обратно към таблото на ко-мениджъра",
+  
   // Common elements
   "common.address": "Адрес",
   "common.phone": "Телефон",
@@ -519,7 +531,14 @@ const translations = {
   "common.creating": "Създаване...",
   "common.restaurantName": "Име на ресторанта",
   "common.hideEditPanel": "Скрий панела за редактиране",
-  "common.toggleEditPanel": "Покажи/скрий панела за редактиране"
+  "common.toggleEditPanel": "Покажи/скрий панела за редактиране",
+  
+  // Roles
+  "roles.user": "Потребител",
+  "roles.admin": "Администратор",
+  "roles.manager": "Мениджър",
+  "roles.waiter": "Сервитьор",
+  "roles.comanager": "Ко-Мениджър"
 };
 
 export default translations; 

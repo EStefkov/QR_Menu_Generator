@@ -60,7 +60,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/products/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        
+                        // Manager assignments endpoints - move most specific path first
+                        .requestMatchers(HttpMethod.GET, "/api/manager-assignments/managed-by/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER") 
+                        .requestMatchers(HttpMethod.GET, "/api/manager-assignments/comanager-assignments/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/manager-assignments/debug-assignments/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/manager-assignments/check").hasAnyRole("MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/manager-assignments/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER")
+                        
                         .requestMatchers(HttpMethod.POST, "/api/menus/{id}/default-product-image").hasAnyRole("ADMIN", "USER", "MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/menus/{id}/image").hasAnyRole("ADMIN", "USER", "MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/menus").hasAnyRole("ADMIN", "USER", "MANAGER")
