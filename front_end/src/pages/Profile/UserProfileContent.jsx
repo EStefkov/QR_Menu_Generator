@@ -131,13 +131,25 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
   
   // Get the email address from the correct field
   const getEmail = () => {
-    if (profileData && profileData.mailAddress) {
-      return profileData.mailAddress;
+    // First try to get from profileData
+    if (profileData) {
+      if (profileData.mailAddress) {
+        return profileData.mailAddress;
+      }
+      if (profileData.email) {
+        return profileData.email;
+      }
     }
     
+    // Then try to get from localStorage
     const storedEmail = localStorage.getItem('mailAddress');
     if (storedEmail) {
       return storedEmail;
+    }
+    
+    // Finally, try to get from userData
+    if (userData && userData.mailAddress) {
+      return userData.mailAddress;
     }
     
     return t('profile.notProvided') || 'Not provided';

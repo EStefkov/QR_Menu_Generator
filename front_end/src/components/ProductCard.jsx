@@ -143,22 +143,16 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
             } else if (categoryDetails.menu && categoryDetails.menu.restorant) {
               restaurantId = categoryDetails.menu.restorant.id;
               console.log("Found restaurant ID from category.menu.restorant:", restaurantId);
-            } else if (categoryDetails.menuId) {
-              // If we have menuId but no direct restaurant access
-              console.log("Menu ID from category:", categoryDetails.menuId);
-              // We would need to fetch the menu to get the restaurant ID
             }
           }
         } catch (categoryError) {
           console.error("Error fetching category details:", categoryError.message);
-          // Fallback for category fetch errors - continue with default
         }
       }
       
       // Fallback if we still don't have a restaurant ID
       if (!restaurantId) {
         console.warn("Could not determine restaurant ID, using default restaurant ID 1");
-        // Based on your logs, restaurant ID 1 seems to be correct
         restaurantId = 1;
       }
       
@@ -179,7 +173,13 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
       
       console.log("Adding to cart with restaurant ID:", restaurantId);
       // Add to cart context with explicit quantity of 1
-      addToCart(cartItem, 1);
+      const result = await addToCart(cartItem, 1);
+      
+      if (!result.success) {
+        setAlertMessage(result.error || 'Failed to add to cart');
+        setShowLoginAlert(true);
+        return;
+      }
       
       // Show visual feedback
       setAddedToCart(true);

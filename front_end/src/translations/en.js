@@ -286,6 +286,7 @@ const translations = {
   "profile.userRole": "Customer",
   "profile.userProfile": "User Profile",
   "profile.name": "Name",
+  "profile.email": "Email",
   "profile.phone": "Phone",
   "profile.memberSince": "Member Since",
   "profile.notProvided": "Not provided",

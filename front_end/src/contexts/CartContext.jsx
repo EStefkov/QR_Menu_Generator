@@ -42,6 +42,21 @@ export const CartProvider = ({ children }) => {
       // Ensure quantity is a number and at least 1
       const safeQuantity = Math.max(1, parseInt(quantity) || 1);
       
+      // Get the restaurant ID from the product
+      const productRestaurantId = product.restaurantId || product.restorantId;
+      
+      // Check if cart is empty or if the product is from the same restaurant
+      if (cartItems.length > 0) {
+        const firstItemRestaurantId = cartItems[0].restaurantId || cartItems[0].restorantId;
+        
+        if (productRestaurantId !== firstItemRestaurantId) {
+          return { 
+            success: false, 
+            error: "You can only order from one restaurant at a time. Please clear your cart first." 
+          };
+        }
+      }
+      
       if (isAuthenticated) {
         // If user is authenticated, use the API
         const result = await cartApi.addToCart(product.id, safeQuantity);
@@ -67,7 +82,7 @@ export const CartProvider = ({ children }) => {
               image: product.productImage || product.image,
               categoryId: product.categoryId,
               categoryName: product.categoryName || '',
-              restaurantId: product.restaurantId // Preserve restaurant ID
+              restaurantId: productRestaurantId // Preserve restaurant ID
             }];
           }
         });
@@ -78,7 +93,7 @@ export const CartProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       console.error("Failed to add to cart", error);
-      return { success: false, error };
+      return { success: false, error: error.message || "Failed to add to cart" };
     } finally {
       setIsLoading(false);
     }
