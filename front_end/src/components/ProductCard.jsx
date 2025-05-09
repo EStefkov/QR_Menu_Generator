@@ -3,8 +3,9 @@ import React, { useState, useEffect } from "react";
 import { getFullImageUrl, getCategoryDetails } from "../api/adminDashboard";
 import { HiHeart, HiShoppingCart, HiOutlineHeart, HiUser, HiInformationCircle, HiCheckCircle } from 'react-icons/hi';
 import { useAuth } from '../contexts/AuthContext';
-import { favoritesApi } from '../api/favoritesProducts';
-import { useCart } from '../contexts/CartContext';
+import { favoritesApi } from "../api/favoritesProducts";
+import { useCart } from "../contexts/CartContext";
+import axiosInstance from "../api/axiosInstance";
 
 const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onFavoriteUpdate, isFavorite: initialIsFavorite }) => {
   const { userData } = useAuth();
@@ -112,6 +113,23 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
       // Try to get restaurant ID from different sources
       let restaurantId = product.restaurantId || product.restorantId;
       
+      // If we're in favorites view and don't have restaurant ID, fetch product details
+      if (!restaurantId && product.menuName) {
+        console.log("Fetching product details for favorite item:", product.id);
+        try {
+          const response = await axiosInstance.get(`/api/products/${product.id}`);
+          if (response.data) {
+            const productDetails = response.data;
+            restaurantId = productDetails.restaurantId || productDetails.restorantId;
+            if (restaurantId) {
+              console.log("Found restaurant ID from product details:", restaurantId);
+            }
+          }
+        } catch (productError) {
+          console.error("Error fetching product details:", productError.message);
+        }
+      }
+      
       // If restaurant ID is not directly available from product, try from category.menu.restorant
       if (!restaurantId && product.category && product.category.menu && product.category.menu.restorant) {
         restaurantId = product.category.menu.restorant.id;
@@ -147,6 +165,20 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
           }
         } catch (categoryError) {
           console.error("Error fetching category details:", categoryError.message);
+        }
+      }
+      
+      // If we still don't have a restaurant ID, try to get it from the menu name
+      if (!restaurantId && product.menuName) {
+        console.log("Attempting to get restaurant ID from menu name:", product.menuName);
+        try {
+          const response = await axiosInstance.get(`/api/menus/by-name/${encodeURIComponent(product.menuName)}`);
+          if (response.data && response.data.restorant) {
+            restaurantId = response.data.restorant.id;
+            console.log("Found restaurant ID from menu name:", restaurantId);
+          }
+        } catch (menuError) {
+          console.error("Error fetching menu by name:", menuError.message);
         }
       }
       
