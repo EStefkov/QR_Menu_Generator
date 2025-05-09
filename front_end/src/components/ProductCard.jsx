@@ -208,7 +208,11 @@ const ProductCard = ({ product, onSelectProduct, onEditProduct, accountType, onF
       const result = await addToCart(cartItem, 1);
       
       if (!result.success) {
-        setAlertMessage(result.error || 'Failed to add to cart');
+        if (result.error && result.error.includes('different restaurant')) {
+          setAlertMessage('You can only order from one restaurant at a time. Please complete or clear your current order first.');
+        } else {
+          setAlertMessage(result.error || 'Failed to add to cart');
+        }
         setShowLoginAlert(true);
         return;
       }

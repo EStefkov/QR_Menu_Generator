@@ -52,7 +52,7 @@ export const CartProvider = ({ children }) => {
         if (productRestaurantId !== firstItemRestaurantId) {
           return { 
             success: false, 
-            error: "You can only order from one restaurant at a time. Please clear your cart first." 
+            error: "You can only order from one restaurant at a time. Please complete or clear your current order before adding items from a different restaurant." 
           };
         }
       }

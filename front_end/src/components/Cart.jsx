@@ -1,11 +1,13 @@
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { HiOutlineTrash, HiOutlineMinus, HiOutlinePlus, HiOutlineShoppingCart, HiOutlineChevronLeft } from 'react-icons/hi';
+import { HiOutlineTrash, HiOutlineMinus, HiOutlinePlus, HiOutlineShoppingCart, HiOutlineChevronLeft, HiX } from 'react-icons/hi';
 import { CartContext } from '../contexts/CartContext';
+import { useTranslation } from 'react-i18next';
 
 function Cart() {
-  const { cartItems, removeFromCart, updateCartItemQuantity, clearCart, cartTotal } = useContext(CartContext);
+  const { cartItems, removeFromCart, updateCartItemQuantity, clearCart, cartTotal, toggleCart } = useContext(CartContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   if (!cartItems) {
     return (
@@ -52,14 +54,21 @@ function Cart() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black p-4 sm:p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center mb-6 sm:mb-8">
-          <button 
-            onClick={() => navigate('/')}
-            className="mr-3 sm:mr-4 flex items-center text-blue-400 hover:text-blue-300 transition-colors"
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+            {t('cart.title') || 'Your Cart'}
+          </h2>
+          {cartItems.length > 0 && (
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              {t('cart.currentRestaurant') || 'Ordering from:'} {cartItems[0].restaurantName || 'Restaurant'}
+            </div>
+          )}
+          <button
+            onClick={toggleCart}
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
-            <HiOutlineChevronLeft className="h-4 w-4 sm:h-5 sm:w-5 mr-1" /> Back
+            <HiX className="w-6 h-6" />
           </button>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">Shopping Cart</h1>
         </div>
         
         <div className="mb-6 sm:mb-8 bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-sm rounded-xl sm:rounded-2xl overflow-hidden border border-gray-700 shadow-xl">
