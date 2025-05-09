@@ -192,53 +192,58 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
         </h2>
         
         {/* User Info Cards - Responsive Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-800/30 shadow rounded-xl p-4 md:p-5 flex items-center hover:shadow-md transition">
-            <div className="bg-blue-100 dark:bg-blue-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-800/30 shadow rounded-xl p-4 md:p-6 flex items-start hover:shadow-md transition">
+            <div className="bg-blue-100 dark:bg-blue-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4 flex-shrink-0">
               <HiUser className="w-6 h-6 md:w-8 md:h-8 text-blue-600 dark:text-blue-300" />
             </div>
-            <div>
-              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.name') || 'Name'}</p>
-              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[120px] md:max-w-full">
-                {profileData.firstName || ''} {profileData.lastName || ''}
-              </p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">{t('profile.name') || 'Name'}</p>
+              <div className="flex flex-col">
+                <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white break-words">
+                  {profileData.firstName || ''}
+                </p>
+                <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white break-words">
+                  {profileData.lastName || ''}
+                </p>
+              </div>
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 shadow rounded-xl p-4 md:p-5 flex items-center hover:shadow-md transition">
-            <div className="bg-green-100 dark:bg-green-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4">
+          <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 shadow rounded-xl p-4 md:p-6 flex items-start hover:shadow-md transition">
+            <div className="bg-green-100 dark:bg-green-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4 flex-shrink-0">
               <HiMail className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-300" />
             </div>
-            <div>
-              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.email') || 'Email'}</p>
-              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[120px] md:max-w-[180px]">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">{t('profile.email') || 'Email'}</p>
+              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white break-words">
                 {getEmail()}
               </p>
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-800/30 shadow rounded-xl p-4 md:p-5 flex items-center hover:shadow-md transition">
-            <div className="bg-purple-100 dark:bg-purple-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4">
+          <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-800/30 shadow rounded-xl p-4 md:p-6 flex items-start hover:shadow-md transition">
+            <div className="bg-purple-100 dark:bg-purple-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4 flex-shrink-0">
               <HiPhone className="w-6 h-6 md:w-8 md:h-8 text-purple-600 dark:text-purple-300" />
             </div>
-            <div>
-              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.phone') || 'Phone'}</p>
-              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[120px] md:max-w-full">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">{t('profile.phone') || 'Phone'}</p>
+              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white break-words">
                 {profileData.phone || t('profile.notProvided') || 'Not provided'}
               </p>
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-800/30 shadow rounded-xl p-4 md:p-5 flex items-center hover:shadow-md transition">
-            <div className="bg-amber-100 dark:bg-amber-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4">
+          <div className="bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-800/30 shadow rounded-xl p-4 md:p-6 flex items-start hover:shadow-md transition">
+            <div className="bg-amber-100 dark:bg-amber-900 p-2 md:p-3 rounded-lg mr-3 md:mr-4 flex-shrink-0">
               <HiCalendar className="w-6 h-6 md:w-8 md:h-8 text-amber-600 dark:text-amber-300" />
             </div>
-            <div>
-              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.memberSince') || 'Member Since'}</p>
-              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white truncate max-w-[120px] md:max-w-full">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">{t('profile.memberSince') || 'Member Since'}</p>
+              <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white break-words">
                 {formatDate(profileData.createdAt)}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {getTimeAgo(profileData.createdAt)}
               </p>
             </div>
@@ -279,22 +284,6 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
                   {t('common.retry') || 'Retry'}
                 </button>
               </div>
-            </div>
-          )}
-          
-          {/* If no stats loaded yet but no error, show a big refresh button */}
-          {!statsError && orderCount === 0 && favoritesCount === 0 && !statsLoading && (
-            <div className="text-center py-4 md:py-6 mb-2 md:mb-4">
-              <p className="text-gray-500 dark:text-gray-400 text-sm mb-3 md:mb-4">
-                {t('profile.noActivityData') || 'No activity data available yet'}
-              </p>
-              <button 
-                onClick={fetchUserStats}
-                className="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white font-medium py-1.5 px-3 md:py-2 md:px-4 rounded-lg transition text-sm"
-              >
-                <HiRefresh className="w-4 h-4 md:w-5 md:h-5 mr-1.5 md:mr-2" />
-                {t('common.loadData') || 'Load Data'}
-              </button>
             </div>
           )}
           

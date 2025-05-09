@@ -14,7 +14,6 @@ function OrderReview() {
     name: '',
     email: '',
     phone: '',
-    tableNumber: '',
     specialRequests: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -303,21 +302,6 @@ function OrderReview() {
                         <div className="mt-1 block w-full py-2 px-3 bg-gray-700 rounded-md text-gray-200 text-sm">
                           {userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : 'Not provided'}
                         </div>
-                      </div>
-
-                      <div className="col-span-6 sm:col-span-3">
-                        <label htmlFor="tableNumber" className="block text-sm font-medium text-gray-300">
-                          Table number
-                        </label>
-                        <input
-                          type="text"
-                          name="tableNumber"
-                          id="tableNumber"
-                          value={customerInfo.tableNumber}
-                          onChange={handleInputChange}
-                          className="mt-1 block w-full border border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          placeholder="Enter your table number"
-                        />
                       </div>
 
                       <div className="col-span-6">

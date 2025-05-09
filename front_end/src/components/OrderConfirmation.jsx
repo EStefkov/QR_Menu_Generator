@@ -45,7 +45,8 @@ function OrderConfirmation() {
           })),
           customerInfo: {
             name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-            tableNumber: 'N/A' // Would need to be stored in order
+            email: userData.email || '',
+            phone: userData.phone || ''
           }
         };
         
@@ -238,9 +239,6 @@ function OrderConfirmation() {
                         {order.customerInfo.email}<br />
                         {order.customerInfo.phone && (
                           <>{order.customerInfo.phone}<br /></>
-                        )}
-                        {order.customerInfo.tableNumber && (
-                          <>Table: {order.customerInfo.tableNumber}<br /></>
                         )}
                       </address>
                     </dd>

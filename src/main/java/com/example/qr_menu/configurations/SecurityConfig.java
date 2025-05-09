@@ -76,9 +76,9 @@ public class SecurityConfig {
                         
                         // Account management endpoints
                         .requestMatchers("/api/accounts/validate").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/accounts/{id}").hasAnyRole("ADMIN", "USER", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/api/accounts/uploadProfilePicture/**").hasAnyRole("ADMIN", "USER", "MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/api/accounts/update/**").hasAnyRole("ADMIN", "USER", "MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/accounts/{id}").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/accounts/uploadProfilePicture/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/accounts/update/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
 
                         // Favorites endpoints - allow all authenticated users
                         .requestMatchers("/api/favorites/**").authenticated()

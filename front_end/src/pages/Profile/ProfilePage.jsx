@@ -305,7 +305,7 @@ const ProfilePage = () => {
                       e.target.src = "/vite.svg";
                     }}
                   />
-                  <span className={`absolute bottom-0 right-0 w-4 h-4 md:w-5 md:h-5 rounded-full ${isAdmin ? 'bg-purple-500' : 'bg-green-500'} border-2 border-white dark:border-gray-800`}></span>
+                  <span className="absolute bottom-0 right-0 w-4 h-4 md:w-5 md:h-5 rounded-full bg-green-500 border-2 border-white dark:border-gray-800"></span>
                 </div>
                 <h2 className="mt-4 text-lg md:text-xl font-bold text-gray-800 dark:text-white">
                   {userData.firstName} {userData.lastName}
@@ -316,21 +316,17 @@ const ProfilePage = () => {
                   {getUserEmail()}
                 </p>
                 
-                {/* Admin badge on desktop */}
-                {isAdmin && (
-                  <div className="mt-2 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 px-3 py-1 rounded-full flex items-center">
-                    <HiShieldCheck className="w-4 h-4 md:w-5 md:h-5 mr-1" />
-                    <span className="text-xs md:text-sm font-medium">{t('profile.adminRole') || 'Administrator'}</span>
-                  </div>
-                )}
-                
-                {/* User badge on desktop */}
-                {!isAdmin && (
-                  <div className="mt-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-3 py-1 rounded-full flex items-center">
-                    <HiUser className="w-4 h-4 md:w-5 md:h-5 mr-1" />
-                    <span className="text-xs md:text-sm font-medium">{t('profile.userRole') || 'Customer'}</span>
-                  </div>
-                )}
+                {/* Role badge */}
+                <div className="mt-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-3 py-1 rounded-full flex items-center">
+                  <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 20 20" aria-hidden="true" class="w-4 h-4 md:w-5 md:h-5 mr-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                  </svg>
+                  <span className="text-xs md:text-sm font-medium">
+                    {userData.accountType === 'ROLE_ADMIN' ? 'Administrator' :
+                     userData.accountType === 'ROLE_MANAGER' ? 'Manager' :
+                     userData.accountType === 'ROLE_COMANAGER' ? 'Co-Manager' : 'Customer'}
+                  </span>
+                </div>
               </div>
               
               <nav className="space-y-2">
