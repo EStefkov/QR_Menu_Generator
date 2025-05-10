@@ -1058,15 +1058,15 @@ const EditMenuPage = () => {
   };
   
   const handleGoBack = () => {
-    // Use returnPath if provided, otherwise try backUrl or default paths
-    if (returnPath) {
+    // Check if we're in a menu edit context
+    if (location.state?.fromCoManager) {
+      navigate('/comanager');
+    } else if (fromManager) {
+      navigate('/manager');
+    } else if (returnPath) {
       navigate(returnPath);
     } else if (backUrl) {
       navigate(backUrl);
-    } else if (fromManager) {
-      navigate('/manager/menus'); 
-    } else if (location.state?.fromCoManager) {
-      navigate('/comanager/menus');
     } else if (restaurantId) {
       navigate(`/admin/restaurants/${restaurantId}/menus`);
     } else {
