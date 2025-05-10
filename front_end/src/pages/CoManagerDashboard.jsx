@@ -6,6 +6,7 @@ import { HiOutlineRefresh, HiOutlineExclamationCircle } from 'react-icons/hi';
 import { ImSpinner8 } from 'react-icons/im';
 import { MdOutlineCreate } from 'react-icons/md';
 import axios from 'axios';
+import RestaurantRevenue from '../components/RestaurantRevenue';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -420,6 +421,14 @@ const CoManagerDashboard = () => {
                     {t('comanager.manageMenus') || 'Manage Menus'}
                   </button>
                 </div>
+              </div>
+
+              {/* Restaurant Revenue Statistics */}
+              <div className="p-6">
+                <RestaurantRevenue 
+                  restaurantId={selectedRestaurant.id}
+                  restaurantName={selectedRestaurant.name || selectedRestaurant.restorantName}
+                />
               </div>
             </div>
           )}

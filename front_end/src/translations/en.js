@@ -724,6 +724,26 @@ const translations = {
     "qr": "QR Code",
     "test": "Test",
   },
+  
+  // Stats and time periods
+  "stats": {
+    "restaurantRevenue": "Restaurant Revenue",
+    "totalRevenue": "Total Revenue",
+    "totalOrders": "Total Orders",
+    "avgOrderValue": "Avg Order Value",
+    "latestOrder": "Latest Order",
+    "noOrders": "No orders yet",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "year": "Year",
+    "all": "All Time",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "thisYear": "This Year",
+    "allTime": "All Time"
+  },
 };
 
 export default translations; 

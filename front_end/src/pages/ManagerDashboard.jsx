@@ -9,6 +9,7 @@ import { MdOutlineCreate, MdOutlineAssignmentInd } from 'react-icons/md';
 import axios from 'axios';
 import CreateRestaurantModal from '../components/CreateRestaurantModal';
 import ManagerAccountsTable from '../components/manager/ManagerAccountsTable';
+import RestaurantRevenue from '../components/RestaurantRevenue';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -509,6 +510,14 @@ const ManagerDashboard = () => {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                     {selectedRestaurant.name || selectedRestaurant.restorantName}
                   </h3>
+                  
+                  {/* Restaurant Revenue Statistics */}
+                  <div className="mb-6">
+                    <RestaurantRevenue 
+                      restaurantId={selectedRestaurant.id}
+                      restaurantName={selectedRestaurant.name || selectedRestaurant.restorantName}
+                    />
+                  </div>
                   
                   <div className="space-y-3">
                     <div>

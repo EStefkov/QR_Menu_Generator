@@ -201,5 +201,29 @@ export const restaurantApi = {
       }
       throw new Error(error.response?.data?.message || 'Failed to apply default image to product');
     }
+  },
+  
+  // Get revenue data for a specific restaurant
+  getRestaurantRevenue: async (restaurantId) => {
+    try {
+      const response = await axiosInstance.get(`/restaurants/${restaurantId}/revenue`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching restaurant revenue:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch revenue data');
+    }
+  },
+  
+  // Get comprehensive stats for a restaurant
+  getRestaurantStats: async (restaurantId, timeRange = 'all') => {
+    try {
+      const response = await axiosInstance.get(`/restaurants/${restaurantId}/statistics`, {
+        params: { timeRange }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching restaurant statistics:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch restaurant statistics');
+    }
   }
 }; 

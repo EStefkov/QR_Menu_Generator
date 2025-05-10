@@ -427,6 +427,85 @@ export const profileApi = {
       // Return 0 as a fallback for UI rendering purposes
       return 0;
     }
+  },
+  
+  // Get user statistics (combined method to reduce API calls)
+  getUserStats: async () => {
+    try {
+      console.log('Fetching user statistics...');
+      
+      // Get user ID
+      let accountId = localStorage.getItem('accountId');
+      if (!accountId) {
+        accountId = localStorage.getItem('userId');
+      }
+      
+      if (!accountId) {
+        console.log('No user ID found in localStorage for stats');
+        try {
+          const profileData = await profileApi.getUserProfile();
+          if (profileData && profileData.id) {
+            accountId = profileData.id;
+            localStorage.setItem('userId', accountId);
+            localStorage.setItem('accountId', accountId);
+          }
+        } catch (profileError) {
+          console.error('Failed to get profile data for stats:', profileError);
+        }
+        
+        if (!accountId) {
+          console.error('Could not retrieve account ID for stats');
+          return { orderCount: 0, favoritesCount: 0 };
+        }
+      }
+      
+      // Get orders count
+      let orderCount = 0;
+      try {
+        const ordersResponse = await axiosInstance.get(`/accounts/${accountId}/orders`);
+        if (ordersResponse.data) {
+          let orders = [];
+          if (Array.isArray(ordersResponse.data)) {
+            orders = ordersResponse.data;
+          } else if (ordersResponse.data.content && Array.isArray(ordersResponse.data.content)) {
+            orders = ordersResponse.data.content;
+          }
+          orderCount = orders.length;
+          console.log(`Retrieved ${orderCount} orders for user ${accountId}`);
+        }
+      } catch (ordersError) {
+        console.error('Failed to retrieve orders:', ordersError);
+      }
+      
+      // Get favorites count
+      let favoritesCount = 0;
+      try {
+        const favoritesResponse = await axiosInstance.get(`/favorites/user/${accountId}`);
+        if (favoritesResponse.data) {
+          let favorites = [];
+          if (Array.isArray(favoritesResponse.data)) {
+            favorites = favoritesResponse.data;
+          } else if (favoritesResponse.data.content && Array.isArray(favoritesResponse.data.content)) {
+            favorites = favoritesResponse.data.content;
+          }
+          favoritesCount = favorites.length;
+          console.log(`Retrieved ${favoritesCount} favorites for user ${accountId}`);
+        }
+      } catch (favoritesError) {
+        console.error('Failed to retrieve favorites:', favoritesError);
+      }
+      
+      return {
+        orderCount,
+        favoritesCount
+      };
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      return {
+        orderCount: 0,
+        favoritesCount: 0
+      };
+    }
   }
 };
 

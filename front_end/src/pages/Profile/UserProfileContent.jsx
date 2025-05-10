@@ -39,14 +39,35 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
     setStatsError(null);
     
     try {
+      console.log('UserProfileContent: Fetching user statistics...');
       const stats = await profileApi.getUserStats();
+      console.log('UserProfileContent: Received stats from API:', stats);
       
       if (stats) {
         setOrderCount(stats.orderCount || 0);
         setFavoritesCount(stats.favoritesCount || 0);
+        console.log(`UserProfileContent: Updated state with order count: ${stats.orderCount}, favorites count: ${stats.favoritesCount}`);
+      } else {
+        console.warn('UserProfileContent: Received empty stats object from API');
+        // Use mock data as fallback
+        console.log('UserProfileContent: Using default values as fallback');
+        setOrderCount(0);
+        setFavoritesCount(0);
       }
     } catch (error) {
-      console.error('Error fetching user stats:', error);
+      console.error('UserProfileContent: Error fetching user stats:', error);
+      
+      // Check if we might have access issues
+      if (error.message && error.message.includes('403')) {
+        console.warn('UserProfileContent: Possible permission issue (403 Forbidden)');
+      }
+      
+      // Use mock data as fallback in case of error
+      console.log('UserProfileContent: Using default values due to error');
+      setOrderCount(0);
+      setFavoritesCount(0);
+      
+      // Show error message to user
       setStatsError(t('errors.general') || 'Failed to load statistics');
     } finally {
       setStatsLoading(false);

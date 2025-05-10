@@ -564,7 +564,27 @@ const translations = {
   "roles.admin": "Администратор",
   "roles.manager": "Мениджър",
   "roles.waiter": "Сервитьор",
-  "roles.comanager": "Ко-Мениджър"
+  "roles.comanager": "Ко-Мениджър",
+  
+  // Stats and time periods
+  "stats": {
+    "restaurantRevenue": "Приходи на ресторанта",
+    "totalRevenue": "Общи приходи",
+    "totalOrders": "Общо поръчки",
+    "avgOrderValue": "Средна стойност на поръчка",
+    "latestOrder": "Последна поръчка",
+    "noOrders": "Още няма поръчки",
+    "day": "Ден",
+    "week": "Седмица",
+    "month": "Месец",
+    "year": "Година",
+    "all": "Всичко време",
+    "today": "Днес",
+    "thisWeek": "Тази седмица",
+    "thisMonth": "Този месец",
+    "thisYear": "Тази година",
+    "allTime": "Всичко време"
+  },
 };
 
 export default translations; 
