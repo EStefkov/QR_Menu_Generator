@@ -5,7 +5,7 @@ CREATE TABLE account (
                          mail_address VARCHAR(255),
                          number VARCHAR(255),
                          password VARCHAR(255) NOT NULL,
-                         account_type ENUM('ROLE_USER', 'ROLE_ADMIN') NOT NULL,
+                         account_type ENUM('ROLE_USER', 'ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_COMANAGER') NOT NULL,
                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

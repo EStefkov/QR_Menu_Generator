@@ -139,9 +139,21 @@ public class JwtTokenUtil {
     public Boolean validateToken(String token, String username) {
         try {
             final String extractedUsername = extractUsername(token);
+            
+            // Extract account type for debugging
+            String accountType = extractClaim(token, claims -> claims.get("accountType", String.class));
+            Long accountId = extractClaim(token, claims -> claims.get("accountId", Long.class));
+            
+            // Log token validation attempt for debugging
+            System.out.println("Token validation - Username: " + extractedUsername + 
+                              ", Expected username: " + username + 
+                              ", AccountType: " + accountType + 
+                              ", AccountId: " + accountId);
+            
             return (extractedUsername.equals(username) && !isTokenExpired(token));
         } catch (Exception e) {
-            System.out.println("Token validation failed for user " + username + ": " + e.getMessage());
+            System.err.println("Error validating token: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }

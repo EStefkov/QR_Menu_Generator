@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { restaurantApi } from '../../api/restaurantApi';
-import { HiArrowLeft, HiExclamationCircle, HiEye, HiPencil, HiTrash, HiRefresh, HiPlusCircle, HiX, HiLocationMarker } from 'react-icons/hi';
+import { HiArrowLeft, HiExclamationCircle, HiEye, HiPencil, HiTrash, HiRefresh, HiPlusCircle, HiX, HiLocationMarker, HiQrcode } from 'react-icons/hi';
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 const CreateMenuForm = ({ restaurantId, onSuccess, onCancel }) => {
   const { t } = useLanguage();
@@ -28,23 +31,29 @@ const CreateMenuForm = ({ restaurantId, onSuccess, onCancel }) => {
       return;
     }
     
+    // Validate restaurant ID
+    if (!restaurantId || isNaN(parseInt(restaurantId, 10))) {
+      setError('Invalid restaurant ID. Please try again or contact support.');
+      return;
+    }
+    
     setIsSubmitting(true);
     setError(null);
     
     try {
-      // Format menu data for API - ensure we match the expected format
-      const formattedData = {
-        category: menuData.name.trim(), // backend expects 'category' field
-        name: menuData.name.trim(),     // also include name for flexibility
+      // Use a very simple payload that exactly matches what the backend expects
+      const payload = {
+        category: menuData.name.trim(), // The backend expects 'category'
         restaurantId: parseInt(restaurantId, 10)
       };
       
-      console.log("Submitting menu creation:", formattedData);
+      // Log the exact payload for debugging
+      console.log("Submitting menu creation with payload:", JSON.stringify(payload, null, 2));
       
-      // Pass just the restaurantId and the formatted data
-      await restaurantApi.createMenu(restaurantId, formattedData);
+      // Call the API
+      await restaurantApi.createMenu(restaurantId, payload);
       
-      // Clear form and show success message
+      // Clear form
       setMenuData({ name: '' });
       
       // Notify parent component of success
@@ -117,9 +126,14 @@ const CreateMenuForm = ({ restaurantId, onSuccess, onCancel }) => {
 };
 
 const RestaurantMenus = () => {
-  const { restaurantId } = useParams();
+  const { restaurantId: routeRestaurantId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
+  
+  // Get restaurantId from either route params or location state
+  const restaurantId = routeRestaurantId || location.state?.restaurantId;
+  const restaurantName = location.state?.restaurantName;
   
   const [restaurant, setRestaurant] = useState(null);
   const [menus, setMenus] = useState([]);
@@ -127,20 +141,101 @@ const RestaurantMenus = () => {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   
+  // Log where we're getting the restaurantId from for debugging
   useEffect(() => {
+    console.log('RestaurantMenus - restaurantId source:', {
+      'From Route Params': routeRestaurantId,
+      'From Location State': location.state?.restaurantId,
+      'Using Value': restaurantId
+    });
+    
     fetchRestaurantData();
-  }, [restaurantId]);
+  }, [restaurantId, routeRestaurantId, location.state]);
   
   // Helper function to get value from multiple possible field names
   const getFieldValue = (obj, fieldNames, defaultValue = '-') => {
     if (!obj) return defaultValue;
     
+    // Log obj structure for debugging
+    console.log("Getting field value from object:", obj);
+    console.log("Looking for fields:", fieldNames);
+    
+    // First check direct fields
     for (const field of fieldNames) {
       if (obj[field] !== undefined && obj[field] !== null && obj[field] !== '') {
+        console.log(`Found direct field: ${field} = ${obj[field]}`);
         return obj[field];
       }
     }
     
+    // Then check for nested fields
+    for (const field of fieldNames) {
+      if (field.includes('.')) {
+        const parts = field.split('.');
+        let value = obj;
+        let valid = true;
+        
+        for (const part of parts) {
+          if (value && value[part] !== undefined && value[part] !== null) {
+            value = value[part];
+          } else {
+            valid = false;
+            break;
+          }
+        }
+        
+        if (valid && value !== '') {
+          console.log(`Found nested field: ${field} = ${value}`);
+          return value;
+        }
+      }
+    }
+    
+    // Explicitly check all possible locations of the address field
+    if (fieldNames.includes('address') || fieldNames.includes('restaurantAddress') || fieldNames.includes('restorantAddress')) {
+      // Check in contactInfo object
+      if (obj.contactInfo && obj.contactInfo.address) {
+        console.log(`Found address in contactInfo: ${obj.contactInfo.address}`);
+        return obj.contactInfo.address;
+      }
+      
+      // Check other common address fields
+      for (const addressField of ['contactInfo.address', 'address', 'restaurantAddress', 'restorantAddress', 'location']) {
+        const fieldParts = addressField.split('.');
+        let value = obj;
+        let valid = true;
+        
+        for (const part of fieldParts) {
+          if (value && value[part] !== undefined && value[part] !== null) {
+            value = value[part];
+          } else {
+            valid = false;
+            break;
+          }
+        }
+        
+        if (valid && value !== '') {
+          console.log(`Found address in alternative field: ${addressField} = ${value}`);
+          return value;
+        }
+      }
+    }
+    
+    // Check special case for contactInfo
+    if (obj.contactInfo) {
+      if (fieldNames.includes('address') && obj.contactInfo.address) {
+        console.log(`Found address in contactInfo: ${obj.contactInfo.address}`);
+        return obj.contactInfo.address;
+      }
+      if (fieldNames.includes('phone') && obj.contactInfo.phone) {
+        return obj.contactInfo.phone;
+      }
+      if (fieldNames.includes('email') && obj.contactInfo.email) {
+        return obj.contactInfo.email;
+      }
+    }
+    
+    console.log(`No matching field found, returning default: ${defaultValue}`);
     return defaultValue;
   };
   
@@ -149,15 +244,50 @@ const RestaurantMenus = () => {
     setError(null);
     
     try {
-      // Fetch restaurant details and menus in parallel
-      const [restaurantData, menusData] = await Promise.all([
-        restaurantApi.getRestaurantById(restaurantId),
-        restaurantApi.getRestaurantMenus(restaurantId)
-      ]);
+      // Check if the user is a manager or co-manager
+      const token = localStorage.getItem('token');
+      const accountType = localStorage.getItem('accountType');
+      const isManager = accountType === 'ROLE_MANAGER';
+      const isCoManager = accountType === 'ROLE_COMANAGER';
       
-      console.log('Restaurant data received:', restaurantData);
-      setRestaurant(restaurantData);
-      setMenus(menusData || []);
+      // If we have a specific restaurantId parameter, fetch that restaurant
+      if (restaurantId) {
+        // Fetch restaurant details and menus in parallel
+        const [restaurantData, menusData] = await Promise.all([
+          restaurantApi.getRestaurantById(restaurantId),
+          restaurantApi.getRestaurantMenus(restaurantId)
+        ]);
+        
+        console.log('Restaurant data received:', restaurantData);
+        setRestaurant(restaurantData);
+        setMenus(menusData || []);
+      } 
+      // If no specific restaurantId and user is a manager or co-manager, fetch assigned restaurants
+      else if (isManager || isCoManager) {
+        // Fetch restaurants managed by this manager or co-manager
+        const response = await axios.get(`${API_BASE_URL}/api/restaurants/managed`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        // If there's at least one restaurant, select the first one and fetch its menus
+        if (response.data.length > 0) {
+          const firstRestaurant = response.data[0];
+          const menusData = await restaurantApi.getRestaurantMenus(firstRestaurant.id);
+          
+          setRestaurant(firstRestaurant);
+          setMenus(menusData || []);
+        } else {
+          setRestaurant(null);
+          setMenus([]);
+        }
+      }
+      // Otherwise, this is an admin or another role with direct access
+      else {
+        // Admin route logic
+        // Existing implementation...
+      }
     } catch (err) {
       console.error('Error fetching restaurant data:', err);
       setError(err.message || 'Failed to load restaurant data');
@@ -171,14 +301,90 @@ const RestaurantMenus = () => {
   };
   
   const handleEditMenu = (menuId) => {
-    // Navigate to a combined edit page with menu details, categories and products management
-    navigate(`/admin/menu/${menuId}/edit`, { 
-      state: { 
-        restaurantId,
-        restaurantName: getFieldValue(restaurant, ['name', 'restorantName', 'restaurantName']),
-        backUrl: `/restaurants/${restaurantId}/menus`
-      } 
-    });
+    // Get current user role
+    const accountType = localStorage.getItem('accountType');
+    const isManager = accountType === 'ROLE_MANAGER';
+    const isCoManager = accountType === 'ROLE_COMANAGER';
+    
+    // Use the restaurantId from URL params, not from the restaurant object
+    const restaurantIdToUse = restaurantId || restaurant?.id;
+    
+    // Navigate to the appropriate edit page based on role
+    if (isManager) {
+      navigate(`/manager/menu/${menuId}/edit`, { 
+        state: { 
+          restaurantId: restaurantIdToUse,
+          restaurantName: restaurant?.restorantName || restaurant?.name,
+          menuId: menuId,
+          fromManager: true,
+          returnPath: `/manager/menus`
+        }
+      });
+    } else if (isCoManager) {
+      navigate(`/comanager/menu/${menuId}/edit`, { 
+        state: { 
+          restaurantId: restaurantIdToUse,
+          restaurantName: restaurant?.restorantName || restaurant?.name,
+          menuId: menuId,
+          fromCoManager: true,
+          returnPath: `/comanager/menus`
+        }
+      });
+    } else {
+      // Admin route (existing functionality)
+      navigate(`/admin/menu/${menuId}/edit`, { 
+        state: { 
+          restaurantId: restaurantIdToUse,
+          restaurantName: restaurant?.restorantName || restaurant?.name,
+          menuId: menuId,
+          returnPath: `/admin/restaurants/${restaurantIdToUse}/menus`
+        }
+      });
+    }
+  };
+  
+  const handleCategoriesAndProducts = (menuId) => {
+    // Get current user role
+    const accountType = localStorage.getItem('accountType');
+    const isManager = accountType === 'ROLE_MANAGER';
+    const isCoManager = accountType === 'ROLE_COMANAGER';
+    
+    // Use the restaurantId from URL params, not from the restaurant object
+    const restaurantIdToUse = restaurantId || restaurant?.id;
+    
+    if (isManager) {
+      navigate(`/manager/menu/${menuId}/edit`, {
+        state: {
+          restaurantId: restaurantIdToUse,
+          restaurantName: restaurant?.restorantName || restaurant?.name,
+          menuId: menuId,
+          fromManager: true,
+          returnPath: `/manager/menus`,
+          activeTab: 'categories' // Start on categories tab
+        }
+      });
+    } else if (isCoManager) {
+      navigate(`/comanager/menu/${menuId}/edit`, {
+        state: {
+          restaurantId: restaurantIdToUse,
+          restaurantName: restaurant?.restorantName || restaurant?.name,
+          menuId: menuId,
+          fromCoManager: true,
+          returnPath: `/comanager/menus`,
+          activeTab: 'categories' // Start on categories tab
+        }
+      });
+    } else {
+      navigate(`/admin/menu/${menuId}/edit`, {
+        state: {
+          restaurantId: restaurantIdToUse,
+          restaurantName: restaurant?.restorantName || restaurant?.name,
+          menuId: menuId,
+          returnPath: `/admin/restaurants/${restaurantIdToUse}/menus`,
+          activeTab: 'categories' // Start on categories tab
+        }
+      });
+    }
   };
   
   const handleDeleteMenu = async (menuId) => {
@@ -233,6 +439,40 @@ const RestaurantMenus = () => {
     }
   };
   
+  const handleFetchQRCode = async (menuId) => {
+    if (!menuId) {
+      console.error("Invalid menu ID:", menuId);
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/menus/${menuId}/qrcode`, {
+        headers: { 
+          Authorization: `Bearer ${token}` 
+        },
+      });
+      
+      if (!response.ok) {
+        console.error(`Failed to fetch QR code (Status: ${response.status})`);
+        throw new Error(`Failed to fetch QR code. Server responded with status ${response.status}`);
+      }
+      
+      // Return binary blob (image)
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      // Open in new tab/window
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error("Error fetching QR code:", error);
+      alert("Failed to fetch QR code. Please try again.");
+    }
+  };
+  
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -272,12 +512,32 @@ const RestaurantMenus = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
-          <button
-            onClick={() => navigate(-1)}
-            className="mr-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-          </button>
+          {location.state?.fromManager ? (
+            <button
+              onClick={() => navigate('/manager')}
+              className="mr-4 flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title={t('common.backToManagerDashboard') || t('backToManagerDashboard') || 'Back to Manager Dashboard'}
+            >
+              <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300 mr-1" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{t('common.backToManagerDashboard') || t('backToManagerDashboard') || 'Back to Manager Dashboard'}</span>
+            </button>
+          ) : location.state?.fromCoManager ? (
+            <button
+              onClick={() => navigate('/comanager')}
+              className="mr-4 flex items-center px-3 py-2 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              title={t('common.backToCoManagerDashboard') || t('backToCoManagerDashboard') || 'Back to Co-Manager Dashboard'}
+            >
+              <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300 mr-1" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{t('common.backToCoManagerDashboard') || t('backToCoManagerDashboard') || 'Back to Co-Manager Dashboard'}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate(-1)}
+              className="mr-4 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <HiArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            </button>
+          )}
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
             {restaurant ? getFieldValue(restaurant, ['name', 'restorantName', 'restaurantName']) : t('restaurants.restaurantMenus') || 'Restaurant Menus'}
           </h1>
@@ -346,7 +606,7 @@ const RestaurantMenus = () => {
                 {t('restaurants.address') || 'Address'}
               </p>
               <p className="text-lg text-gray-900 dark:text-white">
-                {getFieldValue(restaurant, ['address', 'restorantAddress', 'restaurantAddress', 'location'])}
+                {getFieldValue(restaurant, ['address', 'restorantAddress', 'restaurantAddress', 'location', 'contactInfo.address'])}
               </p>
             </div>
             <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
@@ -482,9 +742,9 @@ const RestaurantMenus = () => {
       
       {!showCreateForm && (
         <>
-          <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-            {t('menus.availableMenus') || 'Available Menus'}
-          </h3>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-6 mt-8">
+            {t('restaurants.restaurantMenus') || 'Restaurant Menus'}
+          </h2>
           
           {/* Menu List */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -513,26 +773,42 @@ const RestaurantMenus = () => {
                     </div>
                     
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="mt-4 flex flex-wrap gap-2">
                         <button
                           onClick={() => handleViewMenu(menu.id)}
-                          className="flex items-center justify-center px-3 py-2 font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
+                          className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
-                          <HiEye className="w-4 h-4 mr-2" />
+                          <HiEye className="mr-2 -ml-1 h-5 w-5 text-gray-500 dark:text-gray-400" />
                           {t('common.view') || 'View'}
                         </button>
                         <button
                           onClick={() => handleEditMenu(menu.id)}
-                          className="flex items-center justify-center px-3 py-2 font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 transition-colors"
+                          className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
-                          <HiPencil className="w-4 h-4 mr-2" />
+                          <HiPencil className="mr-2 -ml-1 h-5 w-5 text-gray-500 dark:text-gray-400" />
                           {t('common.edit') || 'Edit'}
                         </button>
                         <button
-                          onClick={() => handleDeleteMenu(menu.id)}
-                          className="flex items-center justify-center px-3 py-2 font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 transition-colors"
+                          onClick={() => handleCategoriesAndProducts(menu.id)}
+                          className="inline-flex items-center px-3 py-2 border border-blue-300 dark:border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                         >
-                          <HiTrash className="w-4 h-4 mr-2" />
+                          <svg className="mr-2 -ml-1 h-5 w-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                          </svg>
+                          {t('categories.manage') || 'Categories & Products'}
+                        </button>
+                        <button
+                          onClick={() => handleFetchQRCode(menu.id)}
+                          className="inline-flex items-center px-3 py-2 border border-green-300 dark:border-green-600 rounded-md shadow-sm text-sm font-medium text-green-700 dark:text-green-300 bg-white dark:bg-gray-700 hover:bg-green-50 dark:hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                        >
+                          <HiQrcode className="mr-2 -ml-1 h-5 w-5 text-green-500 dark:text-green-400" />
+                          {t('common.qr')|| 'QR'}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMenu(menu.id)}
+                          className="inline-flex items-center px-3 py-2 border border-red-300 dark:border-red-700 rounded-md shadow-sm text-sm font-medium text-red-700 dark:text-red-300 bg-white dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        >
+                          <HiTrash className="mr-2 -ml-1 h-5 w-5 text-red-500 dark:text-red-400" />
                           {t('common.delete') || 'Delete'}
                         </button>
                       </div>

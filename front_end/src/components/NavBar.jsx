@@ -1,20 +1,19 @@
 // NavBar.jsx
 import { useContext, useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { HiOutlineMenu, HiX, HiShoppingCart } from "react-icons/hi";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { HiShoppingCart } from "react-icons/hi";
 import { AuthContext } from "../contexts/AuthContext";
 import { validateToken } from "../api/account";
 import { useCart } from "../contexts/CartContext";
 import { useLanguage } from "../contexts/LanguageContext";
-import ThemeToggle from "./ThemeToggle";
 import LanguageToggle from "./LanguageToggle";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 const NavBar = () => {
   const navigate = useNavigate();
-  const { userData, logout, userUpdating } = useContext(AuthContext);
-  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const { userData, logout, userUpdating, saveRedirectUrl } = useContext(AuthContext);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { cart } = useCart();
   const { t, language, changeLanguage } = useLanguage();
@@ -91,6 +90,24 @@ const NavBar = () => {
     };
   }, [userData?.token, logout, navigate, userUpdating]);
 
+  const handleLogin = () => {
+    // Save current path for redirecting back after login
+    const currentPath = location.pathname;
+    if (currentPath !== '/login' && currentPath !== '/register') {
+      saveRedirectUrl(currentPath);
+    }
+    navigate('/login');
+  };
+
+  const handleRegister = () => {
+    // Save current path for redirecting back after registration
+    const currentPath = location.pathname;
+    if (currentPath !== '/login' && currentPath !== '/register') {
+      saveRedirectUrl(currentPath);
+    }
+    navigate('/register');
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -105,55 +122,56 @@ const NavBar = () => {
             to="/" 
             className="flex items-center space-x-2 text-2xl font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
           >
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-            </svg>
+            <img 
+              src="/logo-transparent-nav-bar.png" 
+              alt="QR Menu Logo" 
+              className="w-12 h-12"
+              onError={(e) => {
+                e.target.src = "/vite.svg";  // Fallback to vite logo if custom logo not found
+              }}
+            />
             <span>QR Menu</span>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Removed Menu and About links for normal users */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/" 
-              className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-            >
-              {t('nav_home')}
-            </Link>
-            {userData?.accountType === "ROLE_ADMIN" && (
-              <Link 
-                to="/admin" 
-                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+            {/* Manager Dashboard link - Only visible for managers */}
+            {userData?.accountType === 'ROLE_MANAGER' && (
+              <Link
+                to="/manager"
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium flex items-center space-x-1"
               >
-                {t('nav_admin')}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span>{t('nav.managerDashboard') || 'Manager Dashboard'}</span>
               </Link>
             )}
-            {userData?.accountType === "ROLE_USER" && (
-              <>
-                <Link 
-                  to="/menus" 
-                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-                >
-                  {t('nav_menu')}
-                </Link>
-                <Link 
-                  to="/about" 
-                  className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-                >
-                  {t('nav_about')}
-                </Link>
-              </>
+            
+            {/* Co-Manager Dashboard link - Only visible for co-managers */}
+            {userData?.accountType === 'ROLE_COMANAGER' && (
+              <Link
+                to="/comanager"
+                className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium flex items-center space-x-1"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span>{t('nav.coManagerDashboard') || 'Co-Manager Dashboard'}</span>
+              </Link>
             )}
+            
+            {/* Admin specific links could be added here if needed */}
           </div>
 
           {/* Right Side Actions */}
           <div className="flex items-center space-x-4">
-            {/* Theme Toggle and Language Toggle with more space before profile on mobile */}
+            {/* Language Toggle */}
             <div className="flex items-center space-x-4 mr-4 md:mr-8">
-              <ThemeToggle className="order-1 md:order-none" />
               <LanguageToggle className="order-2 md:order-none" showText={true} />
             </div>
 
-            {/* User Profile and Mobile Menu Button grouped together on mobile */}
+            {/* User Profile */}
             <div className="flex items-center space-x-2 md:space-x-4">
               {/* User Menu */}
               {userData?.firstName ? (
@@ -170,6 +188,10 @@ const NavBar = () => {
                         src={`${BASE_URL}${userData.profilePicture}`}
                         alt="Profile"
                         className="w-10 h-10 rounded-full border-2 border-blue-500 dark:border-blue-400 hover:border-blue-600 dark:hover:border-blue-300 transition-colors"
+                        onError={(e) => {
+                          e.target.src = "/logo-transparent.png";
+                          e.target.onerror = (e) => { e.target.src = "/vite.svg"; };
+                        }}
                       />
                       <svg 
                         className={`hidden md:block w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
@@ -199,6 +221,49 @@ const NavBar = () => {
                             </svg>
                             <span>{t('profile.myProfile')}</span>
                           </Link>
+                          
+                          {/* Manager Dashboard Link - Only visible for users with ROLE_MANAGER */}
+                          {userData.accountType === 'ROLE_MANAGER' && (
+                            <Link
+                              to="/manager"
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                              onClick={() => setIsProfileOpen(false)}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                              <span>{t('nav.managerDashboard') || 'Manager Dashboard'}</span>
+                            </Link>
+                          )}
+                          
+                          {/* Co-Manager Dashboard Link - Only visible for users with ROLE_COMANAGER */}
+                          {userData.accountType === 'ROLE_COMANAGER' && (
+                            <Link
+                              to="/comanager"
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                              onClick={() => setIsProfileOpen(false)}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                              </svg>
+                              <span>{t('nav.coManagerDashboard') || 'Co-Manager Dashboard'}</span>
+                            </Link>
+                          )}
+                          
+                          {/* Edit Menus Link - Only visible for users with ROLE_MANAGER */}
+                          {userData.accountType === 'ROLE_MANAGER' && (
+                            <Link
+                              to="/manager/menus"
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                              onClick={() => setIsProfileOpen(false)}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                              </svg>
+                              <span>{t('nav.editMenus') || 'Edit Menus'}</span>
+                            </Link>
+                          )}
+                          
                           <Link
                             to="/favorites"
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
@@ -237,117 +302,22 @@ const NavBar = () => {
                   </div>
                 </div>
               ) : (
-                <div className="hidden md:flex space-x-4 order-4 md:order-none">
-                  <Link 
-                    to="/login" 
+                <div className="flex space-x-4 order-4 md:order-none">
+                  <button 
+                    onClick={handleLogin}
                     className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors font-medium"
                   >
                     {t('nav_login')}
-                  </Link>
-                  <Link 
-                    to="/register" 
+                  </button>
+                  <button 
+                    onClick={handleRegister}
                     className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors font-medium"
                   >
                     {t('nav_register')}
-                  </Link>
+                  </button>
                 </div>
               )}
-
-              {/* Mobile Menu Button */}
-              <button 
-                onClick={() => setIsOpen(!isOpen)} 
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors order-5 md:order-none"
-                aria-label="Toggle menu"
-              >
-                {isOpen ? <HiX className="w-6 h-6" /> : <HiOutlineMenu className="w-6 h-6" />}
-              </button>
             </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        <div 
-          className={`md:hidden transition-all duration-300 ease-in-out ${
-            isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-          } overflow-hidden`}
-        >
-          <div className="py-4 space-y-2 border-t border-gray-200 dark:border-gray-700">
-            <Link 
-              to="/" 
-              className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-            >
-              {t('nav_home')}
-            </Link>
-            {userData?.accountType === "ROLE_ADMIN" && (
-              <Link 
-                to="/admin" 
-                className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-              >
-                {t('nav_admin')}
-              </Link>
-            )}
-            {userData?.accountType === "ROLE_USER" && (
-              <>
-                <Link 
-                  to="/menus" 
-                  className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-                >
-                  {t('nav_menu')}
-                </Link>
-                <Link 
-                  to="/about" 
-                  className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-                >
-                  {t('nav_about')}
-                </Link>
-                {/* Add Cart link for mobile menu */}
-                <Link 
-                  to="/cart" 
-                  className="flex items-center justify-between py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-                >
-                  <span className="flex items-center">
-                    <HiShoppingCart className="w-5 h-5 mr-2" />
-                    {t('nav_cart')}
-                  </span>
-                  {cartItemCount > 0 && (
-                    <span className="bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {cartItemCount}
-                    </span>
-                  )}
-                </Link>
-              </>
-            )}
-            {userData?.firstName ? (
-              <>
-                <Link
-                  to="/profile"
-                  className="block py-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
-                >
-                  {t('profile.myProfile')}
-                </Link>
-                <button
-                  className="w-full text-left py-2 text-red-600 hover:text-red-700 transition-colors font-medium"
-                  onClick={handleLogout}
-                >
-                  {t('nav_logout')}
-                </button>
-              </>
-            ) : (
-              <div className="space-y-2 pt-2">
-                <Link 
-                  to="/login" 
-                  className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-                >
-                  {t('nav_login')}
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="block w-full text-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-                >
-                  {t('nav_register')}
-                </Link>
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -332,20 +332,76 @@ export const createProductApi = async (token, formData) => {
  * @returns {Promise<any>} Създаденият ресторант (JSON).
  */
 export const createRestaurantApi = async (token, restaurantData) => {
-    const response = await fetch(`${API_BASE_URL}/api/restaurants`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(restaurantData),
-    });
-
-    if (!response.ok) {
-        throw new Error("Failed to create restaurant");
+    // Ensure address is properly structured
+    const enhancedData = { ...restaurantData };
+    
+    // Make sure we have a contactInfo structure if address exists
+    if (restaurantData.address && !restaurantData.contactInfo) {
+        enhancedData.contactInfo = {
+            ...(restaurantData.contactInfo || {}),
+            address: restaurantData.address,
+            phone: restaurantData.phoneNumber || restaurantData.phone,
+            email: restaurantData.email
+        };
     }
+    
+    // Make sure we have the address in all possible field formats
+    enhancedData.restorantAddress = restaurantData.address;
+    enhancedData.restaurantAddress = restaurantData.address;
+    enhancedData.address = restaurantData.address;
+    
+    // Log the final data being sent to the API
+    console.log("Creating restaurant with data:", JSON.stringify(enhancedData, null, 2));
+    
+    try {
+        // First try using the regular endpoint
+        let response = await fetch(`${API_BASE_URL}/api/restaurants`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(enhancedData),
+        });
 
-    return response.json();
+        // If we get a 403 Forbidden, try the manager-specific endpoint
+        if (response.status === 403) {
+            console.log("Regular endpoint returned 403, trying manager-specific endpoint");
+            
+            // Try the manager-specific endpoint
+            response = await fetch(`${API_BASE_URL}/api/restaurants/create-as-manager`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(enhancedData),
+            });
+        }
+
+        const contentType = response.headers.get("content-type");
+        let responseData;
+        
+        if (contentType && contentType.includes("application/json")) {
+            responseData = await response.json();
+            console.log("Server response (JSON):", responseData);
+        } else {
+            responseData = await response.text();
+            console.log("Server response (Text):", responseData);
+        }
+
+        if (!response.ok) {
+            console.error("Restaurant creation failed with status:", response.status);
+            console.error("Response headers:", Object.fromEntries([...response.headers]));
+            throw new Error(`Failed to create restaurant: ${response.status} - ${responseData}`);
+        }
+
+        console.log("Restaurant created successfully:", responseData);
+        return responseData;
+    } catch (error) {
+        console.error("Error in createRestaurantApi:", error);
+        throw error;
+    }
 };
 
 /**
@@ -581,3 +637,398 @@ export const fetchAllOrdersApi = async (token, page = 0, size = 10, sortBy = 'or
     }
     return response.json();
 };
+
+/**
+ * Fetches all accounts from the API.
+ * @param {string} token - JWT token for authentication
+ * @returns {Promise<Array>} Array of account objects
+ */
+export const fetchAllAccountsApi = async (token) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/accounts`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch accounts');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching accounts:', error);
+    throw error;
+  }
+};
+
+// Manager Assignment Management
+export const getManagerAssignments = async (token) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manager-assignments`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch manager assignments');
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching manager assignments:', error);
+      throw error;
+    }
+  };
+  
+  export const assignManagerToRestaurant = async (token, managerId, restaurantId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manager-assignments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          managerId,
+          restaurantId
+        })
+      });
+  
+      if (!response.ok) {
+        // Check the content type to determine how to parse the error
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to assign manager to restaurant');
+        } else {
+          // Handle text/plain or any other non-JSON response
+          const errorText = await response.text();
+          console.error('Server returned non-JSON error:', errorText);
+          throw new Error('Failed to assign manager to restaurant: ' + errorText);
+        }
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error('Error assigning manager to restaurant:', error);
+      throw error;
+    }
+  };
+  
+  export const removeManagerAssignment = async (token, assignmentId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manager-assignments/${assignmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to remove manager assignment');
+      }
+  
+      return true;
+    } catch (error) {
+      console.error('Error removing manager assignment:', error);
+      throw error;
+    }
+  };
+  
+  export const getRestaurantsByManager = async (token, managerId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manager-assignments/manager/${managerId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch restaurants for manager');
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching restaurants for manager:', error);
+      throw error;
+    }
+  };
+  
+  export const getManagersByRestaurant = async (token, restaurantId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/manager-assignments/restaurant/${restaurantId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch managers for restaurant');
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching managers for restaurant:', error);
+      throw error;
+    }
+  };
+
+export const getAvailableManagers = async (token) => {
+  try {
+    console.log('Fetching available managers from API');
+    
+    // First try to get all accounts with ROLE_MANAGER
+    const response = await fetch(`${API_BASE_URL}/api/accounts/managers`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch managers: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('API returned manager accounts:', data);
+    
+    // If we don't get any managers, try to get all accounts and filter
+    if (!data || data.length === 0) {
+      console.log('No managers returned by API, trying to fetch all accounts');
+      const allAccountsResponse = await fetch(`${API_BASE_URL}/api/accounts/all`, {
+        headers: { 
+          'Authorization': `Bearer ${token}` 
+        }
+      });
+      
+      if (!allAccountsResponse.ok) {
+        throw new Error('Failed to fetch all accounts');
+      }
+      
+      const allAccounts = await allAccountsResponse.json();
+      console.log('All accounts:', allAccounts);
+      
+      // Filter for anything that might be related to managers
+      const potentialManagers = allAccounts.filter(account => {
+        return (
+          account.accountType === 'ROLE_MANAGER' || 
+          account.role === 'ROLE_MANAGER' ||
+          (account.roles && (
+            typeof account.roles === 'string' 
+              ? account.roles.includes('MANAGER') 
+              : Array.isArray(account.roles) && account.roles.some(r => String(r).includes('MANAGER'))
+          )) ||
+          (account.authorities && account.authorities.some(auth => 
+            typeof auth === 'string' 
+              ? auth.includes('MANAGER') 
+              : auth.authority && auth.authority.includes('MANAGER')
+          ))
+        );
+      });
+      
+      console.log('Potential managers filtered from all accounts:', potentialManagers);
+      return potentialManagers;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in getAvailableManagers:', error);
+    throw error;
+  }
+};
+
+export const batchAssignRestaurantsToManager = async (token, managerId, restaurantIds) => {
+  try {
+    // Log the request payload for debugging
+    console.log('Batch assigning restaurants:', { managerId, restaurantIds });
+    
+    const response = await fetch(`${API_BASE_URL}/api/manager-assignments/batch-assign`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        managerId,
+        restaurantIds
+      })
+    });
+
+    // Get response content type to determine how to handle the response
+    const contentType = response.headers.get('content-type');
+
+    if (!response.ok) {
+      // Handle error response based on content type
+      if (contentType && contentType.includes('application/json')) {
+        // Parse JSON error
+        const errorData = await response.json();
+        console.error('Server returned JSON error:', errorData);
+        throw new Error(errorData.error || errorData.message || 'Failed to batch assign restaurants to manager');
+      } else {
+        // Handle text/plain or any other non-JSON response
+        const errorText = await response.text();
+        console.error('Server returned non-JSON error:', errorText);
+        throw new Error('Failed to batch assign restaurants to manager: ' + errorText);
+      }
+    }
+
+    // Handle success response
+    let responseData;
+    if (contentType && contentType.includes('application/json')) {
+      responseData = await response.json();
+    } else {
+      // Unexpected content type for success response
+      const responseText = await response.text();
+      console.warn('Unexpected content type for success response:', contentType, responseText);
+      responseData = { message: responseText };
+    }
+
+    console.log('Batch assignment successful:', responseData);
+    return responseData;
+  } catch (error) {
+    console.error('Error batch assigning restaurants to manager:', error);
+    throw error;
+  }
+};
+
+/**
+ * Updates a user's role (admin only).
+ * @param {string} token - JWT token for authentication
+ * @param {number} userId - ID of the user to update
+ * @param {string} role - New role to assign
+ * @returns {Promise<any>} Response containing the updated account
+ */
+export const updateUserRole = async (token, userId, role) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/accounts/${userId}/update-role`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ role })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update user role');
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error('Error updating user role:', error);
+        throw error;
+    }
+};
+
+/**
+ * Updates a user's role by a manager (to COMANAGER or USER only).
+ * This is a special function for managers to promote users to COMANAGER for their restaurants.
+ * 
+ * @param {string} token - JWT token for authentication
+ * @param {number} userId - ID of the user to update
+ * @param {string} role - New role to assign (must be ROLE_USER or ROLE_COMANAGER)
+ * @param {number} restaurantId - ID of the restaurant (required when role is COMANAGER)
+ * @returns {Promise<any>} Response containing the updated account
+ */
+export const updateUserRoleByManager = async (token, userId, role, restaurantId = null) => {
+    try {
+        const requestBody = { role };
+        
+        // Add restaurant ID if role is COMANAGER
+        if (role === 'ROLE_COMANAGER') {
+            if (!restaurantId) {
+                throw new Error('Restaurant ID is required when setting COMANAGER role');
+            }
+            requestBody.restaurantId = restaurantId;
+        }
+        
+        const response = await fetch(`${API_BASE_URL}/api/accounts/${userId}/manager-update-role`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to update user role');
+        }
+
+        return response.json();
+    } catch (error) {
+        console.error('Error updating user role by manager:', error);
+        throw error;
+    }
+};
+
+/**
+ * Fetches restaurants managed by the current user.
+ * @param {string} token - JWT token for authentication
+ * @returns {Promise<any[]>} List of managed restaurants
+ */
+export const getManagedRestaurants = async (token) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/restaurants/managed`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch managed restaurants');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching managed restaurants:', error);
+    throw error;
+  }
+};
+
+/**
+ * Checks the current user's account details and permissions
+ * @param {string} token - JWT token for authentication
+ * @returns {Promise<any>} User account details
+ */
+export const checkAccountPermissions = async (token) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/accounts/current`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch account permissions');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error checking account permissions:', error);
+    throw error;
+  }
+}; 

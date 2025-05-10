@@ -3,6 +3,7 @@ package com.example.qr_menu.controllers;
 import com.example.qr_menu.dto.AccountDTO;
 import com.example.qr_menu.dto.LoginDTO;
 import com.example.qr_menu.dto.ChangePasswordDTO;
+import com.example.qr_menu.entities.Account;
 import com.example.qr_menu.exceptions.ResourceNotFoundException;
 import com.example.qr_menu.services.AccountService;
 import com.example.qr_menu.utils.JwtTokenUtil;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -251,6 +253,221 @@ public class AccountController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "An unexpected error occurred: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Update the role of an account. Only admin users can perform this operation.
+     *
+     * @param id the ID of the account to update
+     * @param requestBody a map containing the new role value
+     * @param token the authentication token
+     * @return a response indicating the outcome
+     */
+    @PutMapping("/{id}/update-role")
+    public ResponseEntity<?> updateUserRole(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> requestBody,
+            @RequestHeader("Authorization") String token) {
+        try {
+            // Extract role from request body
+            String roleStr = requestBody.get("role");
+            if (roleStr == null || roleStr.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Role must be specified"));
+            }
+            
+            // Convert string to enum
+            Account.AccountType newRole;
+            try {
+                newRole = Account.AccountType.valueOf(roleStr);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid role: " + roleStr));
+            }
+            
+            // Extract admin email from token
+            String jwtToken = token.substring(7); // Remove "Bearer " prefix
+            String adminEmail = jwtTokenUtil.extractUsername(jwtToken);
+            
+            // Call service to update role
+            AccountDTO updatedAccount = accountService.updateUserRole(id, newRole, adminEmail);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "User role updated successfully",
+                "account", updatedAccount
+            ));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to update role: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Update the role of an account to COMANAGER. Only MANAGER users can perform this operation.
+     * Managers can only set users to ROLE_USER or ROLE_COMANAGER roles.
+     *
+     * @param id the ID of the account to update
+     * @param requestBody a map containing the new role value and restaurantId
+     * @param token the authentication token
+     * @return a response indicating the outcome
+     */
+    @PutMapping("/{id}/manager-update-role")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<?> updateUserRoleByManager(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> requestBody,
+            @RequestHeader("Authorization") String token) {
+        try {
+            // Extract role from request body
+            String roleStr = (String) requestBody.get("role");
+            if (roleStr == null || roleStr.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Role must be specified"));
+            }
+            
+            // Convert string to enum
+            Account.AccountType newRole;
+            try {
+                newRole = Account.AccountType.valueOf(roleStr);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid role: " + roleStr));
+            }
+            
+            // Get restaurant ID if role is COMANAGER
+            Long restaurantId = null;
+            if (newRole == Account.AccountType.ROLE_COMANAGER) {
+                try {
+                    // Handle different types of restaurantId (Integer, Long, String)
+                    Object restaurantIdObj = requestBody.get("restaurantId");
+                    if (restaurantIdObj == null) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "Restaurant ID is required for COMANAGER role"));
+                    }
+                    
+                    if (restaurantIdObj instanceof Integer) {
+                        restaurantId = ((Integer) restaurantIdObj).longValue();
+                    } else if (restaurantIdObj instanceof Long) {
+                        restaurantId = (Long) restaurantIdObj;
+                    } else if (restaurantIdObj instanceof String) {
+                        restaurantId = Long.parseLong((String) restaurantIdObj);
+                    } else {
+                        return ResponseEntity.badRequest().body(Map.of("error", "Invalid restaurant ID format"));
+                    }
+                } catch (Exception e) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Invalid restaurant ID: " + e.getMessage()));
+                }
+            }
+            
+            // Extract manager email from token
+            String jwtToken = token.substring(7); // Remove "Bearer " prefix
+            String managerEmail = jwtTokenUtil.extractUsername(jwtToken);
+            
+            // Call service to update role
+            AccountDTO updatedAccount = accountService.updateUserRoleByManager(id, newRole, managerEmail, restaurantId);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "User role updated successfully by manager",
+                "account", updatedAccount
+            ));
+            
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to update user role: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Get orders for a specific user account
+     * @param accountId The account ID
+     * @param page Page number
+     * @param size Page size
+     * @param sortBy Sort field
+     * @param direction Sort direction
+     * @param token JWT token
+     * @return Paginated list of orders
+     */
+    @GetMapping("/{accountId}/orders")
+    public ResponseEntity<?> getUserOrders(
+            @PathVariable Long accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "orderTime") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            @RequestHeader("Authorization") String token) {
+        
+        try {
+            // Validate token and extract claims
+            String jwtToken = token.replace("Bearer ", "");
+            
+            if (!jwtTokenUtil.validateToken(jwtToken)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+            }
+            
+            // Get claims to verify ownership
+            String username = jwtTokenUtil.extractUsername(jwtToken);
+            Long tokenAccountId = jwtTokenUtil.extractClaim(jwtToken, claims -> claims.get("accountId", Long.class));
+            String role = jwtTokenUtil.extractClaim(jwtToken, claims -> claims.get("role", String.class));
+            
+            // Security check: Only admin users or the owner of the account can access these orders
+            boolean isAdmin = "ROLE_ADMIN".equals(role);
+            boolean isAccountOwner = tokenAccountId != null && tokenAccountId.equals(accountId);
+            
+            if (!isAdmin && !isAccountOwner) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: You can only view your own orders");
+            }
+            
+            // Create pageable object for pagination
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                    "asc".equalsIgnoreCase(direction) 
+                        ? org.springframework.data.domain.Sort.by(sortBy).ascending() 
+                        : org.springframework.data.domain.Sort.by(sortBy).descending());
+            
+            // Call the OrderRepository directly to get the orders
+            Page<com.example.qr_menu.entities.Order> orders = accountService.getOrdersByAccountId(accountId, pageable);
+            
+            // Convert to DTOs
+            Page<com.example.qr_menu.dto.OrderDTO> orderDTOs = orders.map(order -> {
+                com.example.qr_menu.dto.OrderDTO orderDTO = com.example.qr_menu.dto.OrderDTO.builder()
+                        .id(order.getId())
+                        .accountId(order.getAccount().getId())
+                        .restorantId(order.getRestorant().getId())
+                        .restorantName(order.getRestorant().getRestorantName())
+                        .orderStatus(order.getOrderStatus())
+                        .orderTime(order.getOrderTime())
+                        .totalPrice(order.getTotalPrice())
+                        .build();
+                
+                // Get order products - you'll need to inject the OrderProductRepository
+                List<com.example.qr_menu.entities.OrderProduct> orderProducts = 
+                    accountService.getOrderProductsByOrderId(order.getId());
+                    
+                List<com.example.qr_menu.dto.OrderDTO.ProductOrderDTO> productDTOs = orderProducts.stream()
+                        .map(op -> com.example.qr_menu.dto.OrderDTO.ProductOrderDTO.builder()
+                                .productId(op.getProduct().getId())
+                                .productName(op.getProduct().getProductName())
+                                .productImage(op.getProduct().getProductImage())
+                                .quantity(op.getQuantity())
+                                .productPriceAtOrder(op.getProduct().getProductPrice())
+                                .build())
+                        .collect(java.util.stream.Collectors.toList());
+                
+                orderDTO.setProducts(productDTOs);
+                return orderDTO;
+            });
+            
+            return ResponseEntity.ok(orderDTOs);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error retrieving orders: " + e.getMessage());
         }
     }
 

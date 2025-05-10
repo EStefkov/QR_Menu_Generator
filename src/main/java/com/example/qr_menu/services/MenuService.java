@@ -175,9 +175,23 @@ public class MenuService {
     public void updateMenu(Long id, MenuDTO menuDTO) {
         Menu menu = menuRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu not found"));
-        menu.setCategory(menuDTO.getCategory());
+        
+        // Update basic menu properties
+        if (menuDTO.getCategory() != null) {
+            menu.setCategory(menuDTO.getCategory());
+        }
+        
+        // Update banner image if provided in the DTO
+        if (menuDTO.getMenuImage() != null) {
+            menu.setMenuImage(menuDTO.getMenuImage());
+        }
+        
+        // Update default product image if provided in the DTO
+        if (menuDTO.getDefaultProductImage() != null) {
+            menu.setDefaultProductImage(menuDTO.getDefaultProductImage());
+        }
+        
         menu.setUpdatedAt(new Date());
-
         menuRepository.save(menu);
     }
 

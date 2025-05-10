@@ -18,7 +18,7 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
     id: userData.id || localStorage.getItem('userId'),
     firstName: userData.firstName || '',
     lastName: userData.lastName || '',
-    email: userData.mailAddress || '',
+    email: userData.mailAddress || userData.email || '',
     phone: profileData?.phone || '',
   });
   
@@ -66,33 +66,23 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
     setMessage({ type: '', text: '' });
     
     try {
-      // Устанавливаем флаг, что пользователь обновляет профиль
-      console.log("ProfileSettings: Setting userUpdating flag to true");
-      setUserUpdating(true);
-      setUserUpdatingFlag(true); // Установка глобального флага
-
-      // Также сохраняем в localStorage для перезагрузки страницы
-      localStorage.setItem("userIsUpdating", "true");
-      
-      // Сохраняем временную метку
-      const timestamp = Date.now();
-      localStorage.setItem("userUpdatingTimestamp", timestamp.toString());
-      
-      // Prepare API request data - transform email to mailAddress
+      // Prepare the profile update data
       const profileUpdateData = {
-        ...formData,
-        mailAddress: formData.email, // Map email to mailAddress for API
-        number: formData.phone, // Map phone to number for API
+        id: formData.id,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        mailAddress: formData.email, // Use email as mailAddress for backend
+        email: formData.email, // Also include email field for frontend
+        phone: formData.phone,
       };
       
-      console.log("Updating profile with data:", profileUpdateData);
+      // Update profile through API
+      const result = await profileApi.updateProfile(profileUpdateData);
+      console.log("Profile update result:", result);
       
-      // Update profile info
-      const updateResult = await profileApi.updateUserProfile(profileUpdateData);
-      console.log("Profile update success:", updateResult);
+      let updatedProfilePicture = null;
       
-      // Upload profile picture if selected
-      let updatedProfilePicture = userData.profilePicture;
+      // Handle profile picture upload if selected
       if (selectedFile) {
         console.log("Uploading new profile picture");
         const formDataForUpload = new FormData();
@@ -110,6 +100,7 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
       localStorage.setItem("firstName", formData.firstName);
       localStorage.setItem("lastName", formData.lastName);
       localStorage.setItem("mailAddress", formData.email); // Set email as mailAddress
+      localStorage.setItem("email", formData.email); // Also store as email
       localStorage.setItem("phone", formData.phone);
       if (updatedProfilePicture) {
         localStorage.setItem("profilePicture", updatedProfilePicture);
@@ -129,6 +120,7 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         mailAddress: formData.email, // Use formData.email
+        email: formData.email, // Also include email field
         profilePicture: updatedProfilePicture
       });
       
@@ -145,37 +137,12 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
         setSelectedFile(null);
         setPreviewUrl(null);
       }
-
-      // Reset updating flag after successful update
-      setTimeout(() => {
-        console.log("ProfileSettings: Resetting userUpdating flag");
-        setUserUpdating(false);
-        setUserUpdatingFlag(false);
-        localStorage.removeItem("userIsUpdating");
-      }, 5000); // Shorter timeout after successful update
-      
-      // Set a backup timeout to ensure flags are cleared eventually
-      setTimeout(() => {
-        console.log("ProfileSettings: Backup timeout to clear update flags");
-        setUserUpdating(false);
-        setUserUpdatingFlag(false);
-        localStorage.removeItem("userIsUpdating");
-        localStorage.removeItem("userUpdatingTimestamp");
-      }, 30000);
-      
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error("Failed to update profile:", error);
       setMessage({ 
         type: 'error', 
-        text: t('profile.profileUpdateError') 
+        text: error.message || t('profile.profileUpdateError') 
       });
-      
-      // Сбрасываем флаг обновления профиля в случае ошибки
-      console.log("ProfileSettings: Setting userUpdating flag to false due to error");
-      setUserUpdating(false);
-      setUserUpdatingFlag(false);
-      localStorage.removeItem("userIsUpdating");
-      localStorage.removeItem("userUpdatingTimestamp");
     } finally {
       setLoading(false);
     }

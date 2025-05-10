@@ -5,7 +5,9 @@ import {
   HiOutlineCheckCircle,
   HiOutlineClock,
   HiOutlineX,
-  HiOutlinePrinter
+  HiOutlinePrinter,
+  HiOutlineUser,
+  HiOutlineOfficeBuilding
 } from 'react-icons/hi';
 
 function OrderDetail() {
@@ -221,21 +223,21 @@ function OrderDetail() {
             </div>
             
             <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center
-              ${order.status?.toLowerCase() === 'completed' 
+              ${order.status?.toUpperCase() === 'READY' 
                 ? 'bg-green-800 text-green-100' 
-                : order.status?.toLowerCase() === 'cancelled' 
+                : order.status?.toUpperCase() === 'CANCELLED' 
                 ? 'bg-red-800 text-red-100'
-                : 'bg-yellow-800 text-yellow-100'
+                : 'bg-blue-800 text-blue-100'
               }`}
             >
-              {order.status?.toLowerCase() === 'completed' ? (
+              {order.status?.toUpperCase() === 'READY' ? (
                 <HiOutlineCheckCircle className="mr-1 h-4 w-4" />
-              ) : order.status?.toLowerCase() === 'cancelled' ? (
+              ) : order.status?.toUpperCase() === 'CANCELLED' ? (
                 <HiOutlineX className="mr-1 h-4 w-4" />
               ) : (
                 <HiOutlineClock className="mr-1 h-4 w-4" />
               )}
-              {(order.status || 'PENDING').replace('_', ' ')}
+              {(order.status || 'ACCEPTED').replace('_', ' ')}
             </div>
           </div>
           
@@ -244,7 +246,10 @@ function OrderDetail() {
             <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-400">Name</dt>
-                <dd className="mt-1 text-sm text-white">{order.customerInfo?.name || '—'}</dd>
+                <dd className="mt-1 text-sm text-white flex items-center">
+                  {order.customerInfo?.name || order.customerName || '—'}
+                  {!order.customerInfo?.name && !order.customerName && <HiOutlineUser className="ml-1 text-gray-500" />}
+                </dd>
               </div>
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-400">Email</dt>
@@ -257,6 +262,21 @@ function OrderDetail() {
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-400">Table Number</dt>
                 <dd className="mt-1 text-sm text-white">{order.customerInfo?.tableNumber || '—'}</dd>
+              </div>
+              
+              <div className="sm:col-span-1">
+                <dt className="text-sm font-medium text-gray-400">Restaurant</dt>
+                <dd className="mt-1 text-sm text-white flex items-center">
+                  {order.restaurantName || '—'}
+                  {!order.restaurantName && <HiOutlineOfficeBuilding className="ml-1 text-gray-500" />}
+                </dd>
+              </div>
+              
+              <div className="sm:col-span-1">
+                <dt className="text-sm font-medium text-gray-400">Status Date</dt>
+                <dd className="mt-1 text-sm text-white">
+                  {order.statusDate ? formatDate(order.statusDate) : order.lastUpdated ? formatDate(order.lastUpdated) : '—'}
+                </dd>
               </div>
               
               {order.customerInfo?.specialRequests && (
@@ -303,47 +323,47 @@ function OrderDetail() {
             <div className="mt-2 flex space-x-3">
               <button
                 type="button"
-                onClick={() => updateOrderStatus('PENDING')}
-                disabled={updatingStatus || order.status === 'PENDING'}
+                onClick={() => updateOrderStatus('ACCEPTED')}
+                disabled={updatingStatus || order.status?.toUpperCase() === 'ACCEPTED'}
                 className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium 
-                  ${order.status === 'PENDING' ? 
-                    'bg-yellow-900 text-yellow-100 border-yellow-700 cursor-not-allowed' : 
+                  ${order.status?.toUpperCase() === 'ACCEPTED' ? 
+                    'bg-blue-900 text-blue-100 border-blue-700 cursor-not-allowed' : 
                     'border-gray-600 text-gray-200 bg-gray-800 hover:bg-gray-700'
                   }
-                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 focus:ring-offset-gray-900`}
+                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-900`}
               >
                 <HiOutlineClock className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Pending
+                Accept
               </button>
               
               <button
                 type="button"
-                onClick={() => updateOrderStatus('COMPLETED')}
-                disabled={updatingStatus || order.status === 'COMPLETED'}
+                onClick={() => updateOrderStatus('READY')}
+                disabled={updatingStatus || order.status?.toUpperCase() === 'READY'}
                 className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium 
-                  ${order.status === 'COMPLETED' ? 
+                  ${order.status?.toUpperCase() === 'READY' ? 
                     'bg-green-900 text-green-100 border-green-700 cursor-not-allowed' : 
                     'border-gray-600 text-gray-200 bg-gray-800 hover:bg-gray-700'
                   }
                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 focus:ring-offset-gray-900`}
               >
                 <HiOutlineCheckCircle className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Completed
+                Ready
               </button>
               
               <button
                 type="button"
                 onClick={() => updateOrderStatus('CANCELLED')}
-                disabled={updatingStatus || order.status === 'CANCELLED'}
+                disabled={updatingStatus || order.status?.toUpperCase() === 'CANCELLED'}
                 className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium 
-                  ${order.status === 'CANCELLED' ? 
+                  ${order.status?.toUpperCase() === 'CANCELLED' ? 
                     'bg-red-900 text-red-100 border-red-700 cursor-not-allowed' : 
                     'border-gray-600 text-gray-200 bg-gray-800 hover:bg-gray-700'
                   }
                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 focus:ring-offset-gray-900`}
               >
                 <HiOutlineX className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                Cancelled
+                Cancel
               </button>
             </div>
           </div>

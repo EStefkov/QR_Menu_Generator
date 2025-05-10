@@ -359,6 +359,35 @@ export const profileApi = {
     }
   },
 
+  // Get user orders directly
+  getUserOrders: async (page = 0, size = 10) => {
+    try {
+      // Try to get accountId from various sources
+      let accountId = localStorage.getItem('accountId');
+      if (!accountId) {
+        accountId = localStorage.getItem('userId');
+      }
+      
+      if (!accountId) {
+        console.error('No accountId or userId found or retrievable');
+        throw new Error('User ID not found');
+      }
+      
+      console.log(`Fetching orders for user ${accountId}, page: ${page}, size: ${size}`);
+      
+      // Call the backend API endpoint to get orders for this account
+      const response = await axiosInstance.get(`/accounts/${accountId}/orders`, {
+        params: { page, size }
+      });
+      
+      console.log('Orders response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user orders:', error);
+      throw new Error(error.response?.data?.message || 'Failed to fetch your orders');
+    }
+  },
+
   // Get user favorites count
   getUserFavoritesCount: async () => {
     try {
@@ -397,6 +426,95 @@ export const profileApi = {
       console.error('Error fetching user favorites count:', error);
       // Return 0 as a fallback for UI rendering purposes
       return 0;
+    }
+  },
+  
+  // Get user statistics (combined method to reduce API calls)
+  getUserStats: async () => {
+    try {
+      console.log('Fetching user statistics...');
+      
+      // Get user ID
+      let accountId = localStorage.getItem('accountId');
+      if (!accountId) {
+        accountId = localStorage.getItem('userId');
+      }
+      
+      if (!accountId) {
+        console.log('No user ID found in localStorage for stats');
+        try {
+          const profileData = await profileApi.getUserProfile();
+          if (profileData && profileData.id) {
+            accountId = profileData.id;
+            localStorage.setItem('userId', accountId);
+            localStorage.setItem('accountId', accountId);
+          }
+        } catch (profileError) {
+          console.error('Failed to get profile data for stats:', profileError);
+        }
+        
+        if (!accountId) {
+          console.error('Could not retrieve account ID for stats');
+          return { orderCount: 0, favoritesCount: 0 };
+        }
+      }
+
+      console.log('Using accountId for stats:', accountId);
+      
+      // Get orders count
+      let orderCount = 0;
+      try {
+        console.log('Attempting to fetch orders count from /orders/count/${accountId}');
+        const ordersResponse = await axiosInstance.get(`/orders/count/${accountId}`);
+        console.log('Orders count response:', ordersResponse);
+        
+        if (ordersResponse.data !== undefined) {
+          orderCount = parseInt(ordersResponse.data) || 0;
+          console.log(`Found ${orderCount} orders`);
+        }
+      } catch (ordersError) {
+        console.error('Error fetching orders count:', ordersError);
+        if (ordersError.response) {
+          console.error('Orders error response:', ordersError.response.data);
+          console.error('Orders error status:', ordersError.response.status);
+        }
+      }
+      
+      // Get favorites count
+      let favoritesCount = 0;
+      try {
+        console.log('Attempting to fetch favorites count from /favorites/count/${accountId}');
+        const favoritesResponse = await axiosInstance.get(`/favorites/count/${accountId}`);
+        console.log('Favorites count response:', favoritesResponse);
+        
+        if (favoritesResponse.data !== undefined) {
+          favoritesCount = parseInt(favoritesResponse.data) || 0;
+          console.log(`Found ${favoritesCount} favorites`);
+        }
+      } catch (favoritesError) {
+        console.error('Error fetching favorites count:', favoritesError);
+        if (favoritesError.response) {
+          console.error('Favorites error response:', favoritesError.response.data);
+          console.error('Favorites error status:', favoritesError.response.status);
+        }
+      }
+      
+      const stats = {
+        orderCount,
+        favoritesCount
+      };
+      console.log('Final stats:', stats);
+      return stats;
+    } catch (error) {
+      console.error('Error in getUserStats:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
+      return {
+        orderCount: 0,
+        favoritesCount: 0
+      };
     }
   }
 };

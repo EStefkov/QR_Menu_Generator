@@ -49,20 +49,36 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/menus/restaurant/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/menus/{id}/qrcode").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/menus/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/menus/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/menus/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/menus/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/menus/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/menus/{id}/with-images").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/categories/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/menus/{id}/default-product-image").hasAnyRole("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.POST, "/api/menus").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        
+                        // Manager assignments endpoints - move most specific path first
+                        .requestMatchers(HttpMethod.GET, "/api/manager-assignments/managed-by/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER") 
+                        .requestMatchers(HttpMethod.GET, "/api/manager-assignments/comanager-assignments/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/manager-assignments/debug-assignments/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/manager-assignments/check").hasAnyRole("MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/manager-assignments/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER")
+                        
+                        .requestMatchers(HttpMethod.POST, "/api/menus/{id}/default-product-image").hasAnyRole("ADMIN", "USER", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/menus/{id}/image").hasAnyRole("ADMIN", "USER", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/menus").hasAnyRole("ADMIN", "USER", "MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/qrcode/generate").permitAll()
 
                         
                         // Account management endpoints
                         .requestMatchers("/api/accounts/validate").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/accounts/{id}").hasAnyRole("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.POST, "/api/accounts/uploadProfilePicture/**").hasAnyRole("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.PUT, "/api/accounts/update/**").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.GET, "/api/accounts/{id}").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/accounts/uploadProfilePicture/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/accounts/update/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
 
                         // Favorites endpoints - allow all authenticated users
                         .requestMatchers("/api/favorites/**").authenticated()

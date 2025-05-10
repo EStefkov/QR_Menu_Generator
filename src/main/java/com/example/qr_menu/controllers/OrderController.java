@@ -2,7 +2,9 @@ package com.example.qr_menu.controllers;
 
 import com.example.qr_menu.dto.OrderDTO;
 import com.example.qr_menu.entities.Order;
+import com.example.qr_menu.entities.OrderProduct;
 import com.example.qr_menu.repositories.OrderRepository;
+import com.example.qr_menu.repositories.OrderProductRepository;
 import com.example.qr_menu.services.OrderService;
 import com.example.qr_menu.utils.JwtTokenUtil;
 import io.jsonwebtoken.Claims;
@@ -16,7 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -26,11 +30,13 @@ public class OrderController {
     private final OrderService orderService;
     private final OrderRepository orderRepository;
     private final JwtTokenUtil jwtTokenUtil;  // Inject JwtTokenUtil
+    private final OrderProductRepository orderProductRepository;
 
-    public OrderController(OrderService orderService, OrderRepository orderRepository,JwtTokenUtil jwtTokenUtil) {
+    public OrderController(OrderService orderService, OrderRepository orderRepository, JwtTokenUtil jwtTokenUtil, OrderProductRepository orderProductRepository) {
         this.orderService = orderService;
         this.orderRepository = orderRepository;
         this.jwtTokenUtil = jwtTokenUtil;
+        this.orderProductRepository = orderProductRepository;
     }
 
     @PostMapping
@@ -97,6 +103,7 @@ public class OrderController {
                 .id(order.getId())
                 .accountId(order.getAccount().getId())
                 .restorantId(order.getRestorant().getId())
+                .restorantName(order.getRestorant().getRestorantName())
                 .orderStatus(order.getOrderStatus())
                 .orderTime(order.getOrderTime())
                 .totalPrice(order.getTotalPrice())
@@ -202,6 +209,7 @@ public class OrderController {
                             .id(savedOrder.getId())
                             .accountId(savedOrder.getAccount().getId())
                             .restorantId(savedOrder.getRestorant().getId())
+                            .restorantName(savedOrder.getRestorant().getRestorantName())
                             .orderStatus(savedOrder.getOrderStatus())
                             .orderTime(savedOrder.getOrderTime())
                             .totalPrice(savedOrder.getTotalPrice())
@@ -276,6 +284,138 @@ public class OrderController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(0L);
+        }
+    }
+
+    // Endpoint to get user orders with pagination
+    @GetMapping("/user")
+    public ResponseEntity<Page<OrderDTO>> getUserOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "orderTime") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            @RequestHeader("Authorization") String token) {
+        
+        try {
+            // Extract accountId from JWT token
+            String jwtToken = token.substring(7); // Remove "Bearer " prefix
+            Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken);
+            Long accountId = claims.get("accountId", Long.class);
+            
+            if (accountId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            
+            // Create pageable object for pagination
+            Pageable pageable = PageRequest.of(page, size,
+                    "asc".equalsIgnoreCase(direction) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending());
+            
+            // Get orders for the user
+            Page<Order> orders = orderRepository.findByAccountId(accountId, pageable);
+            
+            // Convert to DTOs
+            Page<OrderDTO> orderDTOs = orders.map(order -> {
+                OrderDTO orderDTO = OrderDTO.builder()
+                        .id(order.getId())
+                        .accountId(order.getAccount().getId())
+                        .restorantId(order.getRestorant().getId())
+                        .restorantName(order.getRestorant().getRestorantName())
+                        .orderStatus(order.getOrderStatus())
+                        .orderTime(order.getOrderTime())
+                        .totalPrice(order.getTotalPrice())
+                        .build();
+                
+                // Get order products
+                List<OrderProduct> orderProducts = orderProductRepository.findByOrderId(order.getId());
+                List<OrderDTO.ProductOrderDTO> productDTOs = orderProducts.stream()
+                        .map(op -> OrderDTO.ProductOrderDTO.builder()
+                                .productId(op.getProduct().getId())
+                                .productName(op.getProduct().getProductName())
+                                .productImage(op.getProduct().getProductImage())
+                                .quantity(op.getQuantity())
+                                .productPriceAtOrder(op.getProduct().getProductPrice())
+                                .build())
+                        .collect(Collectors.toList());
+                
+                orderDTO.setProducts(productDTOs);
+                return orderDTO;
+            });
+            
+            return ResponseEntity.ok(orderDTOs);
+            
+        } catch (Exception e) {
+            System.out.println("Error getting user orders: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // Endpoint to get orders by account ID with pagination
+    @GetMapping("/account/{accountId}")
+    public ResponseEntity<Page<OrderDTO>> getOrdersByAccountId(
+            @PathVariable Long accountId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "orderTime") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            @RequestHeader("Authorization") String token) {
+        
+        try {
+            // Extract accountId from JWT token for security check
+            String jwtToken = token.substring(7); // Remove "Bearer " prefix
+            Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken);
+            Long tokenAccountId = claims.get("accountId", Long.class);
+            String role = claims.get("role", String.class);
+            
+            // Security check: Only admin users or the owner of the account can access these orders
+            boolean isAdmin = "ROLE_ADMIN".equals(role);
+            boolean isAccountOwner = tokenAccountId != null && tokenAccountId.equals(accountId);
+            
+            if (!isAdmin && !isAccountOwner) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            
+            // Create pageable object for pagination
+            Pageable pageable = PageRequest.of(page, size,
+                    "asc".equalsIgnoreCase(direction) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending());
+            
+            // Get orders for the account
+            Page<Order> orders = orderRepository.findByAccountId(accountId, pageable);
+            
+            // Convert to DTOs
+            Page<OrderDTO> orderDTOs = orders.map(order -> {
+                OrderDTO orderDTO = OrderDTO.builder()
+                        .id(order.getId())
+                        .accountId(order.getAccount().getId())
+                        .restorantId(order.getRestorant().getId())
+                        .restorantName(order.getRestorant().getRestorantName())
+                        .orderStatus(order.getOrderStatus())
+                        .orderTime(order.getOrderTime())
+                        .totalPrice(order.getTotalPrice())
+                        .build();
+                
+                // Get order products
+                List<OrderProduct> orderProducts = orderProductRepository.findByOrderId(order.getId());
+                List<OrderDTO.ProductOrderDTO> productDTOs = orderProducts.stream()
+                        .map(op -> OrderDTO.ProductOrderDTO.builder()
+                                .productId(op.getProduct().getId())
+                                .productName(op.getProduct().getProductName())
+                                .productImage(op.getProduct().getProductImage())
+                                .quantity(op.getQuantity())
+                                .productPriceAtOrder(op.getProduct().getProductPrice())
+                                .build())
+                        .collect(Collectors.toList());
+                
+                orderDTO.setProducts(productDTOs);
+                return orderDTO;
+            });
+            
+            return ResponseEntity.ok(orderDTOs);
+            
+        } catch (Exception e) {
+            System.out.println("Error getting orders by account ID: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

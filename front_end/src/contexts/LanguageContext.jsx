@@ -70,7 +70,35 @@ export const LanguageProvider = ({ children }) => {
   const changeLanguage = (lang) => {
     if (Object.values(languages).includes(lang)) {
       console.log(`Changing language to: ${lang}`);
+      
+      // Debug translation access
+      const currentTranslations = translations[lang] || {};
+      console.log("Translation structure check:", {
+        hasCommonObject: !!currentTranslations.common,
+        hasBackToManagerKey: !!currentTranslations['common.backToManagerDashboard'],
+        commonObjectKeys: currentTranslations.common ? Object.keys(currentTranslations.common) : [],
+        nestedBackToManager: currentTranslations.common ? currentTranslations.common.backToManagerDashboard : null
+      });
+      
+      // Set language in state
       setLanguage(lang);
+      
+      // Also update localStorage directly for immediate effect
+      localStorage.setItem('language', lang);
+      
+      // Update document attributes 
+      document.documentElement.lang = lang;
+      document.documentElement.setAttribute('lang', lang);
+      
+      // Force re-render for components that might not be directly subscribed to context
+      if (i18n.isInitialized) {
+        i18n.changeLanguage(lang);
+      }
+      
+      console.log(`Language changed successfully to: ${lang}`, { 
+        localStorage: localStorage.getItem('language'),
+        documentLang: document.documentElement.lang
+      });
     } else {
       console.warn(`Invalid language code: ${lang}`);
     }
@@ -82,10 +110,37 @@ export const LanguageProvider = ({ children }) => {
     const currentTranslations = translations[language] || {};
     const fallbackTranslations = translations[languages.EN] || {};
     
-    const translation = currentTranslations[key] || fallbackTranslations[key];
+    // First try direct key access (for flat keys like in Bulgarian)
+    const directTranslation = currentTranslations[key];
+    if (directTranslation) return directTranslation;
+    
+    // Then try nested key access if the key contains dots
+    if (key.includes('.')) {
+      const parts = key.split('.');
+      
+      // Try accessing nested structure
+      let currentValue = currentTranslations;
+      let fallbackValue = fallbackTranslations;
+      
+      // Traverse the nested structure
+      for (const part of parts) {
+        currentValue = currentValue && typeof currentValue === 'object' ? currentValue[part] : undefined;
+        fallbackValue = fallbackValue && typeof fallbackValue === 'object' ? fallbackValue[part] : undefined;
+      }
+      
+      if (currentValue) return currentValue;
+      if (fallbackValue) return fallbackValue;
+      
+      // If nested approach fails, try flat access with the dotted key as fallback
+      const flatKeyFallback = currentTranslations[key] || fallbackTranslations[key];
+      if (flatKeyFallback) return flatKeyFallback;
+    }
+    
+    // Fall back to English for simple keys
+    const fallbackTranslation = fallbackTranslations[key];
     
     // If still not found, return the key itself as a last resort
-    return translation || key;
+    return fallbackTranslation || key;
   };
 
   return (

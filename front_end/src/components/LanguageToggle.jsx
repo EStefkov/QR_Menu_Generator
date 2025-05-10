@@ -20,7 +20,26 @@ const LanguageToggle = ({ className = "", showText = false }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   
+  // Debug current language on mount
+  useEffect(() => {
+    console.log("LanguageToggle - Current language:", language);
+    console.log("LanguageToggle - localStorage language:", localStorage.getItem('language'));
+  }, [language]);
+  
   const toggleDropdown = () => setIsOpen(!isOpen);
+  
+  const handleLanguageChange = (lang) => {
+    console.log(`LanguageToggle - Changing to ${lang} from ${language}`);
+    
+    // Change language through context
+    changeLanguage(lang);
+    
+    // Close dropdown
+    setIsOpen(false);
+    
+    // Force reload to refresh all translations
+    setTimeout(() => window.location.reload(), 100);
+  };
   
   const languageDisplay = language === languages.EN ? 'EN' : 'БГ';
 
@@ -45,19 +64,13 @@ const LanguageToggle = ({ className = "", showText = false }) => {
       <div className={`language-dropdown-menu ${isOpen ? 'active' : ''}`}>
         <div className="language-dropdown-content">
           <button
-            onClick={() => {
-              changeLanguage(languages.EN);
-              setIsOpen(false);
-            }}
+            onClick={() => handleLanguageChange(languages.EN)}
             className={`language-option ${language === languages.EN ? 'active' : ''}`}
           >
             <span className="font-medium mr-2">EN</span>English
           </button>
           <button
-            onClick={() => {
-              changeLanguage(languages.BG);
-              setIsOpen(false);
-            }}
+            onClick={() => handleLanguageChange(languages.BG)}
             className={`language-option ${language === languages.BG ? 'active' : ''}`}
           >
             <span className="font-medium mr-2">БГ</span>Български

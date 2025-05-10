@@ -4,7 +4,7 @@ import { AuthContext } from "../contexts/AuthContext";
 
 function ProtectedRoute({ children, role }) {
   const location = useLocation();
-  const { userData } = useContext(AuthContext);
+  const { userData, saveRedirectUrl } = useContext(AuthContext);
   const [mounted, setMounted] = useState(false);
   
   // Добавяме ефект, който ще се изпълни само веднъж при монтиране
@@ -14,6 +14,17 @@ function ProtectedRoute({ children, role }) {
     console.log(`Token in AuthContext: ${!!userData?.token}`);
     setMounted(true);
   }, [location.pathname, userData?.token]);
+  
+  // Helper function to save redirect URL and navigate to login
+  const redirectToLogin = () => {
+    // Save the current path for redirecting back after login
+    if (location.pathname.includes('/menu/')) {
+      console.log(`Saving redirect URL: ${location.pathname}`);
+      saveRedirectUrl(location.pathname);
+    }
+    
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  };
   
   // Специална логика за профил страницата - НИКОГА не редиректваме при рефреш
   const isProfilePage = location.pathname.includes('/profile');
@@ -41,7 +52,7 @@ function ProtectedRoute({ children, role }) {
     
     // Ако няма токен, дори на профил страница трябва да редиректнем
     console.log("ProtectedRoute: Липсва токен в localStorage - редирект към логин");
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return redirectToLogin();
   }
   
   // За всички други страници - стандартна логика за проверка
@@ -86,7 +97,7 @@ function ProtectedRoute({ children, role }) {
   }
   
   // Нито localStorage, нито AuthContext имат токен - редирект
-  return <Navigate to="/login" replace state={{ from: location }} />;
+  return redirectToLogin();
 }
 
 export default ProtectedRoute; 

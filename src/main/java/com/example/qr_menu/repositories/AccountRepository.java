@@ -26,4 +26,11 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByMailAddress(String mailAddress);
 
     boolean existsByMailAddress(String mailAddress);
+
+    /**
+     * Find all accounts with a specific account type
+     * @param accountType The account type to search for
+     * @return List of accounts with the specified type
+     */
+    List<Account> findByAccountType(Account.AccountType accountType);
 }

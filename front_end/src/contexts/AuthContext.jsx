@@ -131,6 +131,7 @@ export function AuthProvider({ children }) {
   const [userData, setUserData] = useState({});
   const [isInitialized, setIsInitialized] = useState(false);
   const [userUpdating, setUserUpdating] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState(null);
   
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -143,10 +144,17 @@ export function AuthProvider({ children }) {
       const storedToken = localStorage.getItem("token");
       console.log("Initial auth state check - Token exists:", !!storedToken, "On profile page:", isOnProfilePage);
       
+      // Check if there's a saved redirect URL
+      const savedRedirectUrl = localStorage.getItem("redirectUrl");
+      if (savedRedirectUrl) {
+        setRedirectUrl(savedRedirectUrl);
+      }
+      
       // Опростена логика - на профил страница или където има токен в localStorage, винаги зареждаме от localStorage
       if (storedToken) {
         // Има токен - зареждаме данните от localStorage
         const id = localStorage.getItem("id") || localStorage.getItem("userId");
+        const mailAddress = localStorage.getItem("mailAddress");
         setUserData({
           id: id,
           token: storedToken,
@@ -154,7 +162,8 @@ export function AuthProvider({ children }) {
           lastName: localStorage.getItem("lastName"),
           profilePicture: localStorage.getItem("profilePicture"),
           accountType: localStorage.getItem("accountType"),
-          mailAddress: localStorage.getItem("mailAddress"),
+          mailAddress: mailAddress,
+          email: mailAddress // Add email field as an alias for mailAddress
         });
         
         // На профил страница никога не правим валидация на токена
@@ -190,21 +199,28 @@ export function AuthProvider({ children }) {
       console.log("AuthContext: User data updated event received");
       updateUserUpdatingState(true); // Set updating flag to true
       
-      // Simple refresh user data from localStorage without token validation
-      const id = localStorage.getItem("id") || localStorage.getItem("userId");
-      const token = localStorage.getItem("token");
+      // Get current user ID from state and localStorage
+      const currentStateId = userData.id;
+      const localStorageId = localStorage.getItem("id") || localStorage.getItem("userId");
       
-      if (id && token) {
-        console.log("AuthContext: Refreshing user data from localStorage");
-        setUserData({
-          id,
-          token,
-          firstName: localStorage.getItem("firstName"),
-          lastName: localStorage.getItem("lastName"),
-          profilePicture: localStorage.getItem("profilePicture"),
-          accountType: localStorage.getItem("accountType"),
-          mailAddress: localStorage.getItem("mailAddress"),
-        });
+      // Only update if the IDs match and we have a token
+      if (currentStateId && localStorageId && currentStateId === localStorageId) {
+        const token = localStorage.getItem("token");
+        
+        if (token) {
+          console.log("AuthContext: Refreshing user data from localStorage for current user");
+          setUserData({
+            id: localStorageId,
+            token,
+            firstName: localStorage.getItem("firstName"),
+            lastName: localStorage.getItem("lastName"),
+            profilePicture: localStorage.getItem("profilePicture"),
+            accountType: localStorage.getItem("accountType"),
+            mailAddress: localStorage.getItem("mailAddress"),
+          });
+        }
+      } else {
+        console.log("AuthContext: Ignoring user data update for different user");
       }
       
       // Reset the updating flag after a delay
@@ -247,6 +263,24 @@ export function AuthProvider({ children }) {
     });
     
     console.log("Login complete, user data set");
+    
+    // Return the saved redirect URL if available
+    return redirectUrl;
+  };
+
+  // Save URL to redirect after login
+  const saveRedirectUrl = (url) => {
+    if (!url || url === '/login' || url === '/register') return;
+    
+    console.log("Saving redirect URL:", url);
+    localStorage.setItem("redirectUrl", url);
+    setRedirectUrl(url);
+  };
+  
+  // Clear saved redirect URL
+  const clearRedirectUrl = () => {
+    localStorage.removeItem("redirectUrl");
+    setRedirectUrl(null);
   };
 
   // Logout function: clear localStorage and state
@@ -262,9 +296,11 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("accountType");
     localStorage.removeItem("mailAddress");
     localStorage.removeItem("userId");
+    localStorage.removeItem("redirectUrl");
 
     // Clear state
     setUserData({});
+    setRedirectUrl(null);
     
     console.log("Logout complete, user data cleared");
   };
@@ -316,7 +352,10 @@ export function AuthProvider({ children }) {
       updateUserData, 
       isInitialized,
       userUpdating,
-      setUserUpdating: updateUserUpdatingState
+      setUserUpdating: updateUserUpdatingState,
+      saveRedirectUrl,
+      clearRedirectUrl,
+      redirectUrl
     }}>
       {children}
     </AuthContext.Provider>

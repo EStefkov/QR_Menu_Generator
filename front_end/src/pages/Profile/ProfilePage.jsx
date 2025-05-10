@@ -6,7 +6,7 @@ import AdminProfileContent from './AdminProfileContent';
 import UserProfileContent from './UserProfileContent';
 import ProfileSettings from './ProfileSettings';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HiHome, HiChartPie, HiUser, HiCog, HiLogout, HiShieldCheck, HiRefresh, HiExclamationCircle, HiMenu, HiX } from 'react-icons/hi';
+import { HiHome, HiChartPie, HiUser, HiCog, HiLogout, HiShieldCheck, HiRefresh, HiExclamationCircle } from 'react-icons/hi';
 
 const ProfilePage = () => {
   const { userData, logout } = useContext(AuthContext);
@@ -20,7 +20,6 @@ const ProfilePage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminLoading, setAdminLoading] = useState(false);
   const [authError, setAuthError] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Check if user is admin from JWT token data or localStorage
   const isAdminFromData = userData?.accountType === 'ROLE_ADMIN' || localStorage.getItem('accountType') === 'ROLE_ADMIN';
@@ -98,13 +97,8 @@ const ProfilePage = () => {
     navigate('/login');
   };
   
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-  
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setMobileMenuOpen(false); // Close mobile menu after tab selection
   };
   
   // Показваме съдържание с кеширани данни, докато зареждаме
@@ -256,13 +250,6 @@ const ProfilePage = () => {
               )}
             </div>
           </div>
-          <button 
-            onClick={toggleMobileMenu}
-            className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-            aria-label={mobileMenuOpen ? t('responsive.collapse') : t('responsive.expand')}
-          >
-            {mobileMenuOpen ? <HiX className="w-6 h-6" /> : <HiMenu className="w-6 h-6" />}
-          </button>
         </div>
         
         {/* Mobile Tab Buttons - Always visible on mobile */}
@@ -294,13 +281,20 @@ const ProfilePage = () => {
             <HiHome className="w-5 h-5 mb-1" />
             <span className="text-xs">{t('nav_home') || 'Home'}</span>
           </button>
+          <button 
+            onClick={handleLogout}
+            className="flex-1 py-3 px-2 flex flex-col items-center justify-center text-red-600 dark:text-red-400"
+          >
+            <HiLogout className="w-5 h-5 mb-1" />
+            <span className="text-xs">{t('nav_logout') || 'Logout'}</span>
+          </button>
         </div>
         
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Sidebar - Hidden on mobile, visible on desktop */}
-          <div className={`${mobileMenuOpen ? 'block' : 'hidden'} md:block w-full md:w-1/4 lg:w-1/5 order-2 md:order-1`}>
+          <div className="hidden md:block w-full md:w-1/4 lg:w-1/5 order-2 md:order-1">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6">
-              <div className="flex flex-col items-center mb-6 hidden md:flex">
+              <div className="flex flex-col items-center mb-6">
                 <div className="relative">
                   <img 
                     src={userData.profilePicture ? `${import.meta.env.VITE_API_URL}${userData.profilePicture}` : "/vite.svg"}
@@ -311,7 +305,7 @@ const ProfilePage = () => {
                       e.target.src = "/vite.svg";
                     }}
                   />
-                  <span className={`absolute bottom-0 right-0 w-4 h-4 md:w-5 md:h-5 rounded-full ${isAdmin ? 'bg-purple-500' : 'bg-green-500'} border-2 border-white dark:border-gray-800`}></span>
+                  <span className="absolute bottom-0 right-0 w-4 h-4 md:w-5 md:h-5 rounded-full bg-green-500 border-2 border-white dark:border-gray-800"></span>
                 </div>
                 <h2 className="mt-4 text-lg md:text-xl font-bold text-gray-800 dark:text-white">
                   {userData.firstName} {userData.lastName}
@@ -322,21 +316,17 @@ const ProfilePage = () => {
                   {getUserEmail()}
                 </p>
                 
-                {/* Admin badge on desktop */}
-                {isAdmin && (
-                  <div className="mt-2 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 px-3 py-1 rounded-full flex items-center">
-                    <HiShieldCheck className="w-4 h-4 md:w-5 md:h-5 mr-1" />
-                    <span className="text-xs md:text-sm font-medium">{t('profile.adminRole') || 'Administrator'}</span>
-                  </div>
-                )}
-                
-                {/* User badge on desktop */}
-                {!isAdmin && (
-                  <div className="mt-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-3 py-1 rounded-full flex items-center">
-                    <HiUser className="w-4 h-4 md:w-5 md:h-5 mr-1" />
-                    <span className="text-xs md:text-sm font-medium">{t('profile.userRole') || 'Customer'}</span>
-                  </div>
-                )}
+                {/* Role badge */}
+                <div className="mt-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-3 py-1 rounded-full flex items-center">
+                  <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 20 20" aria-hidden="true" class="w-4 h-4 md:w-5 md:h-5 mr-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                  </svg>
+                  <span className="text-xs md:text-sm font-medium">
+                    {userData.accountType === 'ROLE_ADMIN' ? 'Administrator' :
+                     userData.accountType === 'ROLE_MANAGER' ? 'Manager' :
+                     userData.accountType === 'ROLE_COMANAGER' ? 'Co-Manager' : 'Customer'}
+                  </span>
+                </div>
               </div>
               
               <nav className="space-y-2">

@@ -5,11 +5,10 @@ import {
     Navigate,
     useLocation,
   } from "react-router-dom";
-  import { useContext, useEffect, useState } from "react";
+  import { useContext, useEffect, useState, useRef } from "react";
   import NavBar from "./components/NavBar";
   import Login from "./pages/Login.jsx";
   import RegisterPage from "./pages/Register.jsx";
-  import AdminDashboard from "./pages/AdminDashboard.jsx";
   import UserDashboard from "./pages/UserDashboard.jsx";
   import WaiterDashboard from "./pages/WaiterDashboard.jsx";
   import Home from "./pages/Home.jsx";
@@ -28,6 +27,8 @@ import {
   import ProfilePage from './pages/Profile/ProfilePage';
   import RestaurantMenus from './pages/Restaurants/RestaurantMenus';
   import { getStoredToken } from './api/account';
+  import ManagerDashboard from "./pages/ManagerDashboard.jsx";
+  import CoManagerDashboard from "./pages/CoManagerDashboard.jsx";
   
   const Layout = ({ children }) => {
     const location = useLocation();
@@ -35,6 +36,12 @@ import {
   
     // Don't show NavBar on login and register pages
     const hideNavBar = location.pathname === "/login" || location.pathname === "/register";
+  
+    // Add state to track if language reload is needed
+    const [shouldReload, setShouldReload] = useState(false);
+    
+    // Track previous language for change detection
+    const prevLanguageRef = useRef(language);
   
     // Make sure language is correctly set
     useEffect(() => {
@@ -58,6 +65,21 @@ import {
         document.documentElement.classList.remove('dark');
       }
     }, []);
+  
+    // Watch for language changes and force a reload if needed
+    useEffect(() => {
+      // Check if language has changed since last render
+      if (prevLanguageRef.current !== language) {
+        console.log(`Language changed from ${prevLanguageRef.current} to ${language}`);
+        
+        // Alternative approach: enable this line to force reload on language change
+        // Uncomment if translations still don't update:
+        // window.location.reload();
+        
+        // Update ref for next change
+        prevLanguageRef.current = language;
+      }
+    }, [language]);
   
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
@@ -155,14 +177,12 @@ import {
             }
           />
   
-          {/* Admin Dashboard */}
+          {/* Admin Dashboard - Redirect to Profile */}
           <Route
             path="/admin"
             element={
               isAuthenticated && accountType === "ROLE_ADMIN" ? (
-                <Layout>
-                  <AdminDashboard />
-                </Layout>
+                <Navigate to="/profile" />
               ) : (
                 <Navigate to="/" />
               )
@@ -194,6 +214,94 @@ import {
               ) : (
                 <Navigate to="/" />
               )
+            }
+          />
+  
+          {/* Manager Dashboard */}
+          <Route
+            path="/manager"
+            element={
+              isAuthenticated && (accountType === "ROLE_MANAGER" || localStorage.getItem("accountType") === "ROLE_MANAGER") ? (
+                <Layout>
+                  <ManagerDashboard />
+                </Layout>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+  
+          {/* Co-Manager Dashboard */}
+          <Route
+            path="/comanager"
+            element={
+              isAuthenticated && (accountType === "ROLE_COMANAGER" || localStorage.getItem("accountType") === "ROLE_COMANAGER") ? (
+                <Layout>
+                  <CoManagerDashboard />
+                </Layout>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+  
+          {/* Co-Manager Menus */}
+          <Route
+            path="/comanager/menus"
+            element={
+              <ProtectedRoute role="ROLE_COMANAGER">
+                <Layout>
+                  <RestaurantMenus />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+  
+          {/* Co-Manager Edit Menu */}
+          <Route
+            path="/comanager/menu/:menuId/edit"
+            element={
+              <ProtectedRoute role="ROLE_COMANAGER">
+                <Layout>
+                  <EditMenuPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+  
+          {/* Manager Menus - For viewing and editing restaurant menus */}
+          <Route
+            path="/manager/menus"
+            element={
+              <ProtectedRoute role="ROLE_MANAGER">
+                <Layout>
+                  <RestaurantMenus />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Additional route for manager menus with restaurantId parameter */}
+          <Route
+            path="/manager/menus/:restaurantId"
+            element={
+              <ProtectedRoute role="ROLE_MANAGER">
+                <Layout>
+                  <RestaurantMenus />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Manager Edit Menu - For editing a specific menu */}
+          <Route
+            path="/manager/menu/:menuId/edit"
+            element={
+              <ProtectedRoute role="ROLE_MANAGER">
+                <Layout>
+                  <EditMenuPage />
+                </Layout>
+              </ProtectedRoute>
             }
           />
   
