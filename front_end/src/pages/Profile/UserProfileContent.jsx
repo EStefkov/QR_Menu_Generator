@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
-import { profileApi } from '../../api/profileApi';
 import {
   HiUser,
   HiMail,
   HiPhone,
   HiCalendar,
-  HiShoppingCart,
-  HiHeart,
   HiExclamationCircle,
   HiRefresh,
   HiChevronUp
@@ -18,61 +15,6 @@ import OrderHistory from '../../components/profile/OrderHistory';
 const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
-  
-  // State for stats
-  const [statsLoading, setStatsLoading] = useState(false);
-  const [statsError, setStatsError] = useState(null);
-  const [orderCount, setOrderCount] = useState(0);
-  const [favoritesCount, setFavoritesCount] = useState(0);
-  
-  // Fetch user stats
-  useEffect(() => {
-    if (currentUser) {
-      fetchUserStats();
-    }
-  }, [currentUser]);
-  
-  const fetchUserStats = async () => {
-    if (!currentUser) return;
-    
-    setStatsLoading(true);
-    setStatsError(null);
-    
-    try {
-      console.log('UserProfileContent: Fetching user statistics...');
-      const stats = await profileApi.getUserStats();
-      console.log('UserProfileContent: Received stats from API:', stats);
-      
-      if (stats) {
-        setOrderCount(stats.orderCount || 0);
-        setFavoritesCount(stats.favoritesCount || 0);
-        console.log(`UserProfileContent: Updated state with order count: ${stats.orderCount}, favorites count: ${stats.favoritesCount}`);
-      } else {
-        console.warn('UserProfileContent: Received empty stats object from API');
-        // Use mock data as fallback
-        console.log('UserProfileContent: Using default values as fallback');
-        setOrderCount(0);
-        setFavoritesCount(0);
-      }
-    } catch (error) {
-      console.error('UserProfileContent: Error fetching user stats:', error);
-      
-      // Check if we might have access issues
-      if (error.message && error.message.includes('403')) {
-        console.warn('UserProfileContent: Possible permission issue (403 Forbidden)');
-      }
-      
-      // Use mock data as fallback in case of error
-      console.log('UserProfileContent: Using default values due to error');
-      setOrderCount(0);
-      setFavoritesCount(0);
-      
-      // Show error message to user
-      setStatsError(t('errors.general') || 'Failed to load statistics');
-    } finally {
-      setStatsLoading(false);
-    }
-  };
   
   // Format date helper
   const formatDate = (dateString) => {
@@ -221,95 +163,12 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
           </div>
         </div>
         
-        {/* Activity Summary - Responsive */}
-        <div className="bg-white dark:bg-gray-700 shadow rounded-xl p-4 md:p-6 mb-6 md:mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white">
-              {t('profile.activitySummary') || 'Activity Summary'}
-            </h3>
-            
-            {/* Refresh button for stats */}
-            <button 
-              onClick={fetchUserStats} 
-              className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 flex items-center transition"
-              disabled={statsLoading}
-              aria-label={t('common.refresh') || 'Refresh'}
-            >
-              <HiRefresh className={`w-5 h-5 ${statsLoading ? 'animate-spin' : ''}`} />
-              <span className="text-sm font-medium ml-1 hidden sm:inline">{t('common.refresh') || 'Refresh'}</span>
-            </button>
-          </div>
-          
-          {statsError && (
-            <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 p-3 rounded-lg mb-4 text-sm">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <p className="flex items-center">
-                  <HiExclamationCircle className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm">{statsError}</span>
-                </p>
-                <button 
-                  onClick={fetchUserStats} 
-                  className="ml-0 sm:ml-3 bg-red-100 hover:bg-red-200 dark:bg-red-800/30 dark:hover:bg-red-700/30 text-red-800 dark:text-red-300 px-2 py-1 rounded-lg text-xs font-medium transition flex items-center"
-                >
-                  <HiRefresh className="w-3 h-3 mr-1" />
-                  {t('common.retry') || 'Retry'}
-                </button>
-              </div>
-            </div>
-          )}
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
-            <div className="flex items-center">
-              <div className="bg-indigo-100 dark:bg-indigo-900 p-2 md:p-3 rounded-full mr-3 md:mr-4 flex-shrink-0">
-                <HiShoppingCart className="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-300" />
-              </div>
-              <div>
-                <p className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">
-                  {statsLoading ? (
-                    <span className="flex items-center">
-                      <span className="w-4 h-4 md:w-6 md:h-6 border-t-2 border-b-2 border-indigo-500 rounded-full animate-spin mr-2"></span>
-                      <span className="text-sm md:text-base">{t('loading') || 'Loading...'}</span>
-                    </span>
-                  ) : (
-                    orderCount
-                  )}
-                </p>
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.totalOrders') || 'Total Orders'}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <div className="bg-pink-100 dark:bg-pink-900 p-2 md:p-3 rounded-full mr-3 md:mr-4 flex-shrink-0">
-                <HiHeart className="w-6 h-6 md:w-8 md:h-8 text-pink-600 dark:text-pink-300" />
-              </div>
-              <div>
-                <p className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">
-                  {statsLoading ? (
-                    <span className="flex items-center">
-                      <span className="w-4 h-4 md:w-6 md:h-6 border-t-2 border-b-2 border-pink-500 rounded-full animate-spin mr-2"></span>
-                      <span className="text-sm md:text-base">{t('loading') || 'Loading...'}</span>
-                    </span>
-                  ) : (
-                    favoritesCount
-                  )}
-                </p>
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{t('profile.favoriteProducts') || 'Favorite Products'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Order History Section */}
-        <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-700 dark:to-blue-900/20 shadow rounded-xl hover:shadow-md transition">
-          <div className="p-4 md:p-6">
-            <div className="flex justify-between items-center mb-2 md:mb-4">
-              <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white">
-                {t('profile.orderHistory') || 'Order History'}
-              </h3>
-            </div>
-            
-            <OrderHistory />
-          </div>
+        {/* Order History with improved colors */}
+        <div className="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-blue-900/20 shadow rounded-xl p-4 md:p-6">
+          <h3 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white mb-4">
+            {t('profile.orderHistory') || 'Order History'}
+          </h3>
+          <OrderHistory />
         </div>
         
         {/* Back to Top - Mobile Only */}

@@ -458,49 +458,59 @@ export const profileApi = {
           return { orderCount: 0, favoritesCount: 0 };
         }
       }
+
+      console.log('Using accountId for stats:', accountId);
       
       // Get orders count
       let orderCount = 0;
       try {
-        const ordersResponse = await axiosInstance.get(`/accounts/${accountId}/orders`);
-        if (ordersResponse.data) {
-          let orders = [];
-          if (Array.isArray(ordersResponse.data)) {
-            orders = ordersResponse.data;
-          } else if (ordersResponse.data.content && Array.isArray(ordersResponse.data.content)) {
-            orders = ordersResponse.data.content;
-          }
-          orderCount = orders.length;
-          console.log(`Retrieved ${orderCount} orders for user ${accountId}`);
+        console.log('Attempting to fetch orders count from /orders/count/${accountId}');
+        const ordersResponse = await axiosInstance.get(`/orders/count/${accountId}`);
+        console.log('Orders count response:', ordersResponse);
+        
+        if (ordersResponse.data !== undefined) {
+          orderCount = parseInt(ordersResponse.data) || 0;
+          console.log(`Found ${orderCount} orders`);
         }
       } catch (ordersError) {
-        console.error('Failed to retrieve orders:', ordersError);
+        console.error('Error fetching orders count:', ordersError);
+        if (ordersError.response) {
+          console.error('Orders error response:', ordersError.response.data);
+          console.error('Orders error status:', ordersError.response.status);
+        }
       }
       
       // Get favorites count
       let favoritesCount = 0;
       try {
-        const favoritesResponse = await axiosInstance.get(`/favorites/user/${accountId}`);
-        if (favoritesResponse.data) {
-          let favorites = [];
-          if (Array.isArray(favoritesResponse.data)) {
-            favorites = favoritesResponse.data;
-          } else if (favoritesResponse.data.content && Array.isArray(favoritesResponse.data.content)) {
-            favorites = favoritesResponse.data.content;
-          }
-          favoritesCount = favorites.length;
-          console.log(`Retrieved ${favoritesCount} favorites for user ${accountId}`);
+        console.log('Attempting to fetch favorites count from /favorites/count/${accountId}');
+        const favoritesResponse = await axiosInstance.get(`/favorites/count/${accountId}`);
+        console.log('Favorites count response:', favoritesResponse);
+        
+        if (favoritesResponse.data !== undefined) {
+          favoritesCount = parseInt(favoritesResponse.data) || 0;
+          console.log(`Found ${favoritesCount} favorites`);
         }
       } catch (favoritesError) {
-        console.error('Failed to retrieve favorites:', favoritesError);
+        console.error('Error fetching favorites count:', favoritesError);
+        if (favoritesError.response) {
+          console.error('Favorites error response:', favoritesError.response.data);
+          console.error('Favorites error status:', favoritesError.response.status);
+        }
       }
       
-      return {
+      const stats = {
         orderCount,
         favoritesCount
       };
+      console.log('Final stats:', stats);
+      return stats;
     } catch (error) {
-      console.error('Error fetching user stats:', error);
+      console.error('Error in getUserStats:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Error status:', error.response.status);
+      }
       return {
         orderCount: 0,
         favoritesCount: 0
