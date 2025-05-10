@@ -51,6 +51,10 @@ public class OrderService {
                 .restorant(restorant)
                 .orderTime(new Date())
                 .orderProducts(orderProducts)
+                .customerName(orderDTO.getCustomerName())
+                .customerEmail(orderDTO.getCustomerEmail())
+                .customerPhone(orderDTO.getCustomerPhone())
+                .specialRequests(orderDTO.getSpecialRequests())
                 .build();
         
         Order savedOrder = orderRepository.save(order);
@@ -108,6 +112,10 @@ public class OrderService {
                 .orderStatus(order.getOrderStatus())
                 .orderTime(order.getOrderTime())
                 .totalPrice(order.getTotalPrice()) // Now Double instead of Long
+                .customerName(order.getCustomerName())
+                .customerEmail(order.getCustomerEmail())
+                .customerPhone(order.getCustomerPhone())
+                .specialRequests(order.getSpecialRequests())
                 .build();
         
         // Get actual ordered products

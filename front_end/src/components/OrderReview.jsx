@@ -178,6 +178,9 @@ function OrderReview() {
         totalPrice: parseFloat(cartTotal || 0),
         restorantId: restaurantId,
         orderStatus: 'ACCEPTED',
+        customerName: customerInfo.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+        customerEmail: customerInfo.email || userData.email || '',
+        customerPhone: customerInfo.phone || userData.phone || '',
         specialRequests: customerInfo.specialRequests || ''
       });
       
@@ -193,6 +196,9 @@ function OrderReview() {
           totalPrice: parseFloat(cartTotal || 0),
           restorantId: restaurantId,
           orderStatus: 'ACCEPTED',
+          customerName: customerInfo.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+          customerEmail: customerInfo.email || userData.email || '',
+          customerPhone: customerInfo.phone || userData.phone || '',
           specialRequests: customerInfo.specialRequests || ''
         })
       });
