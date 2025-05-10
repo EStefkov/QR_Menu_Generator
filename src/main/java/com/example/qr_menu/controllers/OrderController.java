@@ -1,6 +1,7 @@
 package com.example.qr_menu.controllers;
 
 import com.example.qr_menu.dto.OrderDTO;
+import com.example.qr_menu.dto.MessageResponse;
 import com.example.qr_menu.entities.Order;
 import com.example.qr_menu.entities.OrderProduct;
 import com.example.qr_menu.repositories.OrderRepository;
@@ -19,8 +20,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -416,6 +419,44 @@ public class OrderController {
             System.out.println("Error getting orders by account ID: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/{orderId}/public")
+    public ResponseEntity<?> getPublicOrderDetails(@PathVariable Long orderId) {
+        try {
+            OrderDTO order = orderService.getOrderById(orderId);
+            if (order == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new MessageResponse("Order not found"));
+            }
+
+            // Create a public version of the order with only necessary information
+            Map<String, Object> publicOrder = new HashMap<>();
+            publicOrder.put("id", order.getId());
+            publicOrder.put("orderTime", order.getOrderTime());
+            publicOrder.put("totalPrice", order.getTotalPrice());
+            publicOrder.put("orderStatus", order.getOrderStatus());
+            publicOrder.put("products", order.getProducts().stream()
+                .map(product -> {
+                    Map<String, Object> productInfo = new HashMap<>();
+                    productInfo.put("productId", product.getProductId());
+                    productInfo.put("productName", product.getProductName());
+                    productInfo.put("productPriceAtOrder", product.getProductPriceAtOrder());
+                    productInfo.put("quantity", product.getQuantity());
+                    productInfo.put("productImage", product.getProductImage());
+                    return productInfo;
+                })
+                .collect(Collectors.toList()));
+            publicOrder.put("customerName", order.getCustomerName());
+            publicOrder.put("customerEmail", order.getCustomerEmail());
+            publicOrder.put("customerPhone", order.getCustomerPhone());
+            publicOrder.put("specialRequests", order.getSpecialRequests());
+
+            return ResponseEntity.ok(publicOrder);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new MessageResponse("Error fetching order details"));
         }
     }
 

@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -149,5 +150,42 @@ public class OrderService {
         } else {
             return false;
         }
+    }
+
+    public OrderDTO getOrderById(Long orderId) {
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (orderOpt.isEmpty()) {
+            return null;
+        }
+        
+        Order order = orderOpt.get();
+        OrderDTO orderDTO = OrderDTO.builder()
+            .id(order.getId())
+            .accountId(order.getAccount().getId())
+            .restorantId(order.getRestorant().getId())
+            .restorantName(order.getRestorant().getRestorantName())
+            .orderStatus(order.getOrderStatus())
+            .orderTime(order.getOrderTime())
+            .totalPrice(order.getTotalPrice())
+            .customerName(order.getCustomerName())
+            .customerEmail(order.getCustomerEmail())
+            .customerPhone(order.getCustomerPhone())
+            .specialRequests(order.getSpecialRequests())
+            .build();
+            
+        // Get order products
+        List<OrderProduct> orderProducts = orderProductRepository.findByOrderId(order.getId());
+        List<OrderDTO.ProductOrderDTO> productDTOs = orderProducts.stream()
+            .map(op -> OrderDTO.ProductOrderDTO.builder()
+                .productId(op.getProduct().getId())
+                .productName(op.getProduct().getProductName())
+                .productImage(op.getProduct().getProductImage())
+                .quantity(op.getQuantity())
+                .productPriceAtOrder(op.getProduct().getProductPrice())
+                .build())
+            .collect(Collectors.toList());
+        
+        orderDTO.setProducts(productDTOs);
+        return orderDTO;
     }
 }

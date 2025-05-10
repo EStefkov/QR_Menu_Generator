@@ -36,6 +36,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/accounts/register", "/api/accounts/login", "/api/accounts/validate").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         
+                        // Public order confirmation endpoint
+                        .requestMatchers(HttpMethod.GET, "/api/orders/{orderId}/public").permitAll()
+                        
                         // Static resources - make sure to include all possible paths
                         .requestMatchers("/uploads/**", "/uploads/profilePictures/**", "/uploads/profilePictures/*/**").permitAll()
                         .requestMatchers("/uploads/menuImages/**", "/uploads/menuImages/*/**").permitAll()

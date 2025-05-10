@@ -100,6 +100,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return true;
         }
 
+        // Allow unauthenticated access to public order confirmation
+        if (method.equalsIgnoreCase("GET") && path.matches("/api/orders/\\d+/public")) {
+            return true;
+        }
+
         // Add other public endpoints here if needed
 
         return false;
