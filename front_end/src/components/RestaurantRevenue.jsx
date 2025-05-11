@@ -4,7 +4,6 @@ import { restaurantApi } from '../api/restaurantApi';
 import axios from 'axios';
 import { HiCurrencyDollar, HiShoppingCart, HiCalendar, HiChartBar, HiRefresh } from 'react-icons/hi';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const timeRanges = ['day', 'week', 'month', 'year', 'all'];
 
 const RestaurantRevenue = ({ restaurantId, restaurantName }) => {
@@ -51,8 +50,8 @@ const RestaurantRevenue = ({ restaurantId, restaurantName }) => {
       
       console.log(`Fetching orders for restaurant ${restaurantId} from ${startDate.toISOString()} to ${now.toISOString()}`);
       
-      // Use the orders endpoint with date range parameters
-      const ordersResponse = await axios.get(`${API_BASE_URL}/api/orders`, {
+      // Use relative path with Vite proxy instead of absolute URL
+      const ordersResponse = await axios.get(`/api/orders`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -142,6 +141,22 @@ const RestaurantRevenue = ({ restaurantId, restaurantName }) => {
     if (num === undefined || num === null) return '0';
     return new Intl.NumberFormat().format(num);
   };
+  
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '—';
+    
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch (e) {
+      console.error("Error formatting date:", e);
+      return dateString.toString().substring(0, 10);
+    }
+  };
 
   const getTimeRangeLabel = () => {
     switch (timeRange) {
@@ -155,9 +170,9 @@ const RestaurantRevenue = ({ restaurantId, restaurantName }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
+    <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-4 md:p-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg md:text-xl font-semibold text-gray-800 dark:text-white">
+        <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
           {t('stats.restaurantRevenue') || 'Restaurant Revenue'}: {restaurantName}
         </h2>
         
@@ -166,7 +181,7 @@ const RestaurantRevenue = ({ restaurantId, restaurantName }) => {
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             >
               {timeRanges.map(range => (
                 <option key={range} value={range}>
@@ -201,69 +216,69 @@ const RestaurantRevenue = ({ restaurantId, restaurantName }) => {
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Revenue Card */}
-          <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-800/30 rounded-lg p-4 shadow-sm">
+          <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900 dark:to-emerald-900 rounded-lg p-4 shadow-sm">
             <div className="flex items-center">
-              <div className="p-3 rounded-full bg-green-100 dark:bg-green-900 mr-4">
+              <div className="p-3 rounded-full bg-green-100 dark:bg-green-800 mr-4">
                 <HiCurrencyDollar className="h-6 w-6 text-green-700 dark:text-green-300" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('stats.totalRevenue') || 'Total Revenue'}</p>
-                <p className="text-xl font-bold text-gray-800 dark:text-white">
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('stats.totalRevenue') || 'Total Revenue'}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
                   {formatCurrency(stats.totalRevenue || 0)}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{getTimeRangeLabel()}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300">{getTimeRangeLabel()}</p>
               </div>
             </div>
           </div>
           
           {/* Orders Count Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-800/30 rounded-lg p-4 shadow-sm">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 rounded-lg p-4 shadow-sm">
             <div className="flex items-center">
-              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900 mr-4">
+              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-800 mr-4">
                 <HiShoppingCart className="h-6 w-6 text-blue-700 dark:text-blue-300" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('stats.totalOrders') || 'Total Orders'}</p>
-                <p className="text-xl font-bold text-gray-800 dark:text-white">
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('stats.totalOrders') || 'Total Orders'}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
                   {formatNumber(stats.totalOrders || 0)}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{getTimeRangeLabel()}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300">{getTimeRangeLabel()}</p>
               </div>
             </div>
           </div>
           
           {/* Average Order Value */}
-          <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-800/30 rounded-lg p-4 shadow-sm">
+          <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900 dark:to-violet-900 rounded-lg p-4 shadow-sm">
             <div className="flex items-center">
-              <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900 mr-4">
+              <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-800 mr-4">
                 <HiChartBar className="h-6 w-6 text-purple-700 dark:text-purple-300" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('stats.avgOrderValue') || 'Avg Order Value'}</p>
-                <p className="text-xl font-bold text-gray-800 dark:text-white">
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('stats.avgOrderValue') || 'Avg Order Value'}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
                   {stats.totalOrders > 0 
                     ? formatCurrency((stats.totalRevenue || 0) / stats.totalOrders) 
                     : formatCurrency(0)}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{getTimeRangeLabel()}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300">{getTimeRangeLabel()}</p>
               </div>
             </div>
           </div>
           
           {/* Latest Order */}
-          <div className="bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900/30 dark:to-yellow-800/30 rounded-lg p-4 shadow-sm">
+          <div className="bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-amber-900 dark:to-yellow-900 rounded-lg p-4 shadow-sm">
             <div className="flex items-center">
-              <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-900 mr-4">
+              <div className="p-3 rounded-full bg-amber-100 dark:bg-amber-800 mr-4">
                 <HiCalendar className="h-6 w-6 text-amber-700 dark:text-amber-300" />
               </div>
               <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{t('stats.latestOrder') || 'Latest Order'}</p>
-                <p className="text-xl font-bold text-gray-800 dark:text-white">
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('stats.latestOrder') || 'Latest Order'}</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
                   {stats.latestOrderDate 
-                    ? new Date(stats.latestOrderDate).toLocaleDateString() 
+                    ? formatDateTime(stats.latestOrderDate)
                     : t('stats.noOrders') || 'No orders yet'}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-gray-600 dark:text-gray-300">
                   {stats.latestOrderId ? `ID: ${stats.latestOrderId}` : ''}
                 </p>
               </div>

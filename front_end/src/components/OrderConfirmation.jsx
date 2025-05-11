@@ -14,15 +14,17 @@ function OrderConfirmation() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        if (!userData.token) {
-          throw new Error('You must be logged in to view this order');
-        }
+        // Try to fetch order without authentication first
+        let response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}/public`);
         
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}`, {
-          headers: {
-            'Authorization': `Bearer ${userData.token}`
-          }
-        });
+        // If public endpoint fails, try with authentication
+        if (!response.ok && userData?.token) {
+          response = await fetch(`${import.meta.env.VITE_API_URL}/api/orders/${orderId}`, {
+            headers: {
+              'Authorization': `Bearer ${userData.token}`
+            }
+          });
+        }
         
         if (!response.ok) {
           throw new Error('Failed to fetch order');
@@ -44,9 +46,10 @@ function OrderConfirmation() {
             image: product.productImage || '/uploads/default_product.png'
           })),
           customerInfo: {
-            name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-            email: userData.email || '',
-            phone: userData.phone || ''
+            name: data.customerName || `${userData?.firstName || ''} ${userData?.lastName || ''}`.trim(),
+            email: data.customerEmail || userData?.email || '',
+            phone: data.customerPhone || userData?.phone || '',
+            specialRequests: data.specialRequests || ''
           }
         };
         
@@ -67,18 +70,24 @@ function OrderConfirmation() {
   
   const generateQRCode = async (orderData) => {
     try {
+      // Create the direct order confirmation URL
+      const orderConfirmationUrl = `${window.location.origin}/order-confirmation/${orderData.id}`;
+      
+      // Create QR code with the direct URL
       const qrCodeData = {
-        orderId: orderData.id,
-        amount: orderData.totalAmount,
-        items: orderData.items.length,
-        date: orderData.orderDate
+        text: orderConfirmationUrl,
+        format: 'url',
+        size: 300,
+        margin: 1,
+        errorCorrectionLevel: 'H',
+        type: 'url'
       };
       
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/qrcode/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userData.token}`
+          'Authorization': `Bearer ${userData?.token || ''}`
         },
         body: JSON.stringify(qrCodeData)
       });
@@ -245,12 +254,21 @@ function OrderConfirmation() {
                   </div>
                 )}
                 
-                {order.customerInfo?.specialRequests && (
-                  <div className="sm:col-span-2">
-                    <dt className="text-sm font-medium text-gray-400">Special requests</dt>
-                    <dd className="mt-1 text-sm text-gray-200">{order.customerInfo.specialRequests}</dd>
-                  </div>
-                )}
+                <div className="sm:col-span-2">
+                  <dt className="text-sm font-medium text-gray-400 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    Special Requests
+                  </dt>
+                  <dd className="mt-1 text-sm text-gray-200 bg-gradient-to-r from-gray-700 to-gray-800 p-4 rounded-md border-l-4 border-blue-500 shadow-inner">
+                    {order.customerInfo?.specialRequests ? (
+                      <p className="whitespace-pre-wrap">{order.customerInfo.specialRequests}</p>
+                    ) : (
+                      <p className="text-gray-500 italic">No special requests provided</p>
+                    )}
+                  </dd>
+                </div>
               </dl>
             </div>
             
@@ -291,7 +309,15 @@ function OrderConfirmation() {
                     <div className="flex justify-center">
                       <div className="bg-white p-4 rounded-lg border border-gray-600">
                         {qrCode ? (
-                          <img src={qrCode} alt="Order QR code" className="w-44 h-44" />
+                          <img 
+                            src={qrCode} 
+                            alt="Order QR code" 
+                            className="w-44 h-44 object-contain"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = `${import.meta.env.VITE_API_URL}/uploads/default_qr.png`;
+                            }}
+                          />
                         ) : (
                           <div className="w-44 h-44 flex items-center justify-center bg-gray-100">
                             <p className="text-sm text-gray-500">Loading QR code...</p>

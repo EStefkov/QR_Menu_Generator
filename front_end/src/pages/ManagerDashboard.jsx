@@ -10,6 +10,9 @@ import axios from 'axios';
 import CreateRestaurantModal from '../components/CreateRestaurantModal';
 import ManagerAccountsTable from '../components/manager/ManagerAccountsTable';
 import RestaurantRevenue from '../components/RestaurantRevenue';
+import RecentOrdersCard from '../components/common/RecentOrdersCard';
+import OrderDetailsModal from '../components/common/OrderDetailsModal';
+import PopularProductsCard from '../components/stats/PopularProductsCard';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -32,6 +35,9 @@ const ManagerDashboard = () => {
   const [accounts, setAccounts] = useState([]);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [activeTab, setActiveTab] = useState('restaurants'); // 'restaurants' or 'managers'
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [orderUpdateSuccess, setOrderUpdateSuccess] = useState(false);
 
   // Initialize translation keys if they don't exist
   useEffect(() => {
@@ -283,6 +289,37 @@ const ManagerDashboard = () => {
     );
   };
 
+  // Add a function to handle viewing order details
+  const handleViewOrderDetails = (order) => {
+    setSelectedOrder(order);
+    setShowOrderModal(true);
+  };
+
+  // Add a function to handle updating order status
+  const handleOrderUpdated = (orderId, newStatus) => {
+    // Show success message
+    setOrderUpdateSuccess(true);
+    
+    // Hide success message after 3 seconds
+    setTimeout(() => {
+      setOrderUpdateSuccess(false);
+    }, 3000);
+    
+    // Close the modal
+    setShowOrderModal(false);
+    
+    // Refresh the orders data
+    // This will cause the RecentOrdersCard component to re-fetch its data
+    if (selectedRestaurant) {
+      // Force a restaurant re-selection to refresh all data
+      const currentRestaurant = {...selectedRestaurant};
+      setSelectedRestaurant(null);
+      setTimeout(() => {
+        setSelectedRestaurant(currentRestaurant);
+      }, 100);
+    }
+  };
+
   // Fix: We'll check if loading state first, then render content
   if (loading) {
     return (
@@ -512,12 +549,41 @@ const ManagerDashboard = () => {
                   </h3>
                   
                   {/* Restaurant Revenue Statistics */}
-                  <div className="mb-6">
+                  <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      {t('stats.restaurantRevenue') || 'Restaurant Revenue'}
+                    </h3>
                     <RestaurantRevenue 
+                      key={`revenue-${selectedRestaurant.id}-${Date.now()}`}
                       restaurantId={selectedRestaurant.id}
                       restaurantName={selectedRestaurant.name || selectedRestaurant.restorantName}
                     />
                   </div>
+
+                  {/* Most Popular Products Section */}
+                  <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                    <PopularProductsCard 
+                      key={`popular-${selectedRestaurant.id}-${Date.now()}`}
+                      restaurant={selectedRestaurant}
+                      maxProducts={5}
+                    />
+                  </div>
+
+                  {/* Recent Orders Section */}
+                  <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                    <RecentOrdersCard 
+                      key={`orders-${selectedRestaurant.id}-${Date.now()}`}
+                      restaurant={selectedRestaurant}
+                      onViewDetails={handleViewOrderDetails}
+                    />
+                  </div>
+                  
+                  {/* Success message for order status updates */}
+                  {orderUpdateSuccess && (
+                    <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 text-green-700 dark:text-green-300 rounded">
+                      <p>{t('manager.updateOrderStatusSuccess') || 'Order status updated successfully'}</p>
+                    </div>
+                  )}
                   
                   <div className="space-y-3">
                     <div>
@@ -534,7 +600,7 @@ const ManagerDashboard = () => {
                         {t('common.phone') || 'Phone'}
                       </p>
                       <p className="text-gray-900 dark:text-white">
-                        {selectedRestaurant.phone || t('common.notProvided')}
+                        {selectedRestaurant.phone || selectedRestaurant.phoneNumber || t('common.notProvided')}
                       </p>
                     </div>
                     
@@ -640,6 +706,15 @@ const ManagerDashboard = () => {
         onSuccess={handleCreateRestaurantSuccess}
         token={userData?.token || localStorage.getItem('token')}
       />
+
+      {/* Order Details Modal */}
+      {showOrderModal && selectedOrder && (
+        <OrderDetailsModal
+          order={selectedOrder}
+          onClose={() => setShowOrderModal(false)}
+          onOrderUpdated={handleOrderUpdated}
+        />
+      )}
     </div>
   );
 };

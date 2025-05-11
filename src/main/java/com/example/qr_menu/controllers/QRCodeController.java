@@ -1,41 +1,41 @@
 package com.example.qr_menu.controllers;
 
-import com.example.qr_menu.utils.QRCodeGenerator;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import com.example.qr_menu.services.QRCodeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Base64;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/qrcode")
 public class QRCodeController {
 
-    @PostMapping(value = "/generate", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> generateQRCode(@RequestBody Map<String, Object> data) {
+    @Autowired
+    private QRCodeService qrCodeService;
+
+    @PostMapping("/generate")
+    public ResponseEntity<?> generateQRCode(@RequestBody Map<String, Object> request) {
         try {
-            // Convert the data to a JSON string or any format you prefer
-            String text = data.toString();
-            
+            String text = (String) request.get("text");
+            String format = (String) request.get("format");
+            Integer size = (Integer) request.getOrDefault("size", 300);
+            Integer margin = (Integer) request.getOrDefault("margin", 1);
+            String errorCorrectionLevel = (String) request.getOrDefault("errorCorrectionLevel", "H");
+            String type = (String) request.getOrDefault("type", "text");
+
             // Generate QR code
-            byte[] qrCodeBytes = QRCodeGenerator.generateQRCodeImage(text, 250, 250);
-            
-            // Convert to Base64 for easy transport to frontend
-            String base64QRCode = Base64.getEncoder().encodeToString(qrCodeBytes);
+            String qrCode = qrCodeService.generateQRCode(text, format, size, margin, errorCorrectionLevel, type);
             
             return ResponseEntity.ok(Map.of(
-                "success", true, 
-                "qrCode", "data:image/png;base64," + base64QRCode
+                "success", true,
+                "qrCode", qrCode
             ));
         } catch (Exception e) {
-            return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of(
-                    "success", false,
-                    "error", e.getMessage()
-                ));
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", e.getMessage()
+            ));
         }
     }
 } 

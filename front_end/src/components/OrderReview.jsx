@@ -177,7 +177,11 @@ function OrderReview() {
         products: cartItems.map(item => ({ productId: item.productId, quantity: item.quantity, totalPrice: (item.price * item.quantity) })),
         totalPrice: parseFloat(cartTotal || 0),
         restorantId: restaurantId,
-        orderStatus: 'ACCEPTED'
+        orderStatus: 'ACCEPTED',
+        customerName: customerInfo.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+        customerEmail: customerInfo.email || userData.email || '',
+        customerPhone: customerInfo.phone || userData.phone || '',
+        specialRequests: customerInfo.specialRequests || ''
       });
       
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/orders`, {
@@ -191,7 +195,11 @@ function OrderReview() {
           products: cartItems.map(item => ({ productId: item.productId, quantity: item.quantity, totalPrice: (item.price * item.quantity) })),
           totalPrice: parseFloat(cartTotal || 0),
           restorantId: restaurantId,
-          orderStatus: 'ACCEPTED'
+          orderStatus: 'ACCEPTED',
+          customerName: customerInfo.name || `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+          customerEmail: customerInfo.email || userData.email || '',
+          customerPhone: customerInfo.phone || userData.phone || '',
+          specialRequests: customerInfo.specialRequests || ''
         })
       });
       

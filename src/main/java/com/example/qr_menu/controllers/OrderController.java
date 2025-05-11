@@ -1,6 +1,7 @@
 package com.example.qr_menu.controllers;
 
 import com.example.qr_menu.dto.OrderDTO;
+import com.example.qr_menu.dto.MessageResponse;
 import com.example.qr_menu.entities.Order;
 import com.example.qr_menu.entities.OrderProduct;
 import com.example.qr_menu.repositories.OrderRepository;
@@ -19,8 +20,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -414,6 +417,137 @@ public class OrderController {
             
         } catch (Exception e) {
             System.out.println("Error getting orders by account ID: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/{orderId}/public")
+    public ResponseEntity<?> getPublicOrderDetails(@PathVariable Long orderId) {
+        try {
+            OrderDTO order = orderService.getOrderById(orderId);
+            if (order == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new MessageResponse("Order not found"));
+            }
+
+            // Create a public version of the order with only necessary information
+            Map<String, Object> publicOrder = new HashMap<>();
+            publicOrder.put("id", order.getId());
+            publicOrder.put("orderTime", order.getOrderTime());
+            publicOrder.put("totalPrice", order.getTotalPrice());
+            publicOrder.put("orderStatus", order.getOrderStatus());
+            publicOrder.put("products", order.getProducts().stream()
+                .map(product -> {
+                    Map<String, Object> productInfo = new HashMap<>();
+                    productInfo.put("productId", product.getProductId());
+                    productInfo.put("productName", product.getProductName());
+                    productInfo.put("productPriceAtOrder", product.getProductPriceAtOrder());
+                    productInfo.put("quantity", product.getQuantity());
+                    productInfo.put("productImage", product.getProductImage());
+                    return productInfo;
+                })
+                .collect(Collectors.toList()));
+            publicOrder.put("customerName", order.getCustomerName());
+            publicOrder.put("customerEmail", order.getCustomerEmail());
+            publicOrder.put("customerPhone", order.getCustomerPhone());
+            publicOrder.put("specialRequests", order.getSpecialRequests());
+
+            return ResponseEntity.ok(publicOrder);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new MessageResponse("Error fetching order details"));
+        }
+    }
+
+    // Endpoint to get orders by restaurant ID with pagination
+    @GetMapping("/restaurant/{restaurantId}")
+    public ResponseEntity<Page<OrderDTO>> getOrdersByRestaurantId(
+            @PathVariable Long restaurantId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "orderTime") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            @RequestHeader("Authorization") String token) {
+        
+        try {
+            System.out.println("Getting orders for restaurant ID: " + restaurantId);
+            
+            // Extract user info from JWT token
+            String jwtToken = token.substring(7); // Remove "Bearer " prefix
+            Claims claims = jwtTokenUtil.getAllClaimsFromToken(jwtToken);
+            
+            // Get the user details
+            Long accountId = claims.get("accountId", Long.class);
+            String role = claims.get("role", String.class);
+            String email = claims.get("sub", String.class);
+            
+            System.out.println("User requesting restaurant orders - Account ID: " + accountId + ", Role: " + role + ", Email: " + email);
+            
+            // Check if the user has permission to view these orders
+            // ADMIN can view all orders
+            // MANAGER/COMANAGER can view orders for restaurants they manage
+            boolean hasAccess = false;
+            
+            if ("ROLE_ADMIN".equals(role)) {
+                hasAccess = true;
+                System.out.println("Access granted: User is ADMIN");
+            } else if ("ROLE_MANAGER".equals(role) || "ROLE_COMANAGER".equals(role)) {
+                // For now, allowing all managers/co-managers to view orders for any restaurant
+                // In a production environment, you'd want to check if they're actually assigned to this restaurant
+                hasAccess = true;
+                System.out.println("Access granted: User is MANAGER/COMANAGER");
+            }
+            
+            if (!hasAccess) {
+                System.out.println("Access denied: User does not have permission to view orders for this restaurant");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            
+            // Create pageable object for pagination
+            Pageable pageable = PageRequest.of(page, size,
+                    "asc".equalsIgnoreCase(direction) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending());
+            
+            // Use the new dedicated repository method for better performance
+            Page<Order> orders = orderRepository.findByRestaurantId(restaurantId, pageable);
+            
+            // Map to DTOs
+            Page<OrderDTO> orderDTOs = orders.map(order -> {
+                OrderDTO orderDTO = OrderDTO.builder()
+                        .id(order.getId())
+                        .accountId(order.getAccount().getId())
+                        .restorantId(order.getRestorant().getId())
+                        .restorantName(order.getRestorant().getRestorantName())
+                        .orderStatus(order.getOrderStatus())
+                        .orderTime(order.getOrderTime())
+                        .totalPrice(order.getTotalPrice())
+                        .customerName(order.getCustomerName())
+                        .customerEmail(order.getCustomerEmail())
+                        .customerPhone(order.getCustomerPhone())
+                        .specialRequests(order.getSpecialRequests())
+                        .build();
+                
+                // Get order products
+                List<OrderProduct> orderProducts = orderProductRepository.findByOrderId(order.getId());
+                List<OrderDTO.ProductOrderDTO> productDTOs = orderProducts.stream()
+                        .map(op -> OrderDTO.ProductOrderDTO.builder()
+                                .productId(op.getProduct().getId())
+                                .productName(op.getProduct().getProductName())
+                                .productImage(op.getProduct().getProductImage())
+                                .quantity(op.getQuantity())
+                                .productPriceAtOrder(op.getProduct().getProductPrice())
+                                .build())
+                        .collect(Collectors.toList());
+                
+                orderDTO.setProducts(productDTOs);
+                return orderDTO;
+            });
+            
+            System.out.println("Returning " + orderDTOs.getContent().size() + " orders for restaurant ID " + restaurantId);
+            return ResponseEntity.ok(orderDTOs);
+            
+        } catch (Exception e) {
+            System.out.println("Error getting restaurant orders: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

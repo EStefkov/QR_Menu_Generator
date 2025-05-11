@@ -22,7 +22,10 @@ public class OrderDTO {
     private List<ProductOrderDTO> products;
     private Date orderTime;
     private Double totalPrice;
-
+    private String customerName;
+    private String customerEmail;
+    private String customerPhone;
+    private String specialRequests;
 
     @Data
     @Builder
@@ -32,7 +35,7 @@ public class OrderDTO {
         private Long productId;
         private String productName;
         private String productImage;
-        private int quantity;
+        private Integer quantity;
         private Double productPriceAtOrder;
     }
 }
