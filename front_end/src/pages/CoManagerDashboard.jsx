@@ -460,15 +460,19 @@ const CoManagerDashboard = () => {
               </div>
 
               {/* Restaurant Revenue Statistics */}
-              <div className="mb-6">
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  {t('stats.restaurantRevenue') || 'Restaurant Revenue'}
+                </h3>
                 <RestaurantRevenue 
                   key={`revenue-${selectedRestaurant.id}-${Date.now()}`}
                   restaurantId={selectedRestaurant.id}
+                  restaurantName={selectedRestaurant.name || selectedRestaurant.restorantName}
                 />
               </div>
 
               {/* Recent Orders Section */}
-              <div className="mb-6">
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700">
                 <RecentOrdersCard 
                   key={`orders-${selectedRestaurant.id}-${Date.now()}`}
                   restaurant={selectedRestaurant}
