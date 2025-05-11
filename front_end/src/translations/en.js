@@ -632,6 +632,12 @@ const translations = {
   "manager.status": "Status",
   "manager.isCoManager": "Is Co-Manager",
   "manager.notCoManager": "Not Co-Manager",
+  "manager.noOrders": "No orders found for this restaurant.",
+  "manager.recentOrders": "Recent Orders",
+  "manager.seeAllOrders": "See all orders",
+  "manager.viewOrderDetails": "View order details",
+  "manager.updateOrderStatusSuccess": "Order status updated successfully",
+  "manager.restaurantOrders": "Restaurant Orders",
   
   // Co-Manager Dashboard
   "comanager.dashboard": "Co-Manager Dashboard",

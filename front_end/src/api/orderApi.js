@@ -1,9 +1,8 @@
 import axios from 'axios';
-const API_BASE_URL = import.meta.env.VITE_API_URL;
-
-// Create axios instance for orders API
+// Remove absolute URL base and use relative paths for proper proxy usage
 const axiosInstance = axios.create({
-  baseURL: `${API_BASE_URL}/api/orders`,
+  // Use relative path to work with Vite proxy
+  baseURL: '/api/orders',
   headers: {
     'Content-Type': 'application/json'
   }
@@ -89,26 +88,56 @@ export const orderApi = {
   
   getRestaurantOrders: async (restaurantId, page = 0, size = 10) => {
     try {
+      console.log(`Fetching orders for restaurant ${restaurantId} with page=${page}, size=${size}`);
+      
+      // Use axiosInstance which is already configured with the correct baseURL and interceptors
       const response = await axiosInstance.get(`/restaurant/${restaurantId}`, {
         params: { page, size }
       });
+      
+      console.log('Successfully fetched restaurant orders:', 
+        response.data ? `${response.data.totalElements || 0} orders found` : 'No data');
+      
       return response.data;
     } catch (error) {
       console.error('Error fetching restaurant orders:', error);
+      
+      // Log detailed error information to help debugging
+      if (error.response) {
+        console.error('Response details:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      }
+      
       throw new Error(error.response?.data?.message || 'Failed to fetch orders');
     }
   },
   
   updateOrderStatus: async (orderId, status) => {
     try {
-      // Use the regular endpoint now that we fixed the JWT issues
+      console.log(`Updating order ${orderId} status to ${status}`);
+      
+      // Use axiosInstance which is already configured with the correct baseURL and interceptors
       const response = await axiosInstance.put(`/${orderId}/status`, null, {
         params: { status }
       });
-      console.log("Status update response:", response.data);
+      
+      console.log(`Successfully updated order ${orderId} status to ${status}`);
       return response.data;
     } catch (error) {
       console.error('Error updating order status:', error);
+      
+      // Log detailed error information to help debugging
+      if (error.response) {
+        console.error('Response details:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      }
+      
       throw new Error(error.response?.data?.message || 'Failed to update order status');
     }
   },

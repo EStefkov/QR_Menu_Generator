@@ -250,20 +250,6 @@ const NavBar = () => {
                             </Link>
                           )}
                           
-                          {/* Edit Menus Link - Only visible for users with ROLE_MANAGER */}
-                          {userData.accountType === 'ROLE_MANAGER' && (
-                            <Link
-                              to="/manager/menus"
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
-                              onClick={() => setIsProfileOpen(false)}
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                              </svg>
-                              <span>{t('nav.editMenus') || 'Edit Menus'}</span>
-                            </Link>
-                          )}
-                          
                           <Link
                             to="/favorites"
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center space-x-2"
