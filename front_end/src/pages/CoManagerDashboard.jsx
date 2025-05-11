@@ -9,6 +9,7 @@ import axios from 'axios';
 import RestaurantRevenue from '../components/RestaurantRevenue';
 import RecentOrdersCard from '../components/common/RecentOrdersCard';
 import OrderDetailsModal from '../components/common/OrderDetailsModal';
+import PopularProductsCard from '../components/stats/PopularProductsCard';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -468,6 +469,15 @@ const CoManagerDashboard = () => {
                   key={`revenue-${selectedRestaurant.id}-${Date.now()}`}
                   restaurantId={selectedRestaurant.id}
                   restaurantName={selectedRestaurant.name || selectedRestaurant.restorantName}
+                />
+              </div>
+
+              {/* Most Popular Products Section */}
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                <PopularProductsCard 
+                  key={`popular-${selectedRestaurant.id}-${Date.now()}`}
+                  restaurant={selectedRestaurant}
+                  maxProducts={5}
                 />
               </div>
 

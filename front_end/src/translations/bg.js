@@ -248,13 +248,12 @@ const translations = {
   "errors.loadFailed": "Грешка при зареждане на данните",
   "errors.loadingFailed": "Зареждането не беше успешно",
   "errors.tryAgainLater": "Моля, опитайте по-късно или се свържете с поддръжката, ако проблемът продължава.",
-  "errors.sessionExpired": "Сесията Ви изтече. Моля, влезте отново.",
-  "errors.failedToLoadMenus": "Неуспешно зареждане на менютата на ресторанта",
+  "errors.sessionExpired": "Вашата сесия е изтекла. Моля, влезте отново.",
+  "errors.failedToLoadMenus": "Неуспешно зареждане на менюта на ресторанта",
   "errors.failedToCreateMenu": "Неуспешно създаване на меню",
   "errors.failedToDeleteMenu": "Неуспешно изтриване на меню",
-  "errors.failedToUpdateMenu": "Неуспешно обновяване на меню",
-  "errors.failedToDeleteProduct": "Грешка при изтриване на продукта. Моля, опитайте отново.",
-  "errors.failedToLoadAccounts": "Неуспешно зареждане на акаунтите",
+  "errors.failedToFetchPopularProducts": "Неуспешно зареждане на най-популярните продукти. Моля, опитайте отново.",
+  "errors.networkError": "Грешка в мрежовата връзка. Моля, проверете интернет връзката си.",
   
   // Profile
   "profile.myProfile": "Моят профил",
@@ -535,6 +534,7 @@ const translations = {
   "manager.isCoManager": "Е Ко-Мениджър",
   "manager.notCoManager": "Не е Ко-Мениджър",
   "manager.noOrders": "Няма намерени поръчки за този ресторант.",
+  "manager.noProducts": "Няма налични данни за продукти за този ресторант.",
   "manager.recentOrders": "Последни поръчки",
   "manager.seeAllOrders": "Виж всички поръчки",
   "manager.viewOrderDetails": "Виж детайли на поръчка",
@@ -590,7 +590,9 @@ const translations = {
     "thisWeek": "Тази седмица",
     "thisMonth": "Този месец",
     "thisYear": "Тази година",
-    "allTime": "Всичко време"
+    "allTime": "Всичко време",
+    "popularProducts": "Най-популярни продукти",
+    "orders": "Поръчки"
   },
 };
 

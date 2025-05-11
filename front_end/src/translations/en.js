@@ -303,6 +303,8 @@ const translations = {
   "errors.failedToUpdateMenu": "Failed to update menu",
   "errors.failedToDeleteProduct": "Failed to delete product. Please try again.",
   "errors.failedToLoadAccounts": "Failed to load accounts",
+  "errors.failedToFetchPopularProducts": "Failed to load most popular products. Please try again.",
+  "errors.networkError": "Network connection error. Please check your internet connection.",
   
   // Profile
   "profile.myProfile": "My Profile",
@@ -633,6 +635,7 @@ const translations = {
   "manager.isCoManager": "Is Co-Manager",
   "manager.notCoManager": "Not Co-Manager",
   "manager.noOrders": "No orders found for this restaurant.",
+  "manager.noProducts": "No product data available for this restaurant.",
   "manager.recentOrders": "Recent Orders",
   "manager.seeAllOrders": "See all orders",
   "manager.viewOrderDetails": "View order details",
@@ -748,7 +751,9 @@ const translations = {
     "thisWeek": "This Week",
     "thisMonth": "This Month",
     "thisYear": "This Year",
-    "allTime": "All Time"
+    "allTime": "All Time",
+    "popularProducts": "Most Popular Products",
+    "orders": "Orders"
   },
 };
 

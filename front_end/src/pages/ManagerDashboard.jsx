@@ -12,6 +12,7 @@ import ManagerAccountsTable from '../components/manager/ManagerAccountsTable';
 import RestaurantRevenue from '../components/RestaurantRevenue';
 import RecentOrdersCard from '../components/common/RecentOrdersCard';
 import OrderDetailsModal from '../components/common/OrderDetailsModal';
+import PopularProductsCard from '../components/stats/PopularProductsCard';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -548,15 +549,28 @@ const ManagerDashboard = () => {
                   </h3>
                   
                   {/* Restaurant Revenue Statistics */}
-                  <div className="mb-6">
+                  <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                      {t('stats.restaurantRevenue') || 'Restaurant Revenue'}
+                    </h3>
                     <RestaurantRevenue 
                       key={`revenue-${selectedRestaurant.id}-${Date.now()}`}
-                      restaurantId={selectedRestaurant.id} 
+                      restaurantId={selectedRestaurant.id}
+                      restaurantName={selectedRestaurant.name || selectedRestaurant.restorantName}
                     />
                   </div>
-                  
+
+                  {/* Most Popular Products Section */}
+                  <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                    <PopularProductsCard 
+                      key={`popular-${selectedRestaurant.id}-${Date.now()}`}
+                      restaurant={selectedRestaurant}
+                      maxProducts={5}
+                    />
+                  </div>
+
                   {/* Recent Orders Section */}
-                  <div className="mb-6">
+                  <div className="p-6 border-t border-gray-200 dark:border-gray-700">
                     <RecentOrdersCard 
                       key={`orders-${selectedRestaurant.id}-${Date.now()}`}
                       restaurant={selectedRestaurant}
