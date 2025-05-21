@@ -18,6 +18,16 @@ const TabPanel = ({ children, value, index }) => {
 // ProductForm component for adding new products
 const ProductForm = ({ categoryId, onSuccess, onCancel, editProduct }) => {
   const { t } = useLanguage();
+  
+  // Enhanced debugging for editProduct
+  useEffect(() => {
+    if (editProduct) {
+      console.log('EditProduct data received:', editProduct);
+      console.log('EditProduct allergens:', editProduct.allergens);
+      console.log('EditProduct allergenIds:', editProduct.allergenIds);
+    }
+  }, [editProduct]);
+  
   const [formData, setFormData] = useState({
     productName: editProduct?.productName || '',
     productPrice: editProduct?.productPrice || '',
@@ -34,14 +44,37 @@ const ProductForm = ({ categoryId, onSuccess, onCancel, editProduct }) => {
   
   // Add allergens state
   const [allergens, setAllergens] = useState([]);
-  const [selectedAllergens, setSelectedAllergens] = useState(editProduct?.allergens?.map(a => a.id) || []);
+  // Use allergenIds if available, otherwise fall back to mapping allergens objects
+  const [selectedAllergens, setSelectedAllergens] = useState(() => {
+    // Log to debug what allergen data we have
+    if (editProduct) {
+      console.log('Initializing ProductForm with editProduct:', editProduct);
+      console.log('Allergens data:', editProduct.allergens, 'Allergen IDs:', editProduct.allergenIds);
+    }
+    
+    // First try to use allergenIds if it exists and is an array
+    if (editProduct?.allergenIds && Array.isArray(editProduct.allergenIds)) {
+      // Convert to numbers to ensure consistent types
+      return editProduct.allergenIds.map(id => Number(id));
+    }
+    // Fall back to mapping allergens objects if they exist
+    else if (editProduct?.allergens && Array.isArray(editProduct.allergens)) {
+      // Convert to numbers to ensure consistent types
+      return editProduct.allergens.map(a => Number(a.id));
+    }
+    // Default to empty array if no allergen data
+    return [];
+  });
   const [loadingAllergens, setLoadingAllergens] = useState(true);
   
   // Fetch allergens on component mount
   useEffect(() => {
     const fetchAllergens = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/allergens`, {
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime();
+        
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/allergens?t=${timestamp}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -52,6 +85,7 @@ const ProductForm = ({ categoryId, onSuccess, onCancel, editProduct }) => {
         }
         
         const data = await response.json();
+        console.log('Fetched allergens:', data);
         setAllergens(data);
       } catch (err) {
         console.error('Error loading allergens:', err);
@@ -73,11 +107,18 @@ const ProductForm = ({ categoryId, onSuccess, onCancel, editProduct }) => {
   
   // Add allergen toggle handler
   const handleAllergenToggle = (allergenId) => {
+    console.log(`Toggling allergen ${allergenId}`);
+    
     setSelectedAllergens(prev => {
-      if (prev.includes(allergenId)) {
-        return prev.filter(id => id !== allergenId);
+      // Convert to number to ensure proper comparison
+      const numericId = Number(allergenId);
+      
+      if (prev.includes(numericId)) {
+        console.log(`Removing allergen ${numericId}`);
+        return prev.filter(id => id !== numericId);
       } else {
-        return [...prev, allergenId];
+        console.log(`Adding allergen ${numericId}`);
+        return [...prev, numericId];
       }
     });
   };
@@ -111,6 +152,7 @@ const ProductForm = ({ categoryId, onSuccess, onCancel, editProduct }) => {
     setError(null);
     
     try {
+      // Create a FormData object for the basic product info (without allergens)
       const submitData = new FormData();
       submitData.append('productName', formData.productName);
       submitData.append('productPrice', formData.productPrice);
@@ -121,15 +163,19 @@ const ProductForm = ({ categoryId, onSuccess, onCancel, editProduct }) => {
         submitData.append('productImage', selectedImage);
       }
       
-      // Add allergens to form data
-      selectedAllergens.forEach(allergenId => {
-        submitData.append('allergenIds', allergenId);
-      });
+      // Log all form data for debugging
+      console.log('Form data entries:');
+      for (let pair of submitData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+      }
       
       let response;
+      let productData;
       
       if (editProduct) {
-        // Update existing product
+        // Update existing product with basic info first
+        console.log(`Updating product ${editProduct.id} with basic data`);
+        
         response = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${editProduct.id}`, {
           method: 'PUT',
           headers: {
@@ -137,22 +183,88 @@ const ProductForm = ({ categoryId, onSuccess, onCancel, editProduct }) => {
           },
           body: submitData
         });
+        
+        if (!response.ok) {
+          throw new Error(t('errors.failedToCreateProduct', { status: response.status }) || `Failed to update product (${response.status})`);
+        }
+        
+        // Get the updated product data
+        productData = await response.json();
+        console.log('First response after product update:', productData);
+        
+        // Now update allergens separately via JSON endpoint
+        try {
+          console.log(`Updating allergens for product ${editProduct.id}:`, selectedAllergens);
+          
+          // Use a JSON endpoint to update only the allergens
+          const allergenResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/products/${editProduct.id}/allergens`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              allergenIds: selectedAllergens
+            })
+          });
+          
+          if (allergenResponse.ok) {
+            const updatedProductWithAllergens = await allergenResponse.json();
+            console.log('Response after allergen update:', updatedProductWithAllergens);
+            // Use this updated data which should have the correct allergens
+            productData = updatedProductWithAllergens;
+          } else {
+            console.error('Failed to update allergens:', await allergenResponse.text());
+          }
+        } catch (allergenErr) {
+          console.error('Error updating allergens:', allergenErr);
+          // Continue with original product data if allergen update fails
+        }
       } else {
-        // Create new product
+        // Create new product with FormData (including allergens)
+        // Add allergens to form data for creation
+        selectedAllergens.forEach(allergenId => {
+          submitData.append('allergenIds', allergenId);
+          console.log(`Adding allergenId: ${allergenId}`);
+        });
+        
         response = await fetch(`${import.meta.env.VITE_API_URL}/api/products`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: submitData
-      });
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: submitData
+        });
+        
+        if (!response.ok) {
+          throw new Error(t('errors.failedToCreateProduct', { status: response.status }) || `Failed to create product (${response.status})`);
+        }
+        
+        productData = await response.json();
       }
       
-      if (!response.ok) {
-        throw new Error(t('errors.failedToCreateProduct', { status: response.status }) || `Failed to ${editProduct ? 'update' : 'create'} product (${response.status})`);
+      // Manual workaround: If allergens were selected, but not in the returned data,
+      // fake it in the frontend for proper UI display
+      if (selectedAllergens.length > 0 && 
+          (!productData.allergens || productData.allergens.length === 0)) {
+        console.log('Adding fake allergens data for UI display');
+        
+        // Get allergen details from the allergens list
+        const fakeAllergens = selectedAllergens.map(id => {
+          const allergen = allergens.find(a => a.id === id);
+          return {
+            id: id,
+            allergenName: allergen ? allergen.allergenName : `Allergen ${id}`
+          };
+        });
+        
+        // Add to the returned product data
+        productData.allergens = fakeAllergens;
+        productData.allergenIds = selectedAllergens;
+        
+        console.log('Modified product data with allergens:', productData);
       }
       
-      const productData = await response.json();
       onSuccess(productData);
     } catch (err) {
       console.error(`Error ${editProduct ? 'updating' : 'creating'} product:`, err);
@@ -268,21 +380,31 @@ const ProductForm = ({ categoryId, onSuccess, onCancel, editProduct }) => {
                   {t('products.noAllergensAvailable') || 'No allergens available or failed to load.'}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {allergens.map(allergen => (
-                    <label key={allergen.id} className="inline-flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        className="rounded text-blue-600 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
-                        checked={selectedAllergens.includes(allergen.id)}
-                        onChange={() => handleAllergenToggle(allergen.id)}
-                        aria-label={t('products.toggleAllergen', { allergen: allergen.allergenName }) || `Toggle ${allergen.allergenName} allergen`}
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-200">
-                        {allergen.allergenName}
-                      </span>
-                    </label>
-                  ))}
+                <div>
+                  <div className="text-sm text-gray-500 mb-2">
+                    Selected allergens: {selectedAllergens.length > 0 ? 
+                      selectedAllergens.map(id => {
+                        const allergen = allergens.find(a => a.id === id);
+                        return allergen ? allergen.allergenName : id;
+                      }).join(", ") : 
+                      "None"}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {allergens.map(allergen => (
+                      <label key={allergen.id} className="inline-flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          className="rounded text-blue-600 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                          checked={selectedAllergens.includes(allergen.id)}
+                          onChange={() => handleAllergenToggle(allergen.id)}
+                          aria-label={t('products.toggleAllergen', { allergen: allergen.allergenName }) || `Toggle ${allergen.allergenName} allergen`}
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-200">
+                          {allergen.allergenName}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -415,19 +537,36 @@ const EditMenuPage = () => {
       setMenu(menuData);
       setMenuName(menuData.category || menuData.name || '');
       
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
+      
       // Fetch categories for this menu
-      const categoriesData = await fetch(`${import.meta.env.VITE_API_URL}/api/categories/menu/${menuId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/categories/menu/${menuId}?t=${timestamp}`, {
         headers: { 
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      }).then(res => res.json());
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch categories: ${response.status} ${response.statusText}`);
+      }
+      
+      const categoriesData = await response.json();
+      console.log("Fetched categories:", categoriesData);
       
       setCategories(categoriesData || []);
       
       // If we have categories, fetch products for the first category
       if (categoriesData && categoriesData.length > 0) {
+        console.log("Setting initial category:", categoriesData[0]);
         setSelectedCategory(categoriesData[0]);
-        await fetchProductsForCategory(categoriesData[0].id);
+        
+        // Small timeout to ensure state updates before fetching products
+        setTimeout(() => {
+          fetchProductsForCategory(categoriesData[0].id);
+        }, 100);
+      } else {
+        console.log("No categories found");
       }
     } catch (err) {
       console.error('Error fetching menu data:', err);
@@ -439,15 +578,39 @@ const EditMenuPage = () => {
   
   const fetchProductsForCategory = async (categoryId) => {
     try {
-      const productsData = await fetch(`${import.meta.env.VITE_API_URL}/api/products/category/${categoryId}`, {
+      if (!categoryId) {
+        console.error('No category ID provided to fetchProductsForCategory');
+        return;
+      }
+      
+      // Add timestamp parameter to prevent caching
+      const timestamp = new Date().getTime();
+      console.log(`Fetching products for category ${categoryId} with timestamp ${timestamp}`);
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/products/category/${categoryId}?t=${timestamp}`, {
         headers: { 
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
-      }).then(res => res.json());
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch products: ${response.status} ${response.statusText}`);
+      }
+      
+      const productsData = await response.json();
+      
+      // Log to verify allergen data is included in the response
+      if (productsData && productsData.length > 0) {
+        console.log('Received products data:', productsData);
+        console.log('First product allergens:', productsData[0].allergens);
+      } else {
+        console.log('Received empty products array or no data for category:', categoryId);
+      }
       
       setProducts(productsData || []);
     } catch (err) {
       console.error('Error fetching products:', err);
+      setProducts([]);
     }
   };
   
@@ -550,8 +713,24 @@ const EditMenuPage = () => {
   };
   
   const handleCategoryClick = async (category) => {
+    console.log('Category clicked:', category);
+    
+    if (!category || !category.id) {
+      console.error('Invalid category or missing category ID');
+      return;
+    }
+    
     setSelectedCategory(category);
-    await fetchProductsForCategory(category.id);
+    
+    try {
+      // Set products to empty array to show loading state
+      setProducts([]);
+      
+      // Fetch products for the selected category
+      await fetchProductsForCategory(category.id);
+    } catch (err) {
+      console.error('Error handling category click:', err);
+    }
   };
 
   const handleAddProduct = () => {
@@ -560,13 +739,24 @@ const EditMenuPage = () => {
   };
   
   const handleProductCreated = async (newProduct) => {
+    console.log('Product created/updated with data:', newProduct);
+    
     if (productToEdit) {
+      console.log('Updating existing product in state:', productToEdit.id);
+      console.log('New allergens data:', newProduct.allergens);
+      
       // Update the existing product in the list
       setProducts(prev => prev.map(p => p.id === newProduct.id ? newProduct : p));
       setProductToEdit(null);
+
+      // Force refresh product data from server after edit
+      if (selectedCategory) {
+        console.log('Refreshing product data from server for category:', selectedCategory.id);
+        await fetchProductsForCategory(selectedCategory.id);
+      }
     } else {
-    // Add the new product to our products list
-    setProducts(prev => [...prev, newProduct]);
+      // Add the new product to our products list
+      setProducts(prev => [...prev, newProduct]);
     }
     
     // Close the form

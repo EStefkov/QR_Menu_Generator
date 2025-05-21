@@ -169,13 +169,39 @@ public class ProductController {
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
         Product product = productService.getProductById(id);
-        ProductDTO productDTO = new ProductDTO();
-        productDTO.setId(product.getId());
-        productDTO.setProductName(product.getProductName());
-        productDTO.setProductPrice(product.getProductPrice());
-        productDTO.setProductInfo(product.getProductInfo());
-        productDTO.setProductImage(product.getProductImage());
-        productDTO.setCategoryId(product.getCategory().getId());
+        
+        // Use the convertToDto method from ProductService to get complete DTO
+        // with all allergen information
+        ProductDTO productDTO = productService.convertToDto(product);
+        
         return ResponseEntity.ok(productDTO);
+    }
+    
+    /**
+     * Special endpoint to update only the allergens for a product.
+     * This solves the issue with the multipart/form-data endpoint not handling allergenIds.
+     */
+    @PutMapping("/{id}/allergens")
+    public ResponseEntity<ProductDTO> updateProductAllergens(
+            @PathVariable Long id,
+            @RequestBody ProductDTO productDTO) {
+        
+        // Get the existing product first
+        Product existingProduct = productService.getProductById(id);
+        
+        // Copy only the allergen IDs to a new DTO to avoid overwriting other fields
+        ProductDTO allergenUpdateDTO = new ProductDTO();
+        allergenUpdateDTO.setProductName(existingProduct.getProductName());
+        allergenUpdateDTO.setProductPrice(existingProduct.getProductPrice());
+        allergenUpdateDTO.setProductInfo(existingProduct.getProductInfo());
+        allergenUpdateDTO.setProductImage(existingProduct.getProductImage());
+        allergenUpdateDTO.setCategoryId(existingProduct.getCategory().getId());
+        
+        // Set the allergen IDs from the request
+        allergenUpdateDTO.setAllergenIds(productDTO.getAllergenIds());
+        
+        // Update the product with the allergen changes
+        ProductDTO updatedProduct = productService.updateProduct(id, allergenUpdateDTO);
+        return ResponseEntity.ok(updatedProduct);
     }
 }

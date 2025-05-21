@@ -100,7 +100,7 @@ public class ProductService {
      *  - allergenIds (за форми/ъпдейти)
      *  - пълен списък от AllergenDTO (за визуализация).
      */
-    private ProductDTO convertToDto(Product product) {
+    public ProductDTO convertToDto(Product product) {
         // Списък с ID-тата на алергените
         List<Long> allergenIds = product.getAllergens().stream()
                 .map(Allergen::getId)
