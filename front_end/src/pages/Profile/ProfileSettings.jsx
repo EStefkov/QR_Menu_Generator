@@ -205,6 +205,9 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
         updatedProfilePicture = result.profilePicture;
         console.log("Profile picture updated successfully:", updatedProfilePicture);
         
+        // Keep the preview URL for immediate visual feedback
+        // Don't clear previewUrl here anymore
+        
         // Update AuthContext user data with just the profile picture
         updateUserData({
           ...userData,
@@ -220,14 +223,17 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
         }
       }
       
-      // Clear the file selection after successful upload
+      // Clear only the selectedFile after successful upload, but keep the preview
       setSelectedFile(null);
-      setPreviewUrl(null);
       
       setMessage({ 
         type: 'success', 
         text: t('profile.profilePictureUpdated') || 'Profile picture updated successfully' 
       });
+      
+      // Trigger the userDataUpdated event again to ensure all components update
+      window.dispatchEvent(new Event("userDataUpdated"));
+      
     } catch (error) {
       console.error("Failed to update profile picture:", error);
       setMessage({ 
@@ -276,6 +282,8 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
         if (result && result.profilePicture) {
           updatedProfilePicture = result.profilePicture;
           console.log("Profile picture updated successfully:", updatedProfilePicture);
+          
+          // Don't clear previewUrl here to keep the image visible
         }
       }
       
@@ -319,10 +327,9 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
         text: t('profile.profileUpdateSuccess') 
       });
       
-      // Clear the file selection after successful upload
+      // Clear only the selectedFile after successful upload, but keep the preview
       if (selectedFile) {
         setSelectedFile(null);
-        setPreviewUrl(null);
       }
     } catch (error) {
       console.error("Failed to update profile:", error);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 /**
  * ProfileImage component - displays a user profile image with fallback handling
@@ -32,6 +32,49 @@ const ProfileImage = ({
     
     return `${import.meta.env.VITE_API_URL}${fallbackSrc}`;
   });
+
+  // Listen for profile picture updates and refresh the component
+  useEffect(() => {
+    const handleUserDataUpdate = () => {
+      console.log("ProfileImage: userDataUpdated event received, checking for new profile picture");
+      
+      // Check if we have a new local profile picture
+      const localProfilePic = localStorage.getItem('profilePictureLocal');
+      if (localProfilePic && localProfilePic.startsWith('data:image')) {
+        console.log("ProfileImage: Found updated local profile picture");
+        setImgSrc(localProfilePic);
+        return;
+      }
+      
+      // Check if we have a new remote profile picture
+      const profilePicture = localStorage.getItem('profilePicture');
+      if (profilePicture && profilePicture !== src) {
+        console.log("ProfileImage: Found updated remote profile picture");
+        const newSrc = profilePicture.startsWith('http') || profilePicture.startsWith('data:') 
+          ? profilePicture 
+          : `${import.meta.env.VITE_API_URL}${profilePicture}`;
+        setImgSrc(newSrc);
+      }
+    };
+
+    // Add event listener for user data updates
+    window.addEventListener('userDataUpdated', handleUserDataUpdate);
+    
+    // Clean up listener on unmount
+    return () => {
+      window.removeEventListener('userDataUpdated', handleUserDataUpdate);
+    };
+  }, [src]);
+
+  // Update image source when prop changes
+  useEffect(() => {
+    if (src) {
+      const newSrc = src.startsWith('http') || src.startsWith('data:') 
+        ? src 
+        : `${import.meta.env.VITE_API_URL}${src}`;
+      setImgSrc(newSrc);
+    }
+  }, [src]);
 
   // Handle image loading errors like 403 Forbidden
   const handleError = () => {
