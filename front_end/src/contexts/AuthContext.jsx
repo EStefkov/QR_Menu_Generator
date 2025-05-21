@@ -154,7 +154,16 @@ export function AuthProvider({ children }) {
       if (storedToken) {
         // Има токен - зареждаме данните от localStorage
         const id = localStorage.getItem("id") || localStorage.getItem("userId");
-        const mailAddress = localStorage.getItem("mailAddress");
+        const mailAddress = localStorage.getItem("mailAddress") || localStorage.getItem("email");
+        const email = mailAddress; // Ensure email is always set
+        
+        // Log the email fields
+        console.log("Auth Context initial load - Mail fields:", {
+          mailAddress, 
+          emailStorage: localStorage.getItem("email"),
+          emailFinal: email
+        });
+        
         setUserData({
           id: id,
           token: storedToken,
@@ -163,8 +172,14 @@ export function AuthProvider({ children }) {
           profilePicture: localStorage.getItem("profilePicture"),
           accountType: localStorage.getItem("accountType"),
           mailAddress: mailAddress,
-          email: mailAddress // Add email field as an alias for mailAddress
+          email: email // Ensure email is explicitly set
         });
+        
+        // Also ensure both localStorage fields are set
+        if (mailAddress) {
+          localStorage.setItem("mailAddress", mailAddress);
+          localStorage.setItem("email", mailAddress);
+        }
         
         // На профил страница никога не правим валидация на токена
         if (!isOnProfilePage) {
@@ -210,15 +225,41 @@ export function AuthProvider({ children }) {
         if (token) {
           console.log("AuthContext: Refreshing user data from localStorage for current user");
           const mailAddress = localStorage.getItem("mailAddress") || localStorage.getItem("email");
+          
+          // Make sure both fields are in sync in localStorage
+          if (mailAddress) {
+            localStorage.setItem("mailAddress", mailAddress);
+            localStorage.setItem("email", mailAddress);
+          }
+          
+          // Get profile picture - prioritize local profile picture for customers
+          let profilePicture = localStorage.getItem("profilePicture");
+          const localProfilePicture = localStorage.getItem("profilePictureLocal");
+          const accountType = localStorage.getItem("accountType");
+          const isCustomer = accountType === 'ROLE_USER' || accountType === 'ROLE_CUSTOMER';
+          
+          // For customers, prefer local profile picture if available
+          if (isCustomer && localProfilePicture && localProfilePicture.startsWith('data:image')) {
+            console.log("Using local profile picture for customer");
+            profilePicture = localProfilePicture;
+          }
+          
           setUserData({
             id: localStorageId,
             token,
             firstName: localStorage.getItem("firstName"),
             lastName: localStorage.getItem("lastName"),
-            profilePicture: localStorage.getItem("profilePicture"),
-            accountType: localStorage.getItem("accountType"),
+            profilePicture: profilePicture,
+            localProfilePicture: localProfilePicture, // Add local profile picture
+            accountType: accountType,
             mailAddress: mailAddress,
             email: mailAddress // Make sure we have both fields
+          });
+          
+          // Log the email-related fields to debug
+          console.log("AuthContext: Updated user data email fields:", {
+            mailAddress,
+            emailStorage: localStorage.getItem("email")
           });
         }
       } else {
@@ -237,18 +278,23 @@ export function AuthProvider({ children }) {
     return () => {
       window.removeEventListener('userDataUpdated', handleUserDataUpdated);
     };
-  }, []);
+  }, [userData.id]); // Add userData.id as dependency
 
   // Login function: save data to localStorage and update state
   const login = (token, payload) => {
     console.log("Logging in user:", payload.id);
     
-    // Save to localStorage
+    // Save basic authentication data to localStorage
     localStorage.setItem("id", payload.id);
     localStorage.setItem("token", token);
     localStorage.setItem("firstName", payload.firstName);
     localStorage.setItem("lastName", payload.lastName);
-    localStorage.setItem("profilePicture", payload.profilePicture);
+    
+    // Only update profile picture if it's provided in the payload
+    if (payload.profilePicture) {
+      localStorage.setItem("profilePicture", payload.profilePicture);
+    }
+    
     localStorage.setItem("accountType", payload.accountType);
     
     // Make sure we always save the email address in both fields
@@ -263,17 +309,34 @@ export function AuthProvider({ children }) {
       localStorage.setItem("email", payload.mail);
     }
     
-    // Update auth state
-    setUserData({
+    // Build user data object, ensuring we don't override profile picture if it's not in the payload
+    const newUserData = {
       id: payload.id,
       token,
       firstName: payload.firstName,
       lastName: payload.lastName,
-      profilePicture: payload.profilePicture,
       accountType: payload.accountType,
       mailAddress: payload.mailAddress || payload.email || payload.mail,
       email: payload.mailAddress || payload.email || payload.mail // Make sure we have both fields
-    });
+    };
+    
+    // Check if we have a locally stored profile picture from previous sessions
+    const localProfilePicture = localStorage.getItem("profilePictureLocal");
+    if (localProfilePicture && localProfilePicture.startsWith('data:image')) {
+      console.log("Found locally cached profile picture during login");
+      newUserData.localProfilePicture = localProfilePicture;
+      // If we have a local profile picture but no server one, use the local one
+      if (!payload.profilePicture) {
+        newUserData.profilePicture = localProfilePicture;
+      } else {
+        newUserData.profilePicture = payload.profilePicture;
+      }
+    } else if (payload.profilePicture) {
+      newUserData.profilePicture = payload.profilePicture;
+    }
+    
+    // Update auth state
+    setUserData(newUserData);
     
     // Return the current redirect URL
     return redirectUrl;
@@ -298,16 +361,26 @@ export function AuthProvider({ children }) {
   const logout = () => {
     console.log("Logging out user");
     
-    // Clear localStorage
+    // Save current profile picture to temporary storage if needed
+    const currentProfilePicture = localStorage.getItem("profilePicture");
+    const localProfilePicture = localStorage.getItem("profilePictureLocal");
+    
+    // Clear all auth-related localStorage items
     localStorage.removeItem("id");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("accountId");
     localStorage.removeItem("token");
     localStorage.removeItem("firstName");
     localStorage.removeItem("lastName");
     localStorage.removeItem("profilePicture");
+    localStorage.removeItem("profilePictureLocal");
     localStorage.removeItem("accountType");
     localStorage.removeItem("mailAddress");
-    localStorage.removeItem("userId");
+    localStorage.removeItem("email");
+    localStorage.removeItem("phone");
     localStorage.removeItem("redirectUrl");
+    localStorage.removeItem("userIsUpdating");
+    localStorage.removeItem("userUpdatingTimestamp");
 
     // Clear state
     setUserData({});

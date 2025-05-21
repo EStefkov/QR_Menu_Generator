@@ -7,6 +7,7 @@ import UserProfileContent from './UserProfileContent';
 import ProfileSettings from './ProfileSettings';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { HiHome, HiChartPie, HiUser, HiCog, HiLogout, HiShieldCheck, HiRefresh, HiExclamationCircle } from 'react-icons/hi';
+import ProfileImage from '../../components/ProfileImage';
 
 const ProfilePage = () => {
   const { userData, logout } = useContext(AuthContext);
@@ -133,13 +134,10 @@ const ProfilePage = () => {
           {/* Header with cached data */}
           <div className="flex items-center justify-between md:hidden mb-4">
             <div className="flex items-center">
-              <img 
-                src={getCachedProfile() ? `${import.meta.env.VITE_API_URL}${getCachedProfile()}` : "/vite.svg"}
+              <ProfileImage 
+                src={getCachedProfile()}
                 alt="Profile"
                 className="w-10 h-10 rounded-full border-2 border-blue-500 dark:border-blue-400 object-cover mr-3"
-                onError={(e) => {
-                  e.target.src = "/vite.svg";
-                }}
               />
               <div>
                 <h1 className="text-lg font-bold text-gray-800 dark:text-white truncate max-w-[200px]">
@@ -242,14 +240,10 @@ const ProfilePage = () => {
         {/* Mobile Header Bar */}
         <div className="flex items-center justify-between md:hidden mb-4">
           <div className="flex items-center">
-            <img 
-              src={userData.profilePicture ? `${import.meta.env.VITE_API_URL}${userData.profilePicture}` : "/vite.svg"}
+            <ProfileImage 
+              src={userData.profilePicture}
               alt={`${userData.firstName} ${userData.lastName}`}
               className="w-10 h-10 rounded-full border-2 border-blue-500 dark:border-blue-400 object-cover mr-3"
-              onError={(e) => {
-                console.log("Error loading profile image, using default");
-                e.target.src = "/vite.svg";
-              }}
             />
             <div>
               <h1 className="text-lg font-bold text-gray-800 dark:text-white truncate max-w-[200px]">
@@ -311,14 +305,10 @@ const ProfilePage = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 md:p-6">
               <div className="flex flex-col items-center mb-6">
                 <div className="relative">
-                  <img 
-                    src={userData.profilePicture ? `${import.meta.env.VITE_API_URL}${userData.profilePicture}` : "/vite.svg"}
+                  <ProfileImage 
+                    src={userData.profilePicture}
                     alt={`${userData.firstName} ${userData.lastName}`}
                     className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-blue-500 dark:border-blue-400 object-cover"
-                    onError={(e) => {
-                      console.log("Error loading profile image, using default");
-                      e.target.src = "/vite.svg";
-                    }}
                   />
                   <span className="absolute bottom-0 right-0 w-4 h-4 md:w-5 md:h-5 rounded-full bg-green-500 border-2 border-white dark:border-gray-800"></span>
                 </div>

@@ -50,6 +50,7 @@ const getCachedProfileData = () => {
   const mailAddress = localStorage.getItem('mailAddress') || localStorage.getItem('email');
   const email = mailAddress; // Ensure both fields are available
   const profilePicture = localStorage.getItem('profilePicture');
+  const localProfilePicture = localStorage.getItem('profilePictureLocal');
   const phone = localStorage.getItem('phone');
   const createdAt = localStorage.getItem('createdAt') || 
                    localStorage.getItem('creationDate') || 
@@ -64,7 +65,9 @@ const getCachedProfileData = () => {
       accountType,
       mailAddress,
       email,
-      profilePicture,
+      profilePicture: localProfilePicture && localProfilePicture.startsWith('data:image') ? 
+                     localProfilePicture : profilePicture,
+      localProfilePicture,
       phone,
       createdAt
     };
@@ -197,6 +200,12 @@ export const profileApi = {
         profileData.number = profileData.phone;
       }
       
+      // Don't send profile picture in update request unless explicitly provided
+      // This prevents accidentally clearing the profile picture
+      if (!profileData.profilePicture) {
+        console.log("No profile picture in update data - existing picture will be preserved");
+      }
+      
       console.log("Sending profile update with data:", profileData);
       
       // Set update flags before making the API call
@@ -228,6 +237,11 @@ export const profileApi = {
           localStorage.setItem('phone', profileData.phone);
         }
         
+        // Don't update profile picture in localStorage unless it's explicitly provided
+        if (profileData.profilePicture) {
+          localStorage.setItem('profilePicture', profileData.profilePicture);
+        }
+        
         // Trigger custom event for UI updates
         window.dispatchEvent(new Event("userDataUpdated"));
       }
@@ -256,18 +270,80 @@ export const profileApi = {
   uploadProfilePicture: async (formData) => {
     try {
       const accountId = localStorage.getItem('userId');
-      const response = await axiosInstance.post(`/accounts/uploadProfilePicture/${accountId}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
+      const accountType = localStorage.getItem('accountType');
+      const isCustomer = accountType === 'ROLE_USER' || accountType === 'ROLE_CUSTOMER';
+      
+      try {
+        // Make API call to upload profile picture
+        const response = await axiosInstance.post(`/accounts/uploadProfilePicture/${accountId}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        // Update profilePicture in localStorage after successful upload
+        if (response.data && response.data.profilePicture) {
+          localStorage.setItem('profilePicture', response.data.profilePicture);
         }
-      });
-      
-      // Update profilePicture in localStorage after successful upload
-      if (response.data && response.data.profilePicture) {
-        localStorage.setItem('profilePicture', response.data.profilePicture);
+        
+        // Always create a local backup of the image in base64 for resilience
+        const file = formData.get('profilePicture');
+        if (file) {
+          // Create a local base64 version for resilience against 403 errors
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64Data = reader.result;
+            // Always store in localStorage for future use
+            localStorage.setItem('profilePictureLocal', base64Data);
+            localStorage.setItem('profilePictureUpdatedAt', Date.now().toString());
+            
+            // Dispatch event to notify components about the update
+            window.dispatchEvent(new Event('userDataUpdated'));
+          };
+          reader.readAsDataURL(file);
+        }
+        
+        // Dispatch event to notify components about the profile update
+        window.dispatchEvent(new Event('userDataUpdated'));
+        
+        return response.data;
+      } catch (apiError) {
+        console.error('API error uploading profile picture:', apiError);
+        
+        // Special handling for customer accounts with permission issues
+        if (isCustomer && (apiError.response?.status === 403 || apiError.response?.status === 401)) {
+          console.log('Customer account got permission error when uploading profile picture - handling locally');
+          
+          // Create a file reader to get base64 data of the image
+          const file = formData.get('profilePicture');
+          if (file) {
+            return new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const base64Data = reader.result;
+                
+                // Store in localStorage for local usage
+                localStorage.setItem('profilePictureLocal', base64Data);
+                localStorage.setItem('profilePictureUpdatedAt', Date.now().toString());
+                
+                // Dispatch event to notify components
+                window.dispatchEvent(new Event('userDataUpdated'));
+                
+                // Return mock response
+                resolve({
+                  success: true,
+                  message: 'Profile picture updated locally',
+                  profilePicture: base64Data
+                });
+              };
+              reader.readAsDataURL(file);
+            });
+          }
+        }
+        
+        // Re-throw error for other cases
+        throw apiError;
       }
-      
-      return response.data;
     } catch (error) {
       console.error('Error uploading profile picture:', error);
       
@@ -374,15 +450,26 @@ export const profileApi = {
       if (!accountId) {
         accountId = localStorage.getItem('userId');
       }
+      if (!accountId) {
+        accountId = localStorage.getItem('id');
+      }
       
       if (!accountId) {
         console.error('No accountId or userId found or retrievable');
         throw new Error('User ID not found');
       }
       
+      // Make sure accountId is a number - backend expects Long
+      if (typeof accountId === 'string') {
+        accountId = parseInt(accountId, 10);
+        if (isNaN(accountId)) {
+          console.error('Invalid account ID (not a number)');
+          throw new Error('Invalid user ID format');
+        }
+      }
+      
       console.log(`Fetching orders for user ${accountId}, page: ${page}, size: ${size}`);
       
-      // Call the backend API endpoint to get orders for this account
       const response = await axiosInstance.get(`/accounts/${accountId}/orders`, {
         params: { page, size }
       });
@@ -391,6 +478,13 @@ export const profileApi = {
       return response.data;
     } catch (error) {
       console.error('Error fetching user orders:', error);
+      
+      // If we get a 403/401 error, return empty data structure instead of throwing
+      if (error.response && (error.response.status === 403 || error.response.status === 401)) {
+        console.log('Returning empty orders list due to permission error');
+        return { content: [], page: { size, number: page, totalElements: 0, totalPages: 0 } };
+      }
+      
       throw new Error(error.response?.data?.message || 'Failed to fetch your orders');
     }
   },

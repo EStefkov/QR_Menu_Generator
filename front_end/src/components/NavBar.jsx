@@ -7,6 +7,7 @@ import { validateToken } from "../api/account";
 import { useCart } from "../contexts/CartContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import LanguageToggle from "./LanguageToggle";
+import ProfileImage from "./ProfileImage";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -158,14 +159,10 @@ const NavBar = () => {
                       onClick={() => setIsProfileOpen(!isProfileOpen)}
                       className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
-                      <img
-                        src={`${BASE_URL}${userData.profilePicture}`}
+                      <ProfileImage
+                        src={userData.profilePicture}
                         alt="Profile"
                         className="w-10 h-10 rounded-full border-2 border-blue-500 dark:border-blue-400 hover:border-blue-600 dark:hover:border-blue-300 transition-colors"
-                        onError={(e) => {
-                          e.target.src = "/logo-transparent.png";
-                          e.target.onerror = (e) => { e.target.src = "/vite.svg"; };
-                        }}
                       />
                       <svg 
                         className={`hidden md:block w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${

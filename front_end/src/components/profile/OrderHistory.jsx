@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { HiClock, HiShoppingBag, HiLocationMarker, HiCurrencyDollar } from 'react-icons/hi';
+import { HiClock, HiShoppingBag, HiLocationMarker, HiCurrencyDollar, HiInformationCircle } from 'react-icons/hi';
 import { profileApi } from '../../api/profileApi';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,6 +12,7 @@ const OrderHistory = () => {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [permissionIssue, setPermissionIssue] = useState(false);
 
   useEffect(() => {
     // Check token on component mount
@@ -36,29 +37,52 @@ const OrderHistory = () => {
         setError(t('auth.noToken') || 'Please log in to view your orders');
         return;
       }
-
-      const response = await profileApi.getUserOrders(page, 10);
-      console.log('Orders response:', response);
-
-      if (response.content) {
-        // Handle paginated response
-        setOrders(prev => page === 0 ? response.content : [...prev, ...response.content]);
-        setHasMore(!response.last);
-      } else {
-        // Handle non-paginated response
-        setOrders(prev => page === 0 ? response : [...prev, ...response]);
-        setHasMore(false);
+      
+      // First, check user account type
+      const accountType = localStorage.getItem('accountType');
+      const isCustomer = accountType === 'ROLE_USER' || accountType === 'ROLE_CUSTOMER';
+      
+      try {
+        // Make API call to get orders
+        const response = await profileApi.getUserOrders(page, 10);
+        console.log('Orders response:', response);
+  
+        if (response.content) {
+          // Handle paginated response
+          setOrders(prev => page === 0 ? response.content : [...prev, ...response.content]);
+          setHasMore(!response.last);
+        } else {
+          // Handle non-paginated response
+          setOrders(prev => page === 0 ? response : [...prev, ...response]);
+          setHasMore(false);
+        }
+        setError(null);
+        setPermissionIssue(false);
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+        
+        // Check if this is a permission issue (403/401)
+        if (err.response?.status === 403 || err.response?.status === 401) {
+          console.log('Permission error when fetching orders - showing empty list');
+          // For customers, show a friendly message and empty state instead of error
+          if (isCustomer) {
+            setPermissionIssue(true);
+            setOrders([]);
+            setHasMore(false);
+            setError(null);
+          } else {
+            // For managers, show the actual error
+            setError(t('orders.permissionError') || 'You don\'t have permission to view order history');
+          }
+        } else {
+          setError(t('orders.fetchError') || 'Failed to load order history');
+          setPermissionIssue(false);
+        }
       }
-      setError(null);
     } catch (err) {
-      console.error('Error fetching orders:', err);
-      if (err.response?.status === 403) {
-        setError(t('auth.sessionExpired') || 'Your session has expired. Please log in again.');
-        // Optionally redirect to login
-        // navigate('/login');
-      } else {
-        setError(t('orders.fetchError') || 'Failed to load order history');
-      }
+      console.error('Unexpected error in fetchOrders:', err);
+      setError(t('orders.fetchError') || 'Failed to load order history');
+      setPermissionIssue(false);
     } finally {
       setLoading(false);
     }
@@ -108,6 +132,21 @@ const OrderHistory = () => {
             {t('auth.login') || 'Log In'}
           </button>
         )}
+      </div>
+    );
+  }
+
+  if (permissionIssue) {
+    return (
+      <div className="text-center py-8">
+        <HiInformationCircle className="w-12 h-12 text-blue-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">
+          {t('orders.accessLimited') || 'Order History Access Limited'}
+        </h3>
+        <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+          {t('orders.customerPermissionMessage') || 
+           'Order history is not available for regular accounts. Orders placed will be visible here when you have access.'}
+        </p>
       </div>
     );
   }

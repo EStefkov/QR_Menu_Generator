@@ -279,6 +279,9 @@ const translations = {
   
   "profile.personalInfo": "Лична информация",
   "profile.changePicture": "Смяна на снимка",
+  "profile.uploadPicture": "Качи снимка",
+  "profile.profilePictureUpdated": "Профилната снимка е обновена успешно",
+  "profile.profilePictureUpdateError": "Неуспешно обновяване на профилната снимка",
   "profile.pictureRequirements": "JPG, PNG или GIF (макс. 2MB)",
   "profile.firstName": "Име",
   "profile.lastName": "Фамилия",

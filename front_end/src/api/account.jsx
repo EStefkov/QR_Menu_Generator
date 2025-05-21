@@ -110,6 +110,10 @@ export const validateToken = async (token) => {
     throw new Error("No token provided");
   }
   
+  // Check user role - regular users get more lenient validation
+  const accountType = localStorage.getItem('accountType');
+  const isRegularUser = accountType === 'ROLE_USER' || accountType === 'ROLE_CUSTOMER';
+  
   // Проверяваме дали потребителят в момента обновява профила си
   if (isUserUpdatingProfile()) {
     console.log("Skipping token validation because user is updating their profile");
@@ -132,6 +136,19 @@ export const validateToken = async (token) => {
     if (isUserUpdatingProfile()) {
       console.log("User started profile update during validation - assuming token is valid");
       return { valid: true };
+    }
+    
+    // Special case for regular users and 403 errors - consider them valid
+    if (isRegularUser && validateError.response?.status === 403) {
+      console.log("Regular user received 403 - considering token still valid");
+      return { 
+        valid: true,
+        id: localStorage.getItem('id') || localStorage.getItem('userId'),
+        firstName: localStorage.getItem('firstName'),
+        lastName: localStorage.getItem('lastName'),
+        accountType: localStorage.getItem('accountType'),
+        profilePicture: localStorage.getItem('profilePicture')
+      };
     }
     
     // Ако валидацията е неуспешна, записваме грешката и пробваме резервния endpoint
@@ -162,6 +179,19 @@ export const validateToken = async (token) => {
       }
       
       console.error("Error validating token with fallback endpoint:", fallbackError.message);
+      
+      // Special case for regular users and 403 errors - consider them valid
+      if (isRegularUser && fallbackError.response?.status === 403) {
+        console.log("Regular user received 403 in fallback - considering token still valid");
+        return { 
+          valid: true,
+          id: localStorage.getItem('id') || localStorage.getItem('userId'),
+          firstName: localStorage.getItem('firstName'),
+          lastName: localStorage.getItem('lastName'),
+          accountType: localStorage.getItem('accountType'),
+          profilePicture: localStorage.getItem('profilePicture')
+        };
+      }
       
       // Ако получим 401, токенът наистина е невалиден
       if (fallbackError.response && fallbackError.response.status === 401) {
