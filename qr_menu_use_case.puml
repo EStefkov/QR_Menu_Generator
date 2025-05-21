@@ -1,0 +1,78 @@
+@startuml QR_Menu_Generator_Use_Case_Diagram
+
+skinparam actorStyle awesome
+
+' Define actors
+:User: as user
+:Manager: as manager
+:Co-Manager: as coManager
+:Admin: as admin
+
+' Define use cases
+(View Menu) as viewMenu
+(Scan QR Code) as scanQR
+(Place Order) as placeOrder
+(View Order History) as viewOrderHistory
+(Track Orders) as trackOrders
+(Manage Products) as manageProducts
+(Add/Edit Products) as editProducts
+(Generate QR Code) as generateQR
+(View Statistics) as viewStats
+(View Popular Products) as viewPopular
+(Manage Users) as manageUsers
+(Configure System) as configSystem
+(Manage Restaurants) as manageRestaurants
+
+' Authentication use cases
+(Login) as login
+(Register) as register
+(Logout) as logout
+(Recover Password) as recoverPassword
+(Verify Account) as verifyAccount
+(Authenticate User) as authenticate
+
+' Define relationships between actors and use cases
+user --> login
+user --> register
+user --> logout
+user --> scanQR
+
+manager --> trackOrders
+manager --> manageProducts
+manager --> editProducts
+manager --> generateQR
+manager --> viewStats
+manager --> viewPopular
+
+coManager --> trackOrders
+coManager --> editProducts
+coManager --> viewStats
+
+admin --> manageUsers
+admin --> configSystem
+admin --> manageRestaurants
+admin --> viewStats
+
+' Include relationships
+login ..> authenticate : <<include>>
+register ..> verifyAccount : <<include>>
+manageProducts ..> editProducts : <<include>>
+viewStats ..> viewPopular : <<include>>
+manageUsers ..> authenticate : <<include>>
+placeOrder ..> login : <<include>>
+viewOrderHistory ..> login : <<include>>
+
+' Flow relationships - correct sequence
+scanQR ..> viewMenu : <<include>>
+viewMenu ..> placeOrder : <<extend>>
+
+' Extend relationships
+login ..> recoverPassword : <<extend>>
+viewStats ..> trackOrders : <<extend>>
+manageRestaurants ..> generateQR : <<extend>>
+
+' Inheritance relationships
+coManager -|> user
+manager -|> coManager
+
+@enduml 

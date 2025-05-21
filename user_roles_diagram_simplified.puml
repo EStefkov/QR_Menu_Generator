@@ -1,0 +1,62 @@
+@startuml QR_Menu_Generator_Simple_User_Roles
+
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor LightBlue
+  BorderColor DarkBlue
+}
+skinparam actor {
+  BackgroundColor LightGreen
+  BorderColor DarkGreen
+}
+
+' Title
+title QR Menu Generator - Basic User Roles
+
+' Define actors
+actor "User\n(Customer)" as user
+actor "Co-Manager\n(Staff)" as coManager
+actor "Manager\n(Restaurant Owner)" as manager
+actor "Admin\n(System Administrator)" as admin
+
+' Define basic use cases - no grouping
+(Login) as login
+(Register) as register
+(Scan QR Code) as scanQR
+(View Menu) as viewMenu
+(Place Order) as placeOrder
+(View Order History) as viewOrderHistory
+(Track Orders) as trackOrders
+(Edit Products) as editProducts
+(Generate QR Code) as generateQR
+(View Statistics) as viewStats
+(Manage Products) as manageProducts
+(Manage Users) as manageUsers
+(Configure System) as configSystem
+(Manage Restaurants) as manageRestaurants
+
+' Simple first-level connections only
+user --> login
+user --> register
+user --> scanQR
+user --> viewMenu
+user --> placeOrder
+user --> viewOrderHistory
+
+coManager --> trackOrders
+coManager --> editProducts
+coManager --> viewStats
+
+manager --> manageProducts
+manager --> generateQR
+manager --> viewStats
+
+admin --> manageUsers
+admin --> configSystem
+admin --> manageRestaurants
+
+' Simple inheritance relationships
+user <|-- coManager
+coManager <|-- manager
+
+@enduml 

@@ -77,7 +77,7 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
       };
       
       // Update profile through API
-      const result = await profileApi.updateProfile(profileUpdateData);
+      const result = await profileApi.updateUserProfile(profileUpdateData);
       console.log("Profile update result:", result);
       
       let updatedProfilePicture = null;

@@ -315,6 +315,8 @@ const translations = {
   "profile.userRole": "Customer",
   "profile.userProfile": "User Profile",
   "profile.name": "Name",
+  "profile.firstName": "First Name",
+  "profile.lastName": "Last Name",
   "profile.email": "Email",
   "profile.phone": "Phone",
   "profile.memberSince": "Member Since",
@@ -324,14 +326,25 @@ const translations = {
   "profile.totalOrders": "Total Orders",
   "profile.favoriteProducts": "Favorite Products",
   "profile.orderHistory": "Order History",
-  
+  "profile.pictureRequirements": "JPG, PNG or GIF (max. 2MB)",
   "profile.personalInfo": "Personal Information",
   "profile.changePicture": "Change Picture",
-  
-  // Admin Statistics
+  "profile.changePassword": "Change Password",
+  "profile.currentPassword": "Current Password",
+  "profile.newPassword": "New Password",
+  "profile.confirmPassword": "Confirm Password",
+  "profile.passwordsDoNotMatch": "Passwords do not match",
+  "profile.passwordTooShort": "Password must be at least 6 characters",
+  "profile.profileUpdateSuccess": "Profile updated successfully",
+  "profile.profileUpdateError": "Failed to update profile. Please try again.",
+  "profile.passwordChangeSuccess": "Password changed successfully",
+  "profile.passwordChangeError": "Failed to change password. Please try again.",
+  "profile.saveChanges": "Save Changes",
   "profile.todayOrders": "Today's Orders",
   "profile.weekOrders": "This Week",
   "profile.monthOrders": "This Month",
+  
+  // Admin Statistics
   "profile.orderStatusSummary": "Order Status Summary",
   "profile.popularProducts": "Popular Products",
   "profile.restaurantPerformance": "Restaurant Performance",

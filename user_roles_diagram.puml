@@ -1,0 +1,94 @@
+@startuml QR_Menu_Generator_User_Roles
+
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor LightBlue
+  BorderColor DarkBlue
+  ArrowColor Navy
+}
+skinparam actor {
+  BackgroundColor LightGreen
+  BorderColor DarkGreen
+}
+
+' Title
+title QR Menu Generator - User Roles and Permissions
+
+' Define actors with descriptions
+actor "User\n(Customer)" as user
+actor "Co-Manager\n(Staff)" as coManager
+actor "Manager\n(Restaurant Owner)" as manager
+actor "Admin\n(System Administrator)" as admin
+
+' Group functionalities
+rectangle "Authentication" {
+  (Login) as login
+  (Register) as register
+  (Logout) as logout
+  (Recover Password) as recoverPassword
+}
+
+rectangle "Customer Actions" {
+  (Scan QR Code) as scanQR
+  (View Menu) as viewMenu
+  (Place Order) as placeOrder
+  (View Order History) as viewOrderHistory
+  (Track Current Order) as trackCurrentOrder
+}
+
+rectangle "Management Functions" {
+  (Track All Orders) as trackOrders
+  (Edit Products) as editProducts
+  (Generate QR Code) as generateQR
+  (View Statistics) as viewStats
+  (View Popular Products) as viewPopular
+  (Manage Products) as manageProducts
+}
+
+rectangle "Administration" {
+  (Manage Users) as manageUsers
+  (Configure System) as configSystem
+  (Manage Restaurants) as manageRestaurants
+}
+
+' User relationships
+user --> login
+user --> register
+user --> logout
+user --> scanQR
+scanQR ..> viewMenu : <<include>>
+viewMenu ..> placeOrder : <<extend>>
+login ..> placeOrder : <<enable>>
+login ..> viewOrderHistory : <<enable>>
+login ..> trackCurrentOrder : <<enable>>
+
+' Co-Manager relationships
+coManager --> login
+coManager --> trackOrders
+coManager --> editProducts
+coManager --> viewStats
+
+' Manager relationships
+manager --> trackOrders
+manager --> manageProducts
+manager --> generateQR
+manager --> viewStats
+manager --> viewPopular
+
+' Admin relationships
+admin --> manageUsers
+admin --> configSystem
+admin --> manageRestaurants
+
+' Include and extend relationships
+login ..> recoverPassword : <<extend>>
+viewStats ..> viewPopular : <<include>>
+manageProducts ..> editProducts : <<include>>
+
+' Inheritance relationships (shown differently for clarity)
+note "Co-Manager inherits all\nUser capabilities" as note1
+note "Manager inherits all\nCo-Manager capabilities" as note1
+user <|-- coManager
+coManager <|-- manager
+
+@enduml 
