@@ -35,13 +35,24 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
   
   // Get email helper
   const getEmail = () => {
+    // Check all possible email field names in profileData
     if (profileData && profileData.email) {
       return profileData.email;
+    } else if (profileData && profileData.mailAddress) {
+      return profileData.mailAddress;
     } else if (currentUser && currentUser.email) {
       return currentUser.email;
-    } else {
-      return t('profile.notProvided') || 'Not provided';
+    } else if (currentUser && currentUser.mailAddress) {
+      return currentUser.mailAddress;
+    } 
+    
+    // Try localStorage as last resort
+    const emailFromStorage = localStorage.getItem('email') || localStorage.getItem('mailAddress');
+    if (emailFromStorage) {
+      return emailFromStorage;
     }
+    
+    return t('profile.notProvided') || 'Not provided';
   };
   
   // Get time ago helper

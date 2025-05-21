@@ -61,7 +61,21 @@ const Login = () => {
           payload.id = Number(payload.id);
         }
         
+        // Ensure we have email consistently
+        if (!payload.email && payload.mailAddress) {
+          console.log("Using mailAddress as email in token payload");
+          payload.email = payload.mailAddress;
+        } else if (!payload.mailAddress && payload.email) {
+          console.log("Using email as mailAddress in token payload");
+          payload.mailAddress = payload.email;
+        } else if (!payload.email && !payload.mailAddress && payload.mail) {
+          console.log("Using mail as email/mailAddress in token payload");
+          payload.email = payload.mail;
+          payload.mailAddress = payload.mail;
+        }
+        
         console.log("Final ID being saved:", payload.id);
+        console.log("Email/mailAddress being saved:", payload.email || payload.mailAddress || "UNDEFINED!");
         
         // Log in the user
         const savedRedirectUrl = login(response, payload);

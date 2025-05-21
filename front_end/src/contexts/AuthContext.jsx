@@ -209,6 +209,7 @@ export function AuthProvider({ children }) {
         
         if (token) {
           console.log("AuthContext: Refreshing user data from localStorage for current user");
+          const mailAddress = localStorage.getItem("mailAddress") || localStorage.getItem("email");
           setUserData({
             id: localStorageId,
             token,
@@ -216,7 +217,8 @@ export function AuthProvider({ children }) {
             lastName: localStorage.getItem("lastName"),
             profilePicture: localStorage.getItem("profilePicture"),
             accountType: localStorage.getItem("accountType"),
-            mailAddress: localStorage.getItem("mailAddress"),
+            mailAddress: mailAddress,
+            email: mailAddress // Make sure we have both fields
           });
         }
       } else {
@@ -248,10 +250,20 @@ export function AuthProvider({ children }) {
     localStorage.setItem("lastName", payload.lastName);
     localStorage.setItem("profilePicture", payload.profilePicture);
     localStorage.setItem("accountType", payload.accountType);
-    localStorage.setItem("mailAddress", payload.mailAddress);
-    localStorage.setItem("userId", payload.id);
-
-    // Update state
+    
+    // Make sure we always save the email address in both fields
+    if (payload.mailAddress) {
+      localStorage.setItem("mailAddress", payload.mailAddress);
+      localStorage.setItem("email", payload.mailAddress);
+    } else if (payload.email) {
+      localStorage.setItem("mailAddress", payload.email);
+      localStorage.setItem("email", payload.email);
+    } else if (payload.mail) {
+      localStorage.setItem("mailAddress", payload.mail);
+      localStorage.setItem("email", payload.mail);
+    }
+    
+    // Update auth state
     setUserData({
       id: payload.id,
       token,
@@ -259,12 +271,11 @@ export function AuthProvider({ children }) {
       lastName: payload.lastName,
       profilePicture: payload.profilePicture,
       accountType: payload.accountType,
-      mailAddress: payload.mailAddress,
+      mailAddress: payload.mailAddress || payload.email || payload.mail,
+      email: payload.mailAddress || payload.email || payload.mail // Make sure we have both fields
     });
     
-    console.log("Login complete, user data set");
-    
-    // Return the saved redirect URL if available
+    // Return the current redirect URL
     return redirectUrl;
   };
 
