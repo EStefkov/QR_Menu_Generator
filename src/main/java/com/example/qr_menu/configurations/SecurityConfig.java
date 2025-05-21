@@ -44,6 +44,7 @@ public class SecurityConfig {
                         .requestMatchers("/uploads/menuImages/**", "/uploads/menuImages/*/**").permitAll()
                         .requestMatchers("/uploads/defaultProductImages/**", "/uploads/defaultProductImages/*/**").permitAll()
                         .requestMatchers("/uploads/default_product.png").permitAll()
+                        .requestMatchers("/uploads/default_profile.png").permitAll()
                         // Allow access to all menu uploads directories 
                         .requestMatchers("/uploads/*/**").permitAll()
                         

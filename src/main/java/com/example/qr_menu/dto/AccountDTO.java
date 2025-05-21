@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Data
@@ -14,7 +15,6 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class AccountDTO {
-
 
     private Long id; // Add this field
     private String accountName;
@@ -27,5 +27,6 @@ public class AccountDTO {
     private Account.AccountType accountType;
     private List<RestaurantDTO> restaurants;
     private Long updatedBy; // Who performed the update
+    private Timestamp createdAt; // When the account was created
 }
 

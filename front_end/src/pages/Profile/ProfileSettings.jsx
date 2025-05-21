@@ -2,9 +2,10 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { AuthContext } from '../../contexts/AuthContext';
 import { profileApi } from '../../api/profileApi';
-import { HiPhotograph, HiCheckCircle, HiExclamationCircle } from 'react-icons/hi';
+import { HiPhotograph, HiCheckCircle, HiExclamationCircle, HiRefresh } from 'react-icons/hi';
 import { setUserUpdatingFlag } from '../../api/account';
 import ProfileImage from '../../components/ProfileImage';
+import { joinPaths, getImageUrl } from '../../utils/urlUtils';
 
 const ProfileSettings = ({ profileData, onUpdate }) => {
   const { t } = useLanguage();
@@ -15,6 +16,42 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [pictureUploadMode, setPictureUploadMode] = useState(false);
   
+  // Add a function to force refresh profile data from backend
+  const forceRefreshProfileData = async () => {
+    try {
+      setLoading(true);
+      setMessage({ type: '', text: 'Refreshing profile data...' });
+      
+      // Clear any profile cache to ensure we get fresh data
+      localStorage.removeItem('profileDataCache');
+      
+      // Clear localStorage token validation timestamp to force a fresh fetch
+      localStorage.removeItem('tokenValidatedAt');
+      
+      // Force fetch profile data from API, bypassing cache
+      const freshProfileData = await profileApi.getUserProfile(true); // Pass true to bypass cache
+      
+      if (freshProfileData) {
+        console.log('Refreshed profile data:', freshProfileData);
+        
+        // Update local state
+        if (onUpdate) {
+          onUpdate(freshProfileData);
+        }
+        
+        // Trigger UI updates
+        window.dispatchEvent(new Event('userDataUpdated'));
+        
+        setMessage({ type: 'success', text: 'Profile data refreshed successfully' });
+      }
+    } catch (error) {
+      console.error('Error refreshing profile data:', error);
+      setMessage({ type: 'error', text: 'Failed to refresh profile data: ' + error.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   // Debug userData when it changes
   useEffect(() => {
     console.log("ProfileSettings - userData changed:", {
@@ -22,7 +59,8 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
       firstName: userData.firstName,
       lastName: userData.lastName,
       mailAddress: userData.mailAddress,
-      email: userData.email
+      email: userData.email,
+      createdAt: userData.createdAt // Log creation date
     });
   }, [userData]);
   
@@ -44,13 +82,30 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
     return '';
   };
   
+  // Get phone from available sources
+  const getPhoneFromAvailableSources = () => {
+    // First try userData
+    if (userData.phone) return userData.phone;
+    
+    // Then try profileData
+    if (profileData?.phone) return profileData.phone;
+    if (profileData?.number) return profileData.number;
+    
+    // Then try localStorage
+    const localPhone = localStorage.getItem('phone') || localStorage.getItem('number');
+    if (localPhone) return localPhone;
+    
+    // Fallback
+    return '';
+  };
+  
   // Form states
   const [formData, setFormData] = useState({
     id: userData.id || localStorage.getItem('userId'),
     firstName: userData.firstName || '',
     lastName: userData.lastName || '',
     email: getEmailFromAvailableSources(),
-    phone: profileData?.phone || '',
+    phone: getPhoneFromAvailableSources(),
   });
   
   // Update form data when userData or profileData changes
@@ -59,6 +114,7 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
       firstName: userData.firstName,
       lastName: userData.lastName,
       email: userData.mailAddress || userData.email,
+      phone: userData.phone
     });
     
     setFormData(prev => ({
@@ -67,7 +123,7 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
       firstName: userData.firstName || prev.firstName,
       lastName: userData.lastName || prev.lastName,
       email: userData.mailAddress || userData.email || prev.email,
-      phone: profileData?.phone || prev.phone
+      phone: userData.phone || profileData?.phone || prev.phone
     }));
   }, [userData, profileData]);
   
@@ -83,13 +139,26 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
         email: localEmail
       }));
     }
-  }, [formData.email]);
+    
+    // Get phone from localStorage directly
+    const localPhone = localStorage.getItem('phone') || localStorage.getItem('number');
+    
+    if (localPhone && !formData.phone) {
+      console.log("Loading phone from localStorage:", localPhone);
+      setFormData(prev => ({
+        ...prev,
+        phone: localPhone
+      }));
+    }
+  }, [formData.email, formData.phone]);
   
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
+  
+  const API_URL = import.meta.env.VITE_API_URL;
   
   // Function to get the current profile picture URL
   const getProfilePictureUrl = () => {
@@ -107,11 +176,11 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
     if (userData.profilePicture) {
       return userData.profilePicture.startsWith('data:image') ? 
         userData.profilePicture : 
-        `${import.meta.env.VITE_API_URL}${userData.profilePicture}`;
+        getImageUrl(userData.profilePicture);
     }
     
     // Default profile picture
-    return `${import.meta.env.VITE_API_URL}/uploads/default_profile.png`;
+    return joinPaths(API_URL, '/uploads/default_profile.png');
   };
   
   // Handle image loading error (403 Forbidden, etc.)
@@ -125,7 +194,7 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
       e.target.src = localProfilePic;
     } else {
       // Fallback to default
-      e.target.src = `${import.meta.env.VITE_API_URL}/uploads/default_profile.png`;
+      e.target.src = joinPaths(API_URL, '/uploads/default_profile.png');
     }
   };
   
@@ -315,6 +384,7 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
         lastName: formData.lastName,
         mailAddress: formData.email,
         email: formData.email,
+        phone: formData.phone,
         // Only update profile picture if a new one was uploaded
         ...(updatedProfilePicture ? { profilePicture: updatedProfilePicture } : {})
       });
@@ -396,9 +466,19 @@ const ProfileSettings = ({ profileData, onUpdate }) => {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">
-          {t('profile.settings')}
-        </h2>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+            {t('profile.settings')}
+          </h2>
+          <button 
+            onClick={forceRefreshProfileData}
+            disabled={loading}
+            className="flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
+          >
+            <HiRefresh className={`w-5 h-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {t('common.refresh') || 'Refresh'}
+          </button>
+        </div>
         
         {message.text && (
           <div className={`p-4 mb-6 rounded-lg flex items-center ${

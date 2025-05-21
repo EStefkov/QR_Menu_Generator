@@ -25,6 +25,34 @@ const ProfilePage = () => {
   // Check if user is admin from JWT token data or localStorage
   const isAdminFromData = userData?.accountType === 'ROLE_ADMIN' || localStorage.getItem('accountType') === 'ROLE_ADMIN';
   
+  // Function to get the best profile picture source
+  const getProfilePicture = () => {
+    // First try userData which should be the most up-to-date source
+    if (userData && userData.profilePicture) {
+      return userData.profilePicture;
+    }
+    
+    // Then try profileData from API
+    if (profileData && profileData.profilePicture) {
+      return profileData.profilePicture;
+    }
+    
+    // Then try localStorage for a locally cached version
+    const localProfilePic = localStorage.getItem('profilePictureLocal');
+    if (localProfilePic && localProfilePic.startsWith('data:image')) {
+      return localProfilePic;
+    }
+    
+    // Finally try the normal profilePicture from localStorage
+    const profilePicture = localStorage.getItem('profilePicture');
+    if (profilePicture) {
+      return profilePicture;
+    }
+    
+    // Return undefined to let ProfileImage component handle the default
+    return undefined;
+  };
+  
   const fetchUserData = async () => {
     setLoading(true);
     setError(null);
@@ -135,13 +163,13 @@ const ProfilePage = () => {
           <div className="flex items-center justify-between md:hidden mb-4">
             <div className="flex items-center">
               <ProfileImage 
-                src={getCachedProfile()}
-                alt="Profile"
+                src={getProfilePicture()}
+                alt={`${userData.firstName || 'User'} ${userData.lastName || 'Profile'}`}
                 className="w-10 h-10 rounded-full border-2 border-blue-500 dark:border-blue-400 object-cover mr-3"
               />
               <div>
                 <h1 className="text-lg font-bold text-gray-800 dark:text-white truncate max-w-[200px]">
-                  {getCachedName()}
+                  {userData.firstName} {userData.lastName}
                 </h1>
               </div>
             </div>
@@ -186,13 +214,25 @@ const ProfilePage = () => {
       case 'overview':
         return isAdmin 
           ? <AdminProfileContent adminStats={adminStats} loading={loading} error={error} onRetry={fetchUserData} /> 
-          : <UserProfileContent profileData={profileData} loading={loading} error={error} onRetry={fetchUserData} />;
+          : <UserProfileContent 
+              profileData={profileData} 
+              userData={userData} 
+              loading={loading} 
+              error={error} 
+              onRetry={fetchUserData} 
+            />;
       case 'settings':
         return <ProfileSettings profileData={profileData} onUpdate={setProfileData} />;
       default:
         return isAdmin 
           ? <AdminProfileContent adminStats={adminStats} loading={loading} error={error} onRetry={fetchUserData} /> 
-          : <UserProfileContent profileData={profileData} loading={loading} error={error} onRetry={fetchUserData} />;
+          : <UserProfileContent 
+              profileData={profileData} 
+              userData={userData} 
+              loading={loading} 
+              error={error} 
+              onRetry={fetchUserData} 
+            />;
     }
   };
   
@@ -241,8 +281,8 @@ const ProfilePage = () => {
         <div className="flex items-center justify-between md:hidden mb-4">
           <div className="flex items-center">
             <ProfileImage 
-              src={userData.profilePicture}
-              alt={`${userData.firstName} ${userData.lastName}`}
+              src={getProfilePicture()}
+              alt={`${userData.firstName || 'User'} ${userData.lastName || 'Profile'}`}
               className="w-10 h-10 rounded-full border-2 border-blue-500 dark:border-blue-400 object-cover mr-3"
             />
             <div>
@@ -306,8 +346,8 @@ const ProfilePage = () => {
               <div className="flex flex-col items-center mb-6">
                 <div className="relative">
                   <ProfileImage 
-                    src={userData.profilePicture}
-                    alt={`${userData.firstName} ${userData.lastName}`}
+                    src={getProfilePicture()}
+                    alt={`${userData.firstName || 'User'} ${userData.lastName || 'Profile'}`}
                     className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-blue-500 dark:border-blue-400 object-cover"
                   />
                   <span className="absolute bottom-0 right-0 w-4 h-4 md:w-5 md:h-5 rounded-full bg-green-500 border-2 border-white dark:border-gray-800"></span>
@@ -323,8 +363,8 @@ const ProfilePage = () => {
                 
                 {/* Role badge */}
                 <div className="mt-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 px-3 py-1 rounded-full flex items-center">
-                  <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 20 20" aria-hidden="true" class="w-4 h-4 md:w-5 md:h-5 mr-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
-                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                  <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 20 20" aria-hidden="true" className="w-4 h-4 md:w-5 md:h-5 mr-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path>
                   </svg>
                   <span className="text-xs md:text-sm font-medium">
                     {userData.accountType === 'ROLE_ADMIN' ? 'Administrator' :

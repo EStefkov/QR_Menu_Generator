@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -12,16 +12,105 @@ import {
 } from 'react-icons/hi';
 import OrderHistory from '../../components/profile/OrderHistory';
 
-const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
+const UserProfileContent = ({ profileData, userData, loading, error, onRetry }) => {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
+  
+  // Debug log data sources to help with debugging
+  useEffect(() => {
+    if (profileData || userData) {
+      console.log("UserProfileContent - Data sources:", {
+        profileData: profileData ? "Provided" : "Missing",
+        userData: userData ? "Provided" : "Missing",
+        currentUser: currentUser ? "Provided" : "Missing"
+      });
+      
+      if (profileData) {
+        console.log("UserProfileContent - Profile data received:", profileData);
+        // Check for phone number
+        console.log("Phone number fields:", {
+          profileDataPhone: profileData.phone,
+          profileDataNumber: profileData.number
+        });
+      }
+      
+      if (userData) {
+        console.log("UserProfileContent - User data received:", userData);
+        // Check for phone number
+        console.log("User data phone:", userData.phone);
+      }
+    }
+  }, [profileData, userData, currentUser]);
+  
+  // Debug log profile data to see all available fields
+  useEffect(() => {
+    if (profileData) {
+      console.log("UserProfileContent - Profile data received:", profileData);
+      console.log("Available date fields:", {
+        createdAt: profileData.createdAt, 
+        created_at: profileData.created_at,
+        createDate: profileData.createDate,
+        registrationDate: profileData.registrationDate
+      });
+      
+      // Check if createdAt is a timestamp object
+      if (profileData.createdAt) {
+        console.log("createdAt type:", typeof profileData.createdAt);
+        console.log("createdAt raw value:", profileData.createdAt);
+        
+        // If it's a timestamp object with date property
+        if (typeof profileData.createdAt === 'object' && profileData.createdAt.date) {
+          console.log("createdAt.date:", profileData.createdAt.date);
+        }
+      }
+    }
+  }, [profileData]);
   
   // Format date helper
   const formatDate = (dateString) => {
     if (!dateString) return t('profile.notAvailable') || 'Not available';
     
     try {
-      const date = new Date(dateString);
+      // Log the date string to help with debugging
+      console.log("Formatting date string:", dateString);
+      
+      // Handle different date formats
+      let date;
+      
+      // If it's a timestamp object from Java
+      if (typeof dateString === 'object' && dateString.date) {
+        console.log("Using timestamp.date property");
+        date = new Date(dateString.date);
+      }
+      // If it's a timestamp number
+      else if (typeof dateString === 'number') {
+        console.log("Using timestamp as number");
+        date = new Date(dateString);
+      }
+      // If it's a string in SQL format "2025-05-21 18:38:45"
+      else if (typeof dateString === 'string' && dateString.includes(' ')) {
+        console.log("Converting SQL timestamp format");
+        date = new Date(dateString.replace(' ', 'T') + '.000Z');
+      }
+      // Otherwise try direct parsing
+      else {
+        console.log("Using default date parsing");
+        date = new Date(dateString);
+      }
+      
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date:', dateString);
+        return t('profile.notAvailable') || 'Not available';
+      }
+      
+      console.log("Parsed date object:", date);
+      console.log("Formatted date:", new Intl.DateTimeFormat(document.documentElement.lang || 'en', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(date));
+      
       return new Intl.DateTimeFormat(document.documentElement.lang || 'en', {
         year: 'numeric',
         month: 'long',
@@ -37,28 +126,90 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
   const getCreationDate = () => {
     if (!profileData) return null;
     
+    // Debug log all properties in profileData
+    console.log("All profileData keys:", Object.keys(profileData));
+    
+    // Direct check for createdAt first - this is what we added to the DTO
+    if (profileData.createdAt) {
+      console.log("Found createdAt directly:", profileData.createdAt);
+      return profileData.createdAt;
+    }
+    
     // Check all possible date field names
     const possibleFields = [
-      'createdAt', 'creationDate', 'createDate', 'registrationDate', 
+      'createdAt', 'created_at', 'createDate', 'registrationDate', 
       'created', 'registeredAt', 'joinDate', 'dateCreated'
     ];
     
     for (const field of possibleFields) {
-      if (profileData[field]) return profileData[field];
+      if (profileData[field]) {
+        console.log(`Found date in field '${field}':`, profileData[field]);
+        return profileData[field];
+      }
     }
     
-    return null; // No date found
+    console.warn("No creation date found in profile data, using fallback");
+    
+    // Fallback to current date minus 1 year (better than showing future date)
+    const fallbackDate = new Date();
+    fallbackDate.setFullYear(fallbackDate.getFullYear() - 1);
+    console.log("Using fallback date:", fallbackDate);
+    return fallbackDate;
   };
   
   // Get email helper
   const getEmail = () => {
     if (profileData && profileData.email) {
       return profileData.email;
+    } else if (profileData && profileData.mailAddress) {
+      return profileData.mailAddress;
+    } else if (userData && userData.email) {
+      return userData.email;
+    } else if (userData && userData.mailAddress) {
+      return userData.mailAddress;
     } else if (currentUser && currentUser.email) {
       return currentUser.email;
     } else {
+      // Try localStorage as last resort
+      const storedEmail = localStorage.getItem('mailAddress') || localStorage.getItem('email');
+      if (storedEmail) return storedEmail;
+      
       return t('profile.notProvided') || 'Not provided';
     }
+  };
+  
+  // Get phone number helper with fallbacks
+  const getPhone = () => {
+    // First try from profileData
+    if (profileData && profileData.phone) {
+      console.log("Using phone from profileData:", profileData.phone);
+      return profileData.phone;
+    } else if (profileData && profileData.number) {
+      console.log("Using number from profileData:", profileData.number);
+      return profileData.number;
+    }
+    
+    // Then try from passed userData prop
+    if (userData && userData.phone) {
+      console.log("Using phone from userData prop:", userData.phone);
+      return userData.phone;
+    }
+    
+    // Then try from currentUser context as fallback
+    if (currentUser && currentUser.phone) {
+      console.log("Using phone from currentUser context:", currentUser.phone);
+      return currentUser.phone;
+    }
+    
+    // Finally try localStorage as fallback
+    const storedPhone = localStorage.getItem('phone') || localStorage.getItem('number');
+    if (storedPhone) {
+      console.log("Using phone from localStorage:", storedPhone);
+      return storedPhone;
+    }
+    
+    console.log("No phone number found, using default message");
+    return t('profile.notProvided') || 'Not provided';
   };
   
   // Get time ago helper
@@ -66,7 +217,17 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
     if (!dateString) return '';
     
     try {
-      const date = new Date(dateString);
+      const date = typeof dateString === 'string' && dateString.includes(' ')
+        ? new Date(dateString.replace(' ', 'T') + '.000Z') 
+        : new Date(dateString);
+        
+      if (isNaN(date.getTime())) {
+        // If date is invalid, use fallback
+        const fallbackDate = new Date();
+        fallbackDate.setFullYear(fallbackDate.getFullYear() - 1);
+        date = fallbackDate;
+      }
+      
       const now = new Date();
       const diffInMonths = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
       
@@ -159,7 +320,7 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
             <div className="min-w-0 flex-1">
               <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">{t('profile.phone') || 'Phone'}</p>
               <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white break-words">
-                {profileData.phone || t('profile.notProvided') || 'Not provided'}
+                {getPhone()}
               </p>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getImageUrl, joinPaths } from '../utils/urlUtils';
 
 /**
  * ProfileImage component - displays a user profile image with fallback handling
@@ -10,6 +11,8 @@ const ProfileImage = ({
   className = 'w-10 h-10 rounded-full',
   fallbackSrc = '/uploads/default_profile.png' 
 }) => {
+  const API_URL = import.meta.env.VITE_API_URL;
+  
   const [imgSrc, setImgSrc] = useState(() => {
     // Check if the source is already a data URL
     if (src && src.startsWith('data:image')) {
@@ -18,19 +21,19 @@ const ProfileImage = ({
     
     // Check if we have a local cached version
     const localProfilePic = localStorage.getItem('profilePictureLocal');
-    if (!src && localProfilePic && localProfilePic.startsWith('data:image')) {
+    if (localProfilePic && localProfilePic.startsWith('data:image')) {
       console.log("Using cached profile image from localStorage");
       return localProfilePic;
     }
     
-    // Use the provided src or prepend the API URL if needed
+    // Use the provided src or generate a proper URL
     if (src) {
-      return src.startsWith('http') || src.startsWith('data:') 
-        ? src 
-        : `${import.meta.env.VITE_API_URL}${src}`;
+      return getImageUrl(src);
     }
     
-    return `${import.meta.env.VITE_API_URL}${fallbackSrc}`;
+    // No source provided, use default
+    console.log("No profile image source provided, using default");
+    return joinPaths(API_URL, fallbackSrc);
   });
 
   // Listen for profile picture updates and refresh the component
@@ -48,12 +51,9 @@ const ProfileImage = ({
       
       // Check if we have a new remote profile picture
       const profilePicture = localStorage.getItem('profilePicture');
-      if (profilePicture && profilePicture !== src) {
+      if (profilePicture) {
         console.log("ProfileImage: Found updated remote profile picture");
-        const newSrc = profilePicture.startsWith('http') || profilePicture.startsWith('data:') 
-          ? profilePicture 
-          : `${import.meta.env.VITE_API_URL}${profilePicture}`;
-        setImgSrc(newSrc);
+        setImgSrc(getImageUrl(profilePicture));
       }
     };
 
@@ -69,16 +69,16 @@ const ProfileImage = ({
   // Update image source when prop changes
   useEffect(() => {
     if (src) {
-      const newSrc = src.startsWith('http') || src.startsWith('data:') 
-        ? src 
-        : `${import.meta.env.VITE_API_URL}${src}`;
-      setImgSrc(newSrc);
+      setImgSrc(getImageUrl(src));
+    } else {
+      // If src becomes null or undefined, fall back to default
+      setImgSrc(joinPaths(API_URL, fallbackSrc));
     }
-  }, [src]);
+  }, [src, fallbackSrc, API_URL]);
 
   // Handle image loading errors like 403 Forbidden
   const handleError = () => {
-    console.log("Error loading profile image:", src);
+    console.log("Error loading profile image:", imgSrc);
     
     // Try to use locally cached image first
     const localProfilePic = localStorage.getItem('profilePictureLocal');
@@ -89,7 +89,8 @@ const ProfileImage = ({
     }
     
     // Fall back to default image if local cache fails
-    setImgSrc(`${import.meta.env.VITE_API_URL}${fallbackSrc}`);
+    console.log("Falling back to default profile image");
+    setImgSrc(joinPaths(API_URL, fallbackSrc));
   };
 
   return (

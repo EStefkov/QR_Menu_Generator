@@ -51,13 +51,22 @@ const getCachedProfileData = () => {
   const email = mailAddress; // Ensure both fields are available
   const profilePicture = localStorage.getItem('profilePicture');
   const localProfilePicture = localStorage.getItem('profilePictureLocal');
-  const phone = localStorage.getItem('phone');
+  const phone = localStorage.getItem('phone') || localStorage.getItem('number');
   const createdAt = localStorage.getItem('createdAt') || 
                    localStorage.getItem('creationDate') || 
                    localStorage.getItem('createDate') ||
                    localStorage.getItem('registrationDate');
   
   if (firstName && lastName && accountId) {
+    // Log what we found for debugging
+    console.log("getCachedProfileData found:", {
+      id: accountId,
+      email: email,
+      phone: phone,
+      firstName: firstName,
+      lastName: lastName
+    });
+    
     return {
       id: accountId,
       firstName,
@@ -68,7 +77,8 @@ const getCachedProfileData = () => {
       profilePicture: localProfilePicture && localProfilePicture.startsWith('data:image') ? 
                      localProfilePicture : profilePicture,
       localProfilePicture,
-      phone,
+      phone, // Include phone in cached data
+      number: phone, // Include as number too for backward compatibility
       createdAt
     };
   }
@@ -78,9 +88,9 @@ const getCachedProfileData = () => {
 
 export const profileApi = {
   // Get user profile information
-  getUserProfile: async () => {
+  getUserProfile: async (bypassCache = false) => {
     try {
-      console.log('Fetching user profile data...');
+      console.log('Fetching user profile data... (bypass cache:', bypassCache, ')');
       const token = localStorage.getItem('token');
       const isOnProfilePage = window.location.pathname.includes('/profile');
       
@@ -89,8 +99,8 @@ export const profileApi = {
         throw new Error('Authentication required. Please log in.');
       }
       
-      // IMPORTANT: On profile page, ALWAYS use cached data first
-      if (isOnProfilePage) {
+      // IMPORTANT: On profile page, ALWAYS use cached data first, UNLESS bypassCache is true
+      if (isOnProfilePage && !bypassCache) {
         const cachedData = getCachedProfileData();
         
         if (cachedData) {
@@ -115,6 +125,14 @@ export const profileApi = {
                     localStorage.setItem('id', response.data.id);
                   }
                   if (response.data.profilePicture) localStorage.setItem('profilePicture', response.data.profilePicture);
+                  if (response.data.createdAt) localStorage.setItem('createdAt', response.data.createdAt);
+                  
+                  // Store phone/number field from response
+                  if (response.data.phone) {
+                    localStorage.setItem('phone', response.data.phone);
+                  } else if (response.data.number) {
+                    localStorage.setItem('phone', response.data.number);
+                  }
                   
                   // Send event to update UI with new data
                   window.dispatchEvent(new Event('userDataUpdated'));
@@ -130,7 +148,8 @@ export const profileApi = {
         }
       }
       
-      // For non-profile pages or if no cached data, fetch from API
+      // For non-profile pages or if no cached data or bypassCache=true, fetch from API
+      console.log('Making direct API call to fetch profile data');
       const response = await axiosInstance.get('/accounts/current');
       
       // Store data in localStorage for future use
@@ -145,6 +164,14 @@ export const profileApi = {
           localStorage.setItem('id', response.data.id);
         }
         if (response.data.profilePicture) localStorage.setItem('profilePicture', response.data.profilePicture);
+        if (response.data.createdAt) localStorage.setItem('createdAt', response.data.createdAt);
+        
+        // Store phone/number field from response
+        if (response.data.phone) {
+          localStorage.setItem('phone', response.data.phone);
+        } else if (response.data.number) {
+          localStorage.setItem('phone', response.data.number);
+        }
       }
       
       console.log("Fetched user profile data from API:", response.data);
@@ -152,8 +179,8 @@ export const profileApi = {
     } catch (error) {
       console.error('Error fetching user profile:', error);
       
-      // On ANY error on profile page, prefer cached data
-      if (window.location.pathname.includes('/profile')) {
+      // On ANY error on profile page, prefer cached data if NOT bypassing cache
+      if (window.location.pathname.includes('/profile') && !bypassCache) {
         const cachedData = getCachedProfileData();
         
         if (cachedData) {

@@ -633,6 +633,7 @@ public class AccountService {
                 .number(entity.getNumber())
                 .accountType(entity.getAccountType())
                 .updatedBy(entity.getUpdatedBy())
+                .createdAt(entity.getCreatedAt())
                 .build();
     }
 }

@@ -232,6 +232,9 @@ export function AuthProvider({ children }) {
             localStorage.setItem("email", mailAddress);
           }
           
+          // Get phone number from localStorage
+          const phone = localStorage.getItem("phone") || localStorage.getItem("number");
+          
           // Get profile picture - prioritize local profile picture for customers
           let profilePicture = localStorage.getItem("profilePicture");
           const localProfilePicture = localStorage.getItem("profilePictureLocal");
@@ -253,13 +256,15 @@ export function AuthProvider({ children }) {
             localProfilePicture: localProfilePicture, // Add local profile picture
             accountType: accountType,
             mailAddress: mailAddress,
-            email: mailAddress // Make sure we have both fields
+            email: mailAddress, // Make sure we have both fields
+            phone: phone // Add phone field
           });
           
           // Log the email-related fields to debug
-          console.log("AuthContext: Updated user data email fields:", {
+          console.log("AuthContext: Updated user data:", {
             mailAddress,
-            emailStorage: localStorage.getItem("email")
+            emailStorage: localStorage.getItem("email"),
+            phone: phone
           });
         }
       } else {
@@ -309,6 +314,18 @@ export function AuthProvider({ children }) {
       localStorage.setItem("email", payload.mail);
     }
     
+    // Save phone number to localStorage (may be in different fields)
+    if (payload.phone) {
+      localStorage.setItem("phone", payload.phone);
+    } else if (payload.number) {
+      localStorage.setItem("phone", payload.number);
+    }
+    
+    // Save createdAt field if available
+    if (payload.createdAt) {
+      localStorage.setItem("createdAt", payload.createdAt);
+    }
+    
     // Build user data object, ensuring we don't override profile picture if it's not in the payload
     const newUserData = {
       id: payload.id,
@@ -317,7 +334,8 @@ export function AuthProvider({ children }) {
       lastName: payload.lastName,
       accountType: payload.accountType,
       mailAddress: payload.mailAddress || payload.email || payload.mail,
-      email: payload.mailAddress || payload.email || payload.mail // Make sure we have both fields
+      email: payload.mailAddress || payload.email || payload.mail, // Make sure we have both fields
+      phone: payload.phone || payload.number, // Include phone data
     };
     
     // Check if we have a locally stored profile picture from previous sessions
