@@ -235,6 +235,9 @@ const translations = {
   "common.notProvided": "Не е предоставено",
   "common.of": "от",
   "common.loadMore": "Зареди още",
+  "common.monthAgo": "месец",
+  "common.monthsAgo": "месеца",
+  "common.thisMonth": "този месец",
   
   // Pagination
   "pagination.showing": "Показване на",

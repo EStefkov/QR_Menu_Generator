@@ -32,6 +32,21 @@ const ProfilePage = () => {
       const userData = await profileApi.getUserProfile();
       console.log('Successfully fetched profile data:', userData);
       
+      // Log all keys in the user data object to find where the date information is stored
+      console.log('Profile data keys:', Object.keys(userData));
+      
+      // Log specific field possibilities for member since date
+      console.log('Creation date fields:', {
+        createdAt: userData.createdAt,
+        creationDate: userData.creationDate, 
+        createDate: userData.createDate,
+        registrationDate: userData.registrationDate,
+        created: userData.created,
+        registeredAt: userData.registeredAt,
+        joinDate: userData.joinDate,
+        dateCreated: userData.dateCreated
+      });
+      
       // Set user data in localStorage
       if (userData && userData.id) {
         localStorage.setItem('userId', userData.id);

@@ -47,9 +47,14 @@ const getCachedProfileData = () => {
   const lastName = localStorage.getItem('lastName');
   const accountId = localStorage.getItem('userId') || localStorage.getItem('id');
   const accountType = localStorage.getItem('accountType');
-  const mailAddress = localStorage.getItem('mailAddress');
+  const mailAddress = localStorage.getItem('mailAddress') || localStorage.getItem('email');
+  const email = mailAddress; // Ensure both fields are available
   const profilePicture = localStorage.getItem('profilePicture');
   const phone = localStorage.getItem('phone');
+  const createdAt = localStorage.getItem('createdAt') || 
+                   localStorage.getItem('creationDate') || 
+                   localStorage.getItem('createDate') ||
+                   localStorage.getItem('registrationDate');
   
   if (firstName && lastName && accountId) {
     return {
@@ -58,8 +63,10 @@ const getCachedProfileData = () => {
       lastName,
       accountType,
       mailAddress,
+      email,
       profilePicture,
-      phone
+      phone,
+      createdAt
     };
   }
   

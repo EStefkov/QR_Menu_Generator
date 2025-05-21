@@ -281,6 +281,9 @@ const translations = {
   "common.imageTypes": "PNG, JPG or GIF (max. 5MB)",
   "common.of": "of",
   "common.loadMore": "Load More",
+  "common.monthAgo": "month ago",
+  "common.monthsAgo": "months ago",
+  "common.thisMonth": "this month",
   
   // Pagination
   "pagination.showing": "Showing",

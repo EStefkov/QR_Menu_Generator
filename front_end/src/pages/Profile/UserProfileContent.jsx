@@ -33,26 +33,32 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
     }
   };
   
-  // Get email helper
-  const getEmail = () => {
-    // Check all possible email field names in profileData
-    if (profileData && profileData.email) {
-      return profileData.email;
-    } else if (profileData && profileData.mailAddress) {
-      return profileData.mailAddress;
-    } else if (currentUser && currentUser.email) {
-      return currentUser.email;
-    } else if (currentUser && currentUser.mailAddress) {
-      return currentUser.mailAddress;
-    } 
+  // Get creation date with various possible field names
+  const getCreationDate = () => {
+    if (!profileData) return null;
     
-    // Try localStorage as last resort
-    const emailFromStorage = localStorage.getItem('email') || localStorage.getItem('mailAddress');
-    if (emailFromStorage) {
-      return emailFromStorage;
+    // Check all possible date field names
+    const possibleFields = [
+      'createdAt', 'creationDate', 'createDate', 'registrationDate', 
+      'created', 'registeredAt', 'joinDate', 'dateCreated'
+    ];
+    
+    for (const field of possibleFields) {
+      if (profileData[field]) return profileData[field];
     }
     
-    return t('profile.notProvided') || 'Not provided';
+    return null; // No date found
+  };
+  
+  // Get email helper
+  const getEmail = () => {
+    if (profileData && profileData.email) {
+      return profileData.email;
+    } else if (currentUser && currentUser.email) {
+      return currentUser.email;
+    } else {
+      return t('profile.notProvided') || 'Not provided';
+    }
   };
   
   // Get time ago helper
@@ -65,11 +71,11 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
       const diffInMonths = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
       
       if (diffInMonths < 1) {
-        return t('profile.memberSince') + ' ' + t('common.thisMonth') || 'Member since this month';
+        return `${t('profile.memberSince')} ${t('common.thisMonth')}`;
       } else if (diffInMonths === 1) {
-        return t('profile.memberSince') + ' 1 ' + t('common.monthAgo') || 'Member since 1 month ago';
+        return `${t('profile.memberSince')} 1 ${t('common.monthAgo')}`;
       } else {
-        return t('profile.memberSince') + ' ' + diffInMonths + ' ' + t('common.monthsAgo') || `Member since ${diffInMonths} months ago`;
+        return `${t('profile.memberSince')} ${diffInMonths} ${t('common.monthsAgo')}`;
       }
     } catch (error) {
       console.error('Error calculating time ago:', error);
@@ -165,10 +171,10 @@ const UserProfileContent = ({ profileData, loading, error, onRetry }) => {
             <div className="min-w-0 flex-1">
               <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">{t('profile.memberSince') || 'Member Since'}</p>
               <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white break-words">
-                {formatDate(profileData.createdAt)}
+                {formatDate(getCreationDate())}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {getTimeAgo(profileData.createdAt)}
+                {getTimeAgo(getCreationDate())}
               </p>
             </div>
           </div>
