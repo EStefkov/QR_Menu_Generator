@@ -156,6 +156,34 @@ const translations = {
   "order_history": "Order History",
   "order_details": "Order Details",
   "order_empty": "No orders found",
+  "back_to_cart": "Back to cart",
+  "customer_information": "Customer Information",
+  "customer_info_included": "Your information will be automatically included with your order.",
+  "full_name": "Full name",
+  "special_requests": "Special requests (optional)",
+  "special_requests_placeholder": "Any special requests for your order?",
+  "processing": "Processing...",
+  "login_required": "Login Required",
+  "login_to_complete": "Please log in to complete your order.",
+  
+  // Order Confirmation
+  "confirmation": {
+    "title": "Order Confirmed!",
+    "thankYou": "Thank you for your order. Your order has been received and is being processed.",
+    "orderNumber": "Order number",
+    "datePlaced": "Date placed",
+    "totalAmount": "Total amount",
+    "customerInformation": "Customer information",
+    "noSpecialRequests": "No special requests provided",
+    "orderItems": "Order Items",
+    "orderQrCode": "Order QR Code",
+    "loadingQrCode": "Loading QR code...",
+    "showQrCode": "Show this QR code to the restaurant staff when collecting your order.",
+    "returnToMenu": "Return to Menu",
+    "loadError": "Could not load order information. Please check your order ID."
+  },
+  
+  "locale": "en-US",
   
   // Orders
   "orders.order": "Order",

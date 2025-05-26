@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { HiOutlineCheckCircle } from 'react-icons/hi';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 function OrderConfirmation() {
   const { orderId } = useParams();
   const { userData } = useAuth();
+  const { t } = useTranslation();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,7 +29,7 @@ function OrderConfirmation() {
         }
         
         if (!response.ok) {
-          throw new Error('Failed to fetch order');
+          throw new Error(t('errors.failedToLoadOrderDetails'));
         }
         
         const data = await response.json();
@@ -40,7 +42,7 @@ function OrderConfirmation() {
           status: data.orderStatus,
           items: (data.products || []).map(product => ({
             id: product.productId,
-            name: product.productName || `Product ${product.productId}`,
+            name: product.productName || `${t('product')} ${product.productId}`,
             price: product.productPriceAtOrder || 0,
             quantity: product.quantity,
             image: product.productImage || '/uploads/default_product.png'
@@ -59,14 +61,14 @@ function OrderConfirmation() {
         generateQRCode(formattedOrder);
       } catch (error) {
         console.error('Error fetching order:', error);
-        setError('Could not load order information. Please check your order ID.');
+        setError(t('confirmation.loadError'));
       } finally {
         setLoading(false);
       }
     };
     
     fetchOrder();
-  }, [orderId, userData]);
+  }, [orderId, userData, t]);
   
   const generateQRCode = async (orderData) => {
     try {
@@ -93,7 +95,7 @@ function OrderConfirmation() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to generate QR code');
+        throw new Error(t('errors.general'));
       }
       
       const contentType = response.headers.get('content-type');
@@ -137,7 +139,7 @@ function OrderConfirmation() {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-200">Error</h3>
+              <h3 className="text-sm font-medium text-red-200">{t('common.error')}</h3>
               <div className="mt-2 text-sm text-red-100">
                 <p>{error}</p>
               </div>
@@ -156,22 +158,22 @@ function OrderConfirmation() {
             <div className="flex items-center">
               <HiOutlineCheckCircle className="h-8 w-8 text-green-400" aria-hidden="true" />
               <h2 className="ml-3 text-2xl font-bold text-green-200">
-                Order Confirmed!
+                {t('confirmation.title')}
               </h2>
             </div>
             <p className="mt-2 max-w-2xl text-sm text-green-300">
-              Thank you for your order. Your order has been received and is being processed.
+              {t('confirmation.thankYou')}
             </p>
           </div>
           
           <div className="border-t border-gray-700 px-4 py-5 sm:px-6">
             <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
               <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-400">Order number</dt>
+                <dt className="text-sm font-medium text-gray-400">{t('confirmation.orderNumber')}</dt>
                 <dd className="mt-1 text-sm text-gray-200">#{orderId}</dd>
               </div>
               <div className="sm:col-span-1">
-                <dt className="text-sm font-medium text-gray-400">Date placed</dt>
+                <dt className="text-sm font-medium text-gray-400">{t('confirmation.datePlaced')}</dt>
                 <dd className="mt-1 text-sm text-gray-200">{new Date().toLocaleString()}</dd>
               </div>
             </dl>
@@ -181,7 +183,7 @@ function OrderConfirmation() {
                 to="/"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-800"
               >
-                Return to Menu
+                {t('confirmation.returnToMenu')}
               </Link>
             </div>
           </div>
@@ -190,7 +192,7 @@ function OrderConfirmation() {
     );
   }
   
-  const formattedDate = new Date(order.orderDate).toLocaleString('en-US', {
+  const formattedDate = new Date(order.orderDate).toLocaleString(t('locale'), {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -208,30 +210,30 @@ function OrderConfirmation() {
               <div className="flex items-center">
                 <HiOutlineCheckCircle className="h-8 w-8 text-green-400" aria-hidden="true" />
                 <h2 className="ml-3 text-2xl font-bold text-green-200">
-                  Order Confirmed!
+                  {t('confirmation.title')}
                 </h2>
               </div>
               <p className="mt-2 max-w-2xl text-sm text-green-300">
-                Thank you for your order. Your order has been received and is being processed.
+                {t('confirmation.thankYou')}
               </p>
             </div>
             
             <div className="border-t border-gray-700 px-4 py-5 sm:px-6">
               <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                 <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-400">Order number</dt>
+                  <dt className="text-sm font-medium text-gray-400">{t('confirmation.orderNumber')}</dt>
                   <dd className="mt-1 text-sm text-gray-200">#{order.id}</dd>
                 </div>
                 <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-400">Date placed</dt>
+                  <dt className="text-sm font-medium text-gray-400">{t('confirmation.datePlaced')}</dt>
                   <dd className="mt-1 text-sm text-gray-200">{formattedDate}</dd>
                 </div>
                 <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-400">Total amount</dt>
+                  <dt className="text-sm font-medium text-gray-400">{t('confirmation.totalAmount')}</dt>
                   <dd className="mt-1 text-sm font-semibold text-gray-200">${(parseFloat(order.totalAmount)).toFixed(2)}</dd>
                 </div>
                 <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-400">Status</dt>
+                  <dt className="text-sm font-medium text-gray-400">{t('order_status')}</dt>
                   <dd className="mt-1 text-sm text-gray-200">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-200">
                       {(order.status || 'PENDING').replace('_', ' ')}
@@ -241,7 +243,7 @@ function OrderConfirmation() {
                 
                 {order.customerInfo && (
                   <div className="sm:col-span-2">
-                    <dt className="text-sm font-medium text-gray-400">Customer information</dt>
+                    <dt className="text-sm font-medium text-gray-400">{t('confirmation.customerInformation')}</dt>
                     <dd className="mt-1 text-sm text-gray-200">
                       <address className="not-italic">
                         {order.customerInfo.name}<br />
@@ -259,13 +261,13 @@ function OrderConfirmation() {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                     </svg>
-                    Special Requests
+                    {t('special_requests')}
                   </dt>
                   <dd className="mt-1 text-sm text-gray-200 bg-gradient-to-r from-gray-700 to-gray-800 p-4 rounded-md border-l-4 border-blue-500 shadow-inner">
                     {order.customerInfo?.specialRequests ? (
                       <p className="whitespace-pre-wrap">{order.customerInfo.specialRequests}</p>
                     ) : (
-                      <p className="text-gray-500 italic">No special requests provided</p>
+                      <p className="text-gray-500 italic">{t('confirmation.noSpecialRequests')}</p>
                     )}
                   </dd>
                 </div>
@@ -274,7 +276,7 @@ function OrderConfirmation() {
             
             <div className="border-t border-gray-700">
               <div className="bg-gray-700 px-4 py-5 sm:px-6">
-                <h3 className="text-lg font-medium text-gray-200">Order Items</h3>
+                <h3 className="text-lg font-medium text-gray-200">{t('confirmation.orderItems')}</h3>
               </div>
               <div className="px-4 py-5 sm:px-6">
                 <ul className="divide-y divide-gray-700">
@@ -295,7 +297,7 @@ function OrderConfirmation() {
                         <div>
                           <span className="font-medium text-gray-200 mr-2">{item.quantity} ×</span>
                           <span className="text-sm font-medium text-gray-200">{item.name}</span>
-                          <p className="text-sm text-gray-400">${parseFloat(item.price).toFixed(2)} each</p>
+                          <p className="text-sm text-gray-400">${parseFloat(item.price).toFixed(2)} {t('cart.each')}</p>
                         </div>
                       </div>
                       <p className="text-sm font-medium text-gray-200">${(parseFloat(item.price) * item.quantity).toFixed(2)}</p>
@@ -305,13 +307,13 @@ function OrderConfirmation() {
                 
                 <div className="mt-8">
                   <div className="bg-gray-700 p-4 rounded-lg">
-                    <h3 className="text-lg font-medium text-gray-200 text-center mb-4">Order QR Code</h3>
+                    <h3 className="text-lg font-medium text-gray-200 text-center mb-4">{t('confirmation.orderQrCode')}</h3>
                     <div className="flex justify-center">
                       <div className="bg-white p-4 rounded-lg border border-gray-600">
                         {qrCode ? (
                           <img 
                             src={qrCode} 
-                            alt="Order QR code" 
+                            alt={t('confirmation.orderQrCode')} 
                             className="w-44 h-44 object-contain"
                             onError={(e) => {
                               e.target.onerror = null;
@@ -320,13 +322,13 @@ function OrderConfirmation() {
                           />
                         ) : (
                           <div className="w-44 h-44 flex items-center justify-center bg-gray-100">
-                            <p className="text-sm text-gray-500">Loading QR code...</p>
+                            <p className="text-sm text-gray-500">{t('confirmation.loadingQrCode')}</p>
                           </div>
                         )}
                       </div>
                     </div>
                     <p className="mt-4 text-center text-sm text-gray-400">
-                      Show this QR code to the restaurant staff when collecting your order.
+                      {t('confirmation.showQrCode')}
                     </p>
                   </div>
                 </div>
@@ -336,7 +338,7 @@ function OrderConfirmation() {
                     to="/"
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-800"
                   >
-                    Return to Menu
+                    {t('confirmation.returnToMenu')}
                   </Link>
                 </div>
               </div>

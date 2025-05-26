@@ -159,6 +159,34 @@ const translations = {
   "order_history": "История на поръчките",
   "order_details": "Детайли на поръчката",
   "order_empty": "Няма намерени поръчки",
+  "back_to_cart": "Обратно към кошницата",
+  "customer_information": "Информация за клиента",
+  "customer_info_included": "Вашата информация ще бъде автоматично включена във вашата поръчка.",
+  "full_name": "Пълно име",
+  "special_requests": "Специални изисквания (незадължително)",
+  "special_requests_placeholder": "Някакви специални изисквания за вашата поръчка?",
+  "processing": "Обработка...",
+  "login_required": "Изисква се вход",
+  "login_to_complete": "Моля, влезте, за да завършите поръчката си.",
+  
+  // Order Confirmation
+  "confirmation": {
+    "title": "Поръчката е потвърдена!",
+    "thankYou": "Благодарим за вашата поръчка. Вашата поръчка е получена и се обработва.",
+    "orderNumber": "Номер на поръчка",
+    "datePlaced": "Дата на поръчка",
+    "totalAmount": "Обща сума",
+    "customerInformation": "Информация за клиента",
+    "noSpecialRequests": "Няма посочени специални изисквания",
+    "orderItems": "Продукти в поръчката",
+    "orderQrCode": "QR код на поръчката",
+    "loadingQrCode": "Зареждане на QR код...",
+    "showQrCode": "Покажете този QR код на персонала на ресторанта, когато получавате поръчката си.",
+    "returnToMenu": "Обратно към менюто",
+    "loadError": "Не можахме да заредим информация за поръчката. Моля, проверете номера на поръчката."
+  },
+  
+  "locale": "bg-BG",
   
   // Orders
   "orders.order": "Поръчка",

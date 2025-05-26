@@ -4,11 +4,13 @@ import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useRestaurant } from '../contexts/RestaurantContext';
 import { HiOutlineChevronLeft } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 function OrderReview() {
   const { cartItems, cartTotal, clearCart } = useCart();
   const { userData } = useAuth();
   const { currentRestaurant } = useRestaurant();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -168,7 +170,7 @@ function OrderReview() {
       console.log(`Final restaurant ID for order: ${restaurantId}`);
       
       if (!cartItems || cartItems.length === 0) {
-        throw new Error('Your cart is empty');
+        throw new Error(t('cart.empty'));
       }
       
       const token = localStorage.getItem('token');
@@ -209,13 +211,13 @@ function OrderReview() {
         
         // Try to provide more detailed error messages based on status code
         if (response.status === 401 || response.status === 403) {
-          throw new Error('Authentication error - please log in again');
+          throw new Error(t('errors.sessionExpired'));
         } else if (response.status === 400) {
-          throw new Error(`Invalid order data: ${errorText}`);
+          throw new Error(`${t('errors.general')}: ${errorText}`);
         } else if (response.status === 404) {
-          throw new Error('Order service not found - please try again later');
+          throw new Error(t('errors.general'));
         } else {
-          throw new Error(`Failed to create order: ${response.status} ${response.statusText}`);
+          throw new Error(`${t('errors.general')}: ${response.status} ${response.statusText}`);
         }
       }
       
@@ -231,7 +233,7 @@ function OrderReview() {
       navigate(`/order-confirmation/${orderId}`);
     } catch (error) {
       console.error('Error submitting order:', error);
-      setError(error.message || 'There was an error submitting your order. Please try again.');
+      setError(error.message || t('errors.general'));
     } finally {
       setIsSubmitting(false);
     }
@@ -241,14 +243,14 @@ function OrderReview() {
     return (
       <div className="bg-gray-900 max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-0">
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">Your cart is empty</h1>
-          <p className="mt-4 text-gray-400">Please add items before proceeding to checkout.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">{t('cart.empty')}</h1>
+          <p className="mt-4 text-gray-400">{t('cart.emptyMessage')}</p>
           <div className="mt-6">
             <button
               onClick={() => navigate('/')}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-900"
             >
-              Continue Shopping
+              {t('cart.continueShopping')}
             </button>
           </div>
         </div>
@@ -261,14 +263,14 @@ function OrderReview() {
     return (
       <div className="bg-gray-900 max-w-2xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-0">
         <div className="text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">Login Required</h1>
-          <p className="mt-4 text-gray-400">Please log in to complete your order.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">{t('login_required')}</h1>
+          <p className="mt-4 text-gray-400">{t('login_to_complete')}</p>
           <div className="mt-6">
             <button
               onClick={() => navigate('/login')}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 focus:ring-offset-gray-900"
             >
-              Login
+              {t('nav_login')}
             </button>
           </div>
         </div>
@@ -286,35 +288,35 @@ function OrderReview() {
             className="inline-flex items-center text-sm font-medium text-blue-400 hover:text-blue-300 mb-6"
           >
             <HiOutlineChevronLeft className="mr-1 h-5 w-5" aria-hidden="true" />
-            Back to cart
+            {t('back_to_cart')}
           </button>
           
-          <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Order Review</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">{t('order_title')}</h1>
         
           <div className="mt-12 lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-start">
             <div className="lg:col-span-7">
               <form id="orderForm" onSubmit={handleSubmitOrder}>
                 <div className="bg-gray-800 shadow overflow-hidden sm:rounded-lg mb-10">
                   <div className="px-4 py-5 sm:px-6">
-                    <h2 className="text-lg font-medium text-white">Customer Information</h2>
+                    <h2 className="text-lg font-medium text-white">{t('customer_information')}</h2>
                     <p className="mt-1 max-w-2xl text-sm text-gray-400">
-                      Your information will be automatically included with your order.
+                      {t('customer_info_included')}
                     </p>
                   </div>
                   <div className="border-t border-gray-700 px-4 py-5 sm:p-6">
                     <div className="grid grid-cols-6 gap-6">
                       <div className="col-span-6 sm:col-span-3">
                         <label htmlFor="name" className="block text-sm font-medium text-gray-300">
-                          Full name
+                          {t('full_name')}
                         </label>
                         <div className="mt-1 block w-full py-2 px-3 bg-gray-700 rounded-md text-gray-200 text-sm">
-                          {userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : 'Not provided'}
+                          {userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : t('common.notProvided')}
                         </div>
                       </div>
 
                       <div className="col-span-6">
                         <label htmlFor="specialRequests" className="block text-sm font-medium text-gray-300">
-                          Special requests (optional)
+                          {t('special_requests')}
                         </label>
                         <textarea
                           name="specialRequests"
@@ -323,7 +325,7 @@ function OrderReview() {
                           value={customerInfo.specialRequests}
                           onChange={handleInputChange}
                           className="mt-1 block w-full border border-gray-600 rounded-md shadow-sm py-2 px-3 bg-gray-700 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                          placeholder="Any special requests for your order?"
+                          placeholder={t('special_requests_placeholder')}
                         />
                       </div>
                     </div>
@@ -352,10 +354,10 @@ function OrderReview() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Processing...
+                        {t('processing')}
                       </span>
                     ) : (
-                      'Place order'
+                      t('order_submit')
                     )}
                   </button>
                 </div>
@@ -365,7 +367,7 @@ function OrderReview() {
             <div className="mt-10 lg:mt-0 lg:col-span-5">
               <div className="bg-gray-800 shadow overflow-hidden sm:rounded-lg">
                 <div className="px-4 py-5 sm:px-6">
-                  <h2 className="text-lg font-medium text-white">Order Summary</h2>
+                  <h2 className="text-lg font-medium text-white">{t('order_summary')}</h2>
                 </div>
                 <div className="border-t border-gray-700 px-4 py-5 sm:p-6">
                   <dl className="divide-y divide-gray-700">
@@ -382,7 +384,7 @@ function OrderReview() {
                     ))}
                     
                     <div className="py-4 flex items-center justify-between">
-                      <dt className="text-base font-medium text-white">Subtotal</dt>
+                      <dt className="text-base font-medium text-white">{t('orders.subtotal')}</dt>
                       <dd className="text-base font-medium text-white">${(cartTotal || 0).toFixed(2)}</dd>
                     </div>
                   </dl>
@@ -404,10 +406,10 @@ function OrderReview() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          Processing...
+                          {t('processing')}
                         </span>
                       ) : (
-                        'Place order'
+                        t('order_submit')
                       )}
                     </button>
                   </div>
