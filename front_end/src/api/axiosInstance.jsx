@@ -45,10 +45,10 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Skip all auth error handling on profile page to prevent logout
-    if (window.location.pathname.includes('/profile')) {
-      console.log('Error on profile page - completely ignoring auth errors');
-      // Don't do any auth handling on profile page
+    // Skip auth error handling on profile page and favorites page to prevent logout
+    if (window.location.pathname.includes('/profile') || window.location.pathname.includes('/favorites')) {
+      console.log('Error on protected page - completely ignoring auth errors');
+      // Don't do any auth handling on these pages
       return Promise.reject(error);
     }
     

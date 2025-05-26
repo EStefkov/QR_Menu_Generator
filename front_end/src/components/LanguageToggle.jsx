@@ -37,8 +37,7 @@ const LanguageToggle = ({ className = "", showText = false }) => {
     // Close dropdown
     setIsOpen(false);
     
-    // Force reload to refresh all translations
-    setTimeout(() => window.location.reload(), 100);
+    // Removed the forced page reload which was causing logout issues
   };
   
   const languageDisplay = language === languages.EN ? 'EN' : 'БГ';

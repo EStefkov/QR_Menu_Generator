@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import ProductCard from '../components/ProductCard';
 import { HiHeart, HiSearch, HiFilter, HiChevronDown, HiChevronRight } from 'react-icons/hi';
 import DetailsModal from '../components/DetailsModal';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -22,6 +23,7 @@ function getFullImageUrl(productImage) {
 const Favorites = () => {
   const { userData } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -176,12 +178,12 @@ const Favorites = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            My Favorites
+            {t('favorites_title')}
           </h1>
           <div className="flex items-center space-x-2">
             <HiHeart className="w-6 h-6 text-red-500" />
             <span className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-              {filteredFavorites.length} items
+              {filteredFavorites.length} {t('items')}
             </span>
           </div>
         </div>
@@ -193,7 +195,7 @@ const Favorites = () => {
               <HiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search favorites..."
+                placeholder={t('favorites_search')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -203,7 +205,7 @@ const Favorites = () => {
               <HiFilter className="text-gray-400" />
               <input
                 type="number"
-                placeholder="Min price"
+                placeholder={t('min_price')}
                 value={priceRange.min}
                 onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
                 className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -211,7 +213,7 @@ const Favorites = () => {
               <span className="text-gray-400">-</span>
               <input
                 type="number"
-                placeholder="Max price"
+                placeholder={t('max_price')}
                 value={priceRange.max}
                 onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
                 className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
@@ -224,10 +226,10 @@ const Favorites = () => {
           <div className="text-center py-12">
             <HiHeart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No favorites found
+              {t('favorites_empty')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Try adjusting your search or filters
+              {t('try_adjusting_search')}
             </p>
           </div>
         ) : (

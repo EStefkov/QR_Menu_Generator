@@ -80,6 +80,22 @@ const translations = {
   "cart_checkout": "Плащане",
   "cart_remove": "Премахни",
   
+  // More detailed cart translations
+  "cart": {
+    "title": "Вашата кошница",
+    "empty": "Вашата кошница е празна",
+    "emptyMessage": "Добавете продукти във вашата кошница, за да продължите.",
+    "loading": "Зареждане на кошницата...",
+    "currentRestaurant": "Поръчвате от:",
+    "each": "за брой",
+    "remove": "Премахни",
+    "subtotal": "Междинна сума",
+    "shippingTaxes": "Доставка и такси се изчисляват при плащане.",
+    "proceedToCheckout": "Продължи към плащане",
+    "continueShopping": "Продължи пазаруването",
+    "clearCart": "Изчисти кошницата"
+  },
+  
   // Products
   "product_add_to_cart": "Добави в кошница",
   "product_details": "Детайли",
@@ -95,6 +111,10 @@ const translations = {
   "favorites_title": "Моите любими",
   "favorites_empty": "Все още нямате любими продукти",
   "favorites_search": "Търсене в любими",
+  "items": "продукта",
+  "min_price": "Мин. цена",
+  "max_price": "Макс. цена",
+  "try_adjusting_search": "Опитайте да промените търсенето или филтрите",
   
   // Theme and Language
   "theme_dark": "Тъмен режим",

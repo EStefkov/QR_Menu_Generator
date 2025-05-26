@@ -77,6 +77,22 @@ const translations = {
   "cart_checkout": "Checkout",
   "cart_remove": "Remove",
   
+  // More detailed cart translations
+  "cart": {
+    "title": "Your Cart",
+    "empty": "Your cart is empty",
+    "emptyMessage": "Add some items to your cart to continue.",
+    "loading": "Loading cart...",
+    "currentRestaurant": "Ordering from:",
+    "each": "each",
+    "remove": "Remove",
+    "subtotal": "Subtotal",
+    "shippingTaxes": "Shipping and taxes calculated at checkout.",
+    "proceedToCheckout": "Proceed to Checkout",
+    "continueShopping": "Continue Shopping",
+    "clearCart": "Clear Cart"
+  },
+  
   // Products
   "product_add_to_cart": "Add to cart",
   "product_details": "View details",
@@ -92,6 +108,10 @@ const translations = {
   "favorites_title": "My Favorites",
   "favorites_empty": "You don't have any favorites yet",
   "favorites_search": "Search favorites",
+  "items": "items",
+  "min_price": "Min price",
+  "max_price": "Max price",
+  "try_adjusting_search": "Try adjusting your search or filters",
   
   // Theme and Language
   "theme_dark": "Dark mode",
