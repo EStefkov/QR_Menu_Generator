@@ -28,7 +28,20 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await loginAccount(formData);
+      // Determine if input is email or username
+      const inputValue = formData.accountName.trim();
+      const isEmail = inputValue.includes('@');
+      
+      // Prepare login data based on input type
+      const loginData = {
+        accountName: isEmail ? null : inputValue,
+        mailAddress: isEmail ? inputValue : null,
+        password: formData.password
+      };
+      
+      console.log("Sending login data:", { ...loginData, password: "***" });
+      
+      const response = await loginAccount(loginData);
       
       // Log the raw token for debugging
       console.log("Raw JWT token:", response);
