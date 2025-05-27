@@ -64,6 +64,22 @@ const translations = {
   "login_register_prompt": "Нямате профил?",
   "login_register_link": "Регистрирайте се",
   
+  // More detailed login translations
+  "login": {
+    "welcomeBack": "Добре дошли отново",
+    "noAccount": "Нямате профил?",
+    "signUpNow": "Регистрирайте се сега",
+    "redirectMessage": "Ще бъдете пренасочени към предишната страница след вход",
+    "emailOrUsername": "Имейл или потребителско име",
+    "password": "Парола",
+    "signIn": "Вход",
+    "signingIn": "Влизане...",
+    "errors": {
+      "invalidResponse": "Невалиден отговор от сървъра при автентикация",
+      "failed": "Неуспешен вход. Моля, опитайте отново."
+    }
+  },
+  
   "register_title": "Създаване на нов профил",
   "register_name": "Пълно име",
   "register_email": "Имейл адрес",
@@ -72,6 +88,42 @@ const translations = {
   "register_button": "Създай профил",
   "register_login_prompt": "Вече имате профил?",
   "register_login_link": "Вход",
+  
+  // More detailed register translations
+  "register": {
+    "createAccount": "Създаване на профил",
+    "haveAccount": "Вече имате профил?",
+    "signIn": "Вход",
+    "redirectMessage": "Ще бъдете пренасочени към предишната страница след регистрация",
+    "username": "Потребителско име",
+    "firstName": "Име",
+    "lastName": "Фамилия",
+    "email": "Имейл адрес",
+    "phoneNumber": "Телефонен номер (само цифри и +)",
+    "password": "Парола (6-50 символа)",
+    "confirmPassword": "Потвърдете паролата",
+    "createButton": "Създай профил",
+    "creatingAccount": "Създаване на профил...",
+    "backToHome": "Обратно към Начало",
+    "validation": {
+      "usernameRequired": "Потребителското име е задължително",
+      "usernameLength": "Потребителското име трябва да бъде поне 3 символа",
+      "usernameMaxLength": "Потребителското име не може да надвишава 30 символа",
+      "usernameSpaces": "Потребителското име не може да съдържа интервали",
+      "firstNameMaxLength": "Името не може да надвишава 50 символа",
+      "lastNameMaxLength": "Фамилията не може да надвишава 50 символа",
+      "emailMaxLength": "Имейлът не може да надвишава 100 символа",
+      "emailInvalid": "Моля, въведете валиден имейл адрес",
+      "phoneNumberFormat": "Телефонният номер може да съдържа само цифри и символа +",
+      "phoneNumberMaxLength": "Телефонният номер не може да надвишава 20 символа",
+      "passwordsDoNotMatch": "Паролите не съвпадат",
+      "passwordMinLength": "Паролата трябва да бъде поне 6 символа",
+      "passwordMaxLength": "Паролата не може да надвишава 50 символа",
+      "passwordUppercase": "Паролата трябва да съдържа поне една главна буква",
+      "passwordNumber": "Паролата трябва да съдържа поне една цифра",
+      "passwordRequirements": "Паролата трябва да:"
+    }
+  },
   
   // Cart
   "cart_title": "Вашата кошница",
@@ -611,6 +663,7 @@ const translations = {
   "common.notProvided": "Не е посочено",
   "common.errorFetchingData": "Грешка при зареждане на данните",
   "common.backToManagerDashboard": "Обратно към Мениджър Табло",
+  "common.backToHome": "Обратно към Начало",
   "common.qr": "QR Код",
   "common.test": "Тест",
   "common.errorOccurred": "Възникна грешка",

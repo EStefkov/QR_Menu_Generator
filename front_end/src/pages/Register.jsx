@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { registerAccount } from "../api/account";
 import { HiOutlineUser, HiOutlineMail, HiOutlineLockClosed, HiOutlineHome, HiInformationCircle } from "react-icons/hi";
 
 const RegisterPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, redirectUrl, clearRedirectUrl } = useAuth();
   const [formData, setFormData] = useState({
@@ -41,17 +43,17 @@ const RegisterPage = () => {
       } else if (value.length < 3) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          accountName: "Username must be at least 3 characters" 
+          accountName: t('register.validation.usernameLength') || "Username must be at least 3 characters" 
         }));
       } else if (value.length > 30) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          accountName: "Username cannot exceed 30 characters" 
+          accountName: t('register.validation.usernameMaxLength') || "Username cannot exceed 30 characters" 
         }));
       } else if (value.includes(" ")) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          accountName: "Username cannot contain spaces" 
+          accountName: t('register.validation.usernameSpaces') || "Username cannot contain spaces" 
         }));
       } else {
         setValidationFeedback(prev => ({ ...prev, accountName: "" }));
@@ -59,10 +61,14 @@ const RegisterPage = () => {
     }
     
     if (name === "firstName" || name === "lastName") {
-      if (value.length > 50) {
+      if (value.length === 0) {
+        setValidationFeedback(prev => ({ ...prev, [name]: "" }));
+      } else if (value.length > 50) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          [name]: `${name === "firstName" ? "First name" : "Last name"} cannot exceed 50 characters` 
+          [name]: name === "firstName" 
+            ? (t('register.validation.firstNameMaxLength') || "First name cannot exceed 50 characters")
+            : (t('register.validation.lastNameMaxLength') || "Last name cannot exceed 50 characters")
         }));
       } else {
         setValidationFeedback(prev => ({ ...prev, [name]: "" }));
@@ -74,12 +80,12 @@ const RegisterPage = () => {
       if (!emailRegex.test(value) && value.length > 0) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          email: "Please enter a valid email address" 
+          email: t('register.validation.emailInvalid') || "Please enter a valid email address" 
         }));
       } else if (value.length > 100) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          email: "Email cannot exceed 100 characters" 
+          email: t('register.validation.emailMaxLength') || "Email cannot exceed 100 characters" 
         }));
       } else {
         setValidationFeedback(prev => ({ ...prev, email: "" }));
@@ -87,10 +93,17 @@ const RegisterPage = () => {
     }
     
     if (name === "number" && value.length > 0) {
-      if (value.length > 20) {
+      // Only allow numbers and + for country code
+      const phoneRegex = /^[0-9+]+$/;
+      if (!phoneRegex.test(value)) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          number: "Phone number cannot exceed 20 characters" 
+          number: t('register.validation.phoneNumberFormat') || "Phone number can only contain numbers and + symbol" 
+        }));
+      } else if (value.length > 20) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          number: t('register.validation.phoneNumberMaxLength') || "Phone number cannot exceed 20 characters" 
         }));
       } else {
         setValidationFeedback(prev => ({ ...prev, number: "" }));
@@ -104,22 +117,22 @@ const RegisterPage = () => {
       } else if (value.length < 6) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          password: "Password must be at least 6 characters long" 
+          password: t('register.validation.passwordMinLength') || "Password must be at least 6 characters long" 
         }));
       } else if (value.length > 50) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          password: "Password cannot exceed 50 characters" 
+          password: t('register.validation.passwordMaxLength') || "Password cannot exceed 50 characters" 
         }));
       } else if (!/[A-Z]/.test(value)) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          password: "Password should contain at least one uppercase letter" 
+          password: t('register.validation.passwordUppercase') || "Password should contain at least one uppercase letter" 
         }));
       } else if (!/[0-9]/.test(value)) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          password: "Password should contain at least one number" 
+          password: t('register.validation.passwordNumber') || "Password should contain at least one number" 
         }));
       } else {
         setValidationFeedback(prev => ({ ...prev, password: "" }));
@@ -129,7 +142,7 @@ const RegisterPage = () => {
       if (formData.confirmPassword && value !== formData.confirmPassword) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          confirmPassword: "Passwords do not match" 
+          confirmPassword: t('register.validation.passwordsDoNotMatch') || "Passwords do not match" 
         }));
       } else if (formData.confirmPassword) {
         setValidationFeedback(prev => ({ ...prev, confirmPassword: "" }));
@@ -140,7 +153,7 @@ const RegisterPage = () => {
       if (value !== formData.password) {
         setValidationFeedback(prev => ({ 
           ...prev, 
-          confirmPassword: "Passwords do not match" 
+          confirmPassword: t('register.validation.passwordsDoNotMatch') || "Passwords do not match" 
         }));
       } else {
         setValidationFeedback(prev => ({ ...prev, confirmPassword: "" }));
@@ -153,58 +166,71 @@ const RegisterPage = () => {
     setError("");
 
     // Enhanced validation
+    if (formData.accountName.length === 0) {
+      setError(t('register.validation.usernameRequired') || "Username is required");
+      return;
+    }
+    
     if (formData.accountName.length < 3) {
-      setError("Username must be at least 3 characters long");
+      setError(t('register.validation.usernameLength') || "Username must be at least 3 characters long");
       return;
     }
     
     if (formData.accountName.length > 30) {
-      setError("Username cannot exceed 30 characters");
+      setError(t('register.validation.usernameMaxLength') || "Username cannot exceed 30 characters");
       return;
     }
     
     if (formData.firstName.length > 50) {
-      setError("First name cannot exceed 50 characters");
+      setError(t('register.validation.firstNameMaxLength') || "First name cannot exceed 50 characters");
       return;
     }
     
     if (formData.lastName.length > 50) {
-      setError("Last name cannot exceed 50 characters");
+      setError(t('register.validation.lastNameMaxLength') || "Last name cannot exceed 50 characters");
       return;
     }
     
     if (formData.email.length > 100) {
-      setError("Email cannot exceed 100 characters");
+      setError(t('register.validation.emailMaxLength') || "Email cannot exceed 100 characters");
       return;
     }
     
-    if (formData.number && formData.number.length > 20) {
-      setError("Phone number cannot exceed 20 characters");
-      return;
+    if (formData.number) {
+      const phoneRegex = /^[0-9+]+$/;
+      if (!phoneRegex.test(formData.number)) {
+        setError(t('register.validation.phoneNumberFormat') || "Phone number can only contain numbers and + symbol");
+        return;
+      }
+      
+      if (formData.number.length > 20) {
+        setError(t('register.validation.phoneNumberMaxLength') || "Phone number cannot exceed 20 characters");
+        return;
+      }
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
+      setError(t('register.validation.passwordsDoNotMatch') || "Passwords do not match");
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters long");
+      setError(t('register.validation.passwordMinLength') || "Password must be at least 6 characters long");
       return;
     }
     
     if (formData.password.length > 50) {
-      setError("Password cannot exceed 50 characters");
+      setError(t('register.validation.passwordMaxLength') || "Password cannot exceed 50 characters");
       return;
     }
     
     if (!/[A-Z]/.test(formData.password)) {
-      setError("Password must contain at least one uppercase letter");
+      setError(t('register.validation.passwordUppercase') || "Password must contain at least one uppercase letter");
       return;
     }
     
     if (!/[0-9]/.test(formData.password)) {
-      setError("Password must contain at least one number");
+      setError(t('register.validation.passwordNumber') || "Password must contain at least one number");
       return;
     }
 
@@ -257,17 +283,17 @@ const RegisterPage = () => {
       <div className="max-w-md w-full space-y-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/20">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
-            Create Account
+            {t('register.createAccount') || "Create Account"}
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Already have an account?{" "}
+            {t('register.haveAccount') || "Already have an account?"}{" "}
             <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200">
-              Sign in
+              {t('register.signIn') || "Sign in"}
             </Link>
           </p>
           {redirectUrl && (
             <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-              You'll be redirected to your previous page after registration
+              {t('register.redirectMessage') || "You'll be redirected to your previous page after registration"}
             </p>
           )}
         </div>
@@ -285,7 +311,7 @@ const RegisterPage = () => {
                 required
                 maxLength={30}
                 className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.accountName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
-                placeholder="Username (3-30 characters)"
+                placeholder={t('register.username') || "Username"}
                 value={formData.accountName}
                 onChange={handleChange}
               />
@@ -308,7 +334,7 @@ const RegisterPage = () => {
                 required
                 maxLength={50}
                 className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.firstName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
-                placeholder="First Name"
+                placeholder={t('register.firstName') || "First Name"}
                 value={formData.firstName}
                 onChange={handleChange}
               />
@@ -331,7 +357,7 @@ const RegisterPage = () => {
                 required
                 maxLength={50}
                 className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.lastName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
-                placeholder="Last Name"
+                placeholder={t('register.lastName') || "Last Name"}
                 value={formData.lastName}
                 onChange={handleChange}
               />
@@ -354,7 +380,7 @@ const RegisterPage = () => {
                 required
                 maxLength={100}
                 className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.email ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
-                placeholder="Email address"
+                placeholder={t('register.email') || "Email address"}
                 value={formData.email}
                 onChange={handleChange}
               />
@@ -375,8 +401,9 @@ const RegisterPage = () => {
                 name="number"
                 type="tel"
                 maxLength={20}
+                pattern="[0-9+]+"
                 className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.number ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
-                placeholder="Phone Number (optional)"
+                placeholder={t('register.phoneNumber') || "Phone Number (numbers and + only)"}
                 value={formData.number}
                 onChange={handleChange}
               />
@@ -399,7 +426,7 @@ const RegisterPage = () => {
                 required
                 maxLength={50}
                 className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.password ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
-                placeholder="Password (6-50 characters)"
+                placeholder={t('register.password') || "Password (6-50 characters)"}
                 value={formData.password}
                 onChange={handleChange}
               />
@@ -418,19 +445,19 @@ const RegisterPage = () => {
               {/* Password requirements checklist - only show after user starts typing */}
               {formData.password.length > 0 && (
                 <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
-                  <p className="font-medium mb-1">Password must:</p>
+                  <p className="font-medium mb-1">{t('register.validation.passwordRequirements') || "Password must:"}</p>
                   <ul className="list-disc pl-5 space-y-1">
                     <li className={formData.password.length >= 6 ? "text-green-600 dark:text-green-400" : ""}>
-                      Be at least 6 characters long
+                      {t('register.validation.passwordMinLength') || "Be at least 6 characters long"}
                     </li>
                     <li className={formData.password.length <= 50 ? "text-green-600 dark:text-green-400" : ""}>
-                      Not exceed 50 characters
+                      {t('register.validation.passwordMaxLength') || "Not exceed 50 characters"}
                     </li>
                     <li className={/[A-Z]/.test(formData.password) ? "text-green-600 dark:text-green-400" : ""}>
-                      Contain at least one uppercase letter
+                      {t('register.validation.passwordUppercase') || "Contain at least one uppercase letter"}
                     </li>
                     <li className={/[0-9]/.test(formData.password) ? "text-green-600 dark:text-green-400" : ""}>
-                      Contain at least one number
+                      {t('register.validation.passwordNumber') || "Contain at least one number"}
                     </li>
                   </ul>
                 </div>
@@ -448,7 +475,7 @@ const RegisterPage = () => {
                 required
                 maxLength={50}
                 className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.confirmPassword ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
-                placeholder="Confirm Password"
+                placeholder={t('register.confirmPassword') || "Confirm Password"}
                 value={formData.confirmPassword}
                 onChange={handleChange}
               />
@@ -488,17 +515,17 @@ const RegisterPage = () => {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Creating account...
+                  {t('register.creatingAccount') || "Creating account..."}
                 </span>
               ) : (
-                "Create Account"
+                t('register.createButton') || "Create Account"
               )}
             </button>
 
             <Link to="/" className="group relative w-full flex justify-center py-3 px-4 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-200 bg-white/50 dark:bg-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
               <span className="flex items-center">
                 <HiOutlineHome className="mr-2 h-5 w-5" />
-                Back to Home
+                {t('register.backToHome') || "Back to Home"}
               </span>
             </Link>
           </div>

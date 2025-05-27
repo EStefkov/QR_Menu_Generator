@@ -61,6 +61,22 @@ const translations = {
   "login_register_prompt": "Don't have an account?",
   "login_register_link": "Create one",
   
+  // More detailed login translations
+  "login": {
+    "welcomeBack": "Welcome Back",
+    "noAccount": "Don't have an account?",
+    "signUpNow": "Sign up now",
+    "redirectMessage": "You'll be redirected to your previous page after login",
+    "emailOrUsername": "Email or Username",
+    "password": "Password",
+    "signIn": "Sign in",
+    "signingIn": "Signing in...",
+    "errors": {
+      "invalidResponse": "Invalid authentication response from server",
+      "failed": "Login failed. Please try again."
+    }
+  },
+  
   "register_title": "Create a new account",
   "register_name": "Full name",
   "register_email": "Email address",
@@ -69,6 +85,42 @@ const translations = {
   "register_button": "Create account",
   "register_login_prompt": "Already have an account?",
   "register_login_link": "Sign in",
+  
+  // More detailed register translations
+  "register": {
+    "createAccount": "Create Account",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "redirectMessage": "You'll be redirected to your previous page after registration",
+    "username": "Username",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email address",
+    "phoneNumber": "Phone Number (numbers and + only)",
+    "password": "Password (6-50 characters)",
+    "confirmPassword": "Confirm Password",
+    "createButton": "Create Account",
+    "creatingAccount": "Creating account...",
+    "backToHome": "Back to Home",
+    "validation": {
+      "usernameRequired": "Username is required",
+      "usernameLength": "Username must be at least 3 characters long",
+      "usernameMaxLength": "Username cannot exceed 30 characters",
+      "usernameSpaces": "Username cannot contain spaces",
+      "firstNameMaxLength": "First name cannot exceed 50 characters",
+      "lastNameMaxLength": "Last name cannot exceed 50 characters",
+      "emailMaxLength": "Email cannot exceed 100 characters",
+      "emailInvalid": "Please enter a valid email address",
+      "phoneNumberFormat": "Phone number can only contain numbers and + symbol",
+      "phoneNumberMaxLength": "Phone number cannot exceed 20 characters",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordMinLength": "Password must be at least 6 characters long",
+      "passwordMaxLength": "Password cannot exceed 50 characters",
+      "passwordUppercase": "Password should contain at least one uppercase letter",
+      "passwordNumber": "Password should contain at least one number",
+      "passwordRequirements": "Password must:"
+    }
+  },
   
   // Cart
   "cart_title": "Your Cart",
@@ -796,7 +848,8 @@ const translations = {
     "refresh": "Refresh",
     "notProvided": "Not provided",
     "errorFetchingData": "Failed to load data",
-    "backToManagerDashboard": "Back to Manager Dashboard", 
+    "backToManagerDashboard": "Back to Manager Dashboard",
+    "backToHome": "Back to Home",
     "qr": "QR Code",
     "test": "Test",
   },

@@ -1,11 +1,13 @@
 // Login.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useContext, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import { loginAccount } from "../api/account";
 import { AuthContext } from "../contexts/AuthContext";
 import { HiOutlineMail, HiOutlineLockClosed, HiOutlineHome } from "react-icons/hi";
 
 const Login = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, redirectUrl, clearRedirectUrl } = useContext(AuthContext);
   const [formData, setFormData] = useState({
@@ -103,11 +105,11 @@ const Login = () => {
         }
       } catch (parseError) {
         console.error("Error parsing JWT token:", parseError);
-        setError("Invalid authentication response from server");
+        setError(t('login.errors.invalidResponse') || "Invalid authentication response from server");
       }
     } catch (err) {
       console.error("Login error:", err);
-      setError(err.message || "Login failed. Please try again.");
+      setError(err.message || t('login.errors.failed') || "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -118,20 +120,20 @@ const Login = () => {
       <div className="max-w-md w-full space-y-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/20">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
-            Welcome Back
+            {t('login.welcomeBack') || "Welcome Back"}
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Don't have an account?{" "}
+            {t('login.noAccount') || "Don't have an account?"}{" "}
             <Link
               to="/register"
               className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
             >
-              Sign up now
+              {t('login.signUpNow') || "Sign up now"}
             </Link>
           </p>
           {redirectUrl && (
             <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-              You'll be redirected to your previous page after login
+              {t('login.redirectMessage') || "You'll be redirected to your previous page after login"}
             </p>
           )}
         </div>
@@ -148,7 +150,7 @@ const Login = () => {
                 type="text"
                 required
                 className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                placeholder="Email or Username"
+                placeholder={t('login.emailOrUsername') || "Email or Username"}
                 value={formData.accountName}
                 onChange={handleChange}
               />
@@ -164,7 +166,7 @@ const Login = () => {
                 type="password"
                 required
                 className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                placeholder="Password"
+                placeholder={t('login.password') || "Password"}
                 value={formData.password}
                 onChange={handleChange}
               />
@@ -214,10 +216,10 @@ const Login = () => {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Signing in...
+                  {t('login.signingIn') || "Signing in..."}
                 </span>
               ) : (
-                "Sign in"
+                t('login.signIn') || "Sign in"
               )}
             </button>
 
@@ -227,7 +229,7 @@ const Login = () => {
             >
               <span className="flex items-center">
                 <HiOutlineHome className="mr-2 h-5 w-5" />
-                Back to Home
+                {t('common.backToHome') || "Back to Home"}
               </span>
             </Link>
           </div>
