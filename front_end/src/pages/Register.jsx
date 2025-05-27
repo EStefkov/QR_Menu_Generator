@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from '../contexts/AuthContext';
 import { registerAccount } from "../api/account";
-import { HiOutlineUser, HiOutlineMail, HiOutlineLockClosed, HiOutlineHome } from "react-icons/hi";
+import { HiOutlineUser, HiOutlineMail, HiOutlineLockClosed, HiOutlineHome, HiInformationCircle } from "react-icons/hi";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -18,19 +18,171 @@ const RegisterPage = () => {
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [validationFeedback, setValidationFeedback] = useState({
+    accountName: "",
+    email: "",
+    password: "",
+    confirmPassword: ""
+  });
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+    
+    // Real-time validation feedback
+    if (name === "accountName") {
+      if (value.length === 0) {
+        // Clear validation feedback when field is empty
+        setValidationFeedback(prev => ({ ...prev, accountName: "" }));
+      } else if (value.length < 3) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          accountName: "Username must be at least 3 characters" 
+        }));
+      } else if (value.length > 30) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          accountName: "Username cannot exceed 30 characters" 
+        }));
+      } else if (value.includes(" ")) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          accountName: "Username cannot contain spaces" 
+        }));
+      } else {
+        setValidationFeedback(prev => ({ ...prev, accountName: "" }));
+      }
+    }
+    
+    if (name === "firstName" || name === "lastName") {
+      if (value.length > 50) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          [name]: `${name === "firstName" ? "First name" : "Last name"} cannot exceed 50 characters` 
+        }));
+      } else {
+        setValidationFeedback(prev => ({ ...prev, [name]: "" }));
+      }
+    }
+    
+    if (name === "email") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value) && value.length > 0) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          email: "Please enter a valid email address" 
+        }));
+      } else if (value.length > 100) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          email: "Email cannot exceed 100 characters" 
+        }));
+      } else {
+        setValidationFeedback(prev => ({ ...prev, email: "" }));
+      }
+    }
+    
+    if (name === "number" && value.length > 0) {
+      if (value.length > 20) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          number: "Phone number cannot exceed 20 characters" 
+        }));
+      } else {
+        setValidationFeedback(prev => ({ ...prev, number: "" }));
+      }
+    }
+    
+    if (name === "password") {
+      if (value.length === 0) {
+        // Clear validation feedback when field is empty
+        setValidationFeedback(prev => ({ ...prev, password: "" }));
+      } else if (value.length < 6) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          password: "Password must be at least 6 characters long" 
+        }));
+      } else if (value.length > 50) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          password: "Password cannot exceed 50 characters" 
+        }));
+      } else if (!/[A-Z]/.test(value)) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          password: "Password should contain at least one uppercase letter" 
+        }));
+      } else if (!/[0-9]/.test(value)) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          password: "Password should contain at least one number" 
+        }));
+      } else {
+        setValidationFeedback(prev => ({ ...prev, password: "" }));
+      }
+      
+      // Check confirm password match
+      if (formData.confirmPassword && value !== formData.confirmPassword) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          confirmPassword: "Passwords do not match" 
+        }));
+      } else if (formData.confirmPassword) {
+        setValidationFeedback(prev => ({ ...prev, confirmPassword: "" }));
+      }
+    }
+    
+    if (name === "confirmPassword") {
+      if (value !== formData.password) {
+        setValidationFeedback(prev => ({ 
+          ...prev, 
+          confirmPassword: "Passwords do not match" 
+        }));
+      } else {
+        setValidationFeedback(prev => ({ ...prev, confirmPassword: "" }));
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Basic validation
+    // Enhanced validation
+    if (formData.accountName.length < 3) {
+      setError("Username must be at least 3 characters long");
+      return;
+    }
+    
+    if (formData.accountName.length > 30) {
+      setError("Username cannot exceed 30 characters");
+      return;
+    }
+    
+    if (formData.firstName.length > 50) {
+      setError("First name cannot exceed 50 characters");
+      return;
+    }
+    
+    if (formData.lastName.length > 50) {
+      setError("Last name cannot exceed 50 characters");
+      return;
+    }
+    
+    if (formData.email.length > 100) {
+      setError("Email cannot exceed 100 characters");
+      return;
+    }
+    
+    if (formData.number && formData.number.length > 20) {
+      setError("Phone number cannot exceed 20 characters");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -38,6 +190,21 @@ const RegisterPage = () => {
 
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters long");
+      return;
+    }
+    
+    if (formData.password.length > 50) {
+      setError("Password cannot exceed 50 characters");
+      return;
+    }
+    
+    if (!/[A-Z]/.test(formData.password)) {
+      setError("Password must contain at least one uppercase letter");
+      return;
+    }
+    
+    if (!/[0-9]/.test(formData.password)) {
+      setError("Password must contain at least one number");
       return;
     }
 
@@ -116,11 +283,18 @@ const RegisterPage = () => {
                 name="accountName"
                 type="text"
                 required
-                className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                placeholder="Username"
+                maxLength={30}
+                className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.accountName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
+                placeholder="Username (3-30 characters)"
                 value={formData.accountName}
                 onChange={handleChange}
               />
+              {validationFeedback.accountName && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                  <HiInformationCircle className="mr-1 h-4 w-4" />
+                  {validationFeedback.accountName}
+                </p>
+              )}
             </div>
 
             <div className="relative">
@@ -132,11 +306,18 @@ const RegisterPage = () => {
                 name="firstName"
                 type="text"
                 required
-                className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                maxLength={50}
+                className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.firstName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
                 placeholder="First Name"
                 value={formData.firstName}
                 onChange={handleChange}
               />
+              {validationFeedback.firstName && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                  <HiInformationCircle className="mr-1 h-4 w-4" />
+                  {validationFeedback.firstName}
+                </p>
+              )}
             </div>
 
             <div className="relative">
@@ -148,11 +329,18 @@ const RegisterPage = () => {
                 name="lastName"
                 type="text"
                 required
-                className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                maxLength={50}
+                className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.lastName ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
                 placeholder="Last Name"
                 value={formData.lastName}
                 onChange={handleChange}
               />
+              {validationFeedback.lastName && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                  <HiInformationCircle className="mr-1 h-4 w-4" />
+                  {validationFeedback.lastName}
+                </p>
+              )}
             </div>
 
             <div className="relative">
@@ -164,11 +352,18 @@ const RegisterPage = () => {
                 name="email"
                 type="email"
                 required
-                className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                maxLength={100}
+                className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.email ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
                 placeholder="Email address"
                 value={formData.email}
                 onChange={handleChange}
               />
+              {validationFeedback.email && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                  <HiInformationCircle className="mr-1 h-4 w-4" />
+                  {validationFeedback.email}
+                </p>
+              )}
             </div>
 
             <div className="relative">
@@ -179,11 +374,18 @@ const RegisterPage = () => {
                 id="number"
                 name="number"
                 type="tel"
-                className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                maxLength={20}
+                className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.number ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
                 placeholder="Phone Number (optional)"
                 value={formData.number}
                 onChange={handleChange}
               />
+              {validationFeedback.number && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                  <HiInformationCircle className="mr-1 h-4 w-4" />
+                  {validationFeedback.number}
+                </p>
+              )}
             </div>
 
             <div className="relative">
@@ -195,11 +397,44 @@ const RegisterPage = () => {
                 name="password"
                 type="password"
                 required
-                className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                placeholder="Password"
+                maxLength={50}
+                className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.password ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
+                placeholder="Password (6-50 characters)"
                 value={formData.password}
                 onChange={handleChange}
               />
+              {validationFeedback.password && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                  <HiInformationCircle className="mr-1 h-4 w-4" />
+                  {validationFeedback.password}
+                </p>
+              )}
+              {!validationFeedback.password && formData.password && (
+                <p className="mt-1 text-sm text-green-600 dark:text-green-400">
+                  Password meets requirements
+                </p>
+              )}
+              
+              {/* Password requirements checklist - only show after user starts typing */}
+              {formData.password.length > 0 && (
+                <div className="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
+                  <p className="font-medium mb-1">Password must:</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    <li className={formData.password.length >= 6 ? "text-green-600 dark:text-green-400" : ""}>
+                      Be at least 6 characters long
+                    </li>
+                    <li className={formData.password.length <= 50 ? "text-green-600 dark:text-green-400" : ""}>
+                      Not exceed 50 characters
+                    </li>
+                    <li className={/[A-Z]/.test(formData.password) ? "text-green-600 dark:text-green-400" : ""}>
+                      Contain at least one uppercase letter
+                    </li>
+                    <li className={/[0-9]/.test(formData.password) ? "text-green-600 dark:text-green-400" : ""}>
+                      Contain at least one number
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div className="relative">
@@ -211,11 +446,18 @@ const RegisterPage = () => {
                 name="confirmPassword"
                 type="password"
                 required
-                className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                maxLength={50}
+                className={`appearance-none block w-full pl-10 pr-3 py-3 border ${validationFeedback.confirmPassword ? 'border-red-300 dark:border-red-600' : 'border-gray-300 dark:border-gray-600'} rounded-lg placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200`}
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
               />
+              {validationFeedback.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center">
+                  <HiInformationCircle className="mr-1 h-4 w-4" />
+                  {validationFeedback.confirmPassword}
+                </p>
+              )}
             </div>
           </div>
 

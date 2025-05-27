@@ -217,7 +217,7 @@ const UserProfileContent = ({ profileData, userData, loading, error, onRetry }) 
     if (!dateString) return '';
     
     try {
-      const date = typeof dateString === 'string' && dateString.includes(' ')
+      let date = typeof dateString === 'string' && dateString.includes(' ')
         ? new Date(dateString.replace(' ', 'T') + '.000Z') 
         : new Date(dateString);
         
