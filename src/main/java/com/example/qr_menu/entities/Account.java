@@ -95,8 +95,22 @@ public class Account {
         if (accountType != AccountType.ROLE_MANAGER && accountType != AccountType.ROLE_COMANAGER) {
             return false;
         }
-        return managedRestaurants.stream()
+        
+        // Check if manager has a ManagerAssignment for this restaurant
+        boolean hasAssignment = managedRestaurants.stream()
                 .anyMatch(assignment -> assignment.getRestorant().getId().equals(restaurantId));
+        
+        if (hasAssignment) {
+            return true;
+        }
+        
+        // Also check if the manager created/owns this restaurant
+        if (restorants != null) {
+            return restorants.stream()
+                    .anyMatch(restaurant -> restaurant.getId().equals(restaurantId));
+        }
+        
+        return false;
     }
 
     public enum AccountType {

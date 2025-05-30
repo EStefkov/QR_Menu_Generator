@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints (no authentication required)
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/accounts/register", "/api/accounts/login", "/api/accounts/validate").permitAll()
+                        .requestMatchers("/api/accounts/register", "/api/accounts/login", "/api/accounts/validate", "/api/accounts/current").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         
                         // Public order confirmation endpoint
@@ -61,9 +61,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/categories/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/categories/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/products/category/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyRole("ADMIN", "USER", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER")
                         
                         // Manager assignments endpoints - move most specific path first
                         .requestMatchers(HttpMethod.GET, "/api/manager-assignments/managed-by/**").hasAnyRole("ADMIN", "MANAGER", "COMANAGER") 

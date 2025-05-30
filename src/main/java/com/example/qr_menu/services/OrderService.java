@@ -35,6 +35,14 @@ public class OrderService {
 
     @Transactional
     public Order createOrder(OrderDTO orderDTO) {
+        // Validate required fields
+        if (orderDTO.getAccountId() == null) {
+            throw new IllegalArgumentException("Account ID is required");
+        }
+        if (orderDTO.getRestorantId() == null) {
+            throw new IllegalArgumentException("Restaurant ID is required");
+        }
+        
         Account account = accountRepository.findById(orderDTO.getAccountId())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         Restorant restorant = restorantRepository.findById(orderDTO.getRestorantId())
@@ -45,7 +53,7 @@ public class OrderService {
 
         // Create and save order first
         Order order = Order.builder()
-                .orderStatus(orderDTO.getOrderStatus())
+                .orderStatus(orderDTO.getOrderStatus() != null ? orderDTO.getOrderStatus() : Order.OrderStatus.PENDING)
                 .totalPrice(orderDTO.getTotalPrice() != null ? orderDTO.getTotalPrice() : 0.0)
                 .account(account)
                 .restorant(restorant)

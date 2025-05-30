@@ -66,6 +66,9 @@ public class AccountController {
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
             }
+        } catch (IllegalArgumentException e) {
+            // Handle invalid credentials (account not found or wrong password)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error occurred");
         }
@@ -166,7 +169,7 @@ public class AccountController {
 
             // 2. Проверяваме дали е валиден
             if (!jwtTokenUtil.validateToken(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token validation failed");
             }
 
             // 3. Извличаме email от токена
@@ -201,7 +204,7 @@ public class AccountController {
             
             // Validate token
             if (!jwtTokenUtil.validateToken(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
             }
             
             // Get email from token
@@ -315,7 +318,6 @@ public class AccountController {
      * @return a response indicating the outcome
      */
     @PutMapping("/{id}/manager-update-role")
-    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<?> updateUserRoleByManager(
             @PathVariable Long id,
             @RequestBody Map<String, Object> requestBody,

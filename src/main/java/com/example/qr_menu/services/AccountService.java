@@ -213,13 +213,13 @@ public class AccountService {
                         .profilePicture(account.getProfilePicture())
                         .number(account.getNumber())
                         .accountType(account.getAccountType())
-                        .restaurants(account.getRestorants().stream()
+                        .restaurants(account.getRestorants() != null ? account.getRestorants().stream()
                                 .map(restaurant -> RestaurantDTO.builder()
                                         .id(restaurant.getId())
                                         .restorantName(restaurant.getRestorantName())
                                         .address(restaurant.getAddress())
                                         .build())
-                                .collect(Collectors.toList()))
+                                .collect(Collectors.toList()) : List.of())
                         .build())
                 .collect(Collectors.toList());
     }
